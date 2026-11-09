@@ -414,11 +414,26 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
     ) async -> WatchTransferStart {
+        // `refreshConnectionState()` takes one synchronous, coherently-timed
+        // reading of all connection flags. `WatchSendReadinessResolver` must
+        // only ever see flags from that same reading — a later independent
+        // re-read of any one flag (e.g. `session.activationState`) can race
+        // `WCSession` activation and falsely report the watch app as not
+        // installed even though it is.
         refreshConnectionState()
-        guard !isTransferringToWatch else { return .failed("Another book is being prepared for Apple Watch.") }
-        guard session.activationState == .activated else { return .failed("The watch connection is still starting. Try again when connected.") }
-        guard isWatchAppInstalled else {
+        switch WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: isTransferringToWatch,
+            isActivated: isActivated,
+            isWatchAppInstalled: isWatchAppInstalled
+        ) {
+        case .transferAlreadyInProgress:
+            return .failed("Another book is being prepared for Apple Watch.")
+        case .sessionNotActivated:
+            return .failed("The watch connection is still starting. Try again when connected.")
+        case .watchAppNotInstalled:
             return .failed("The Voxglass app isn't installed on your Apple Watch.")
+        case .ready:
+            break
         }
         guard let offlineManager else {
             return .failed("The iPhone app is still starting.")

@@ -572,6 +572,43 @@ import ParsoAudioStreaming
         )
         #expect(state == .notAvailable)
     }
+
+    @Test func sendReadiness_readyWhenActivatedInstalledAndIdle() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: true, isWatchAppInstalled: true
+        )
+        #expect(readiness == .ready)
+    }
+
+    @Test func sendReadiness_blocksWhenAlreadyTransferring() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: true, isActivated: true, isWatchAppInstalled: true
+        )
+        #expect(readiness == .transferAlreadyInProgress)
+    }
+
+    @Test func sendReadiness_blocksWhenNotActivated() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: false, isWatchAppInstalled: true
+        )
+        #expect(readiness == .sessionNotActivated)
+    }
+
+    /// The exact state that was reachable via the historical race: activation
+    /// completes but a stale, separately-timed read still reports not-installed.
+    @Test func sendReadiness_blocksWhenActivatedButNotInstalled() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: true, isWatchAppInstalled: false
+        )
+        #expect(readiness == .watchAppNotInstalled)
+    }
+
+    @Test func sendReadiness_transferringTakesPrecedenceOverNotActivated() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: true, isActivated: false, isWatchAppInstalled: false
+        )
+        #expect(readiness == .transferAlreadyInProgress)
+    }
 }
 
 @Suite struct WatchNarrationEstimateTests {
