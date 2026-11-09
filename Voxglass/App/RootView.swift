@@ -10,6 +10,7 @@ struct RootView: View {
     @State private var selectedTab: VoxglassTab = .launchDefault
     @State private var miniPlayerRouter = MiniPlayerPresentationRouter()
     @State private var deepLinkedBook: DeepLinkedBook?
+    @State private var watchTransferBannerDismissed = false
     @Namespace private var zoomNamespace
 
     var body: some View {
@@ -62,9 +63,21 @@ struct RootView: View {
         }
     }
 
+    private var showsWatchTransferBanner: Bool {
+        phoneAudioRelay.watchTransferStatusBanner != nil && !watchTransferBannerDismissed
+    }
+
+    private func openWatchList() {
+        selectedTab = .library
+        NotificationCenter.default.post(name: .showMyWatchBooks, object: nil)
+    }
+
     private var tabsWithPresentation: some View {
         tabShell
-            .modifier(MiniPlayerBottomAccessory())
+            .modifier(MiniPlayerBottomAccessory(watchBanner: showsWatchTransferBanner ? phoneAudioRelay.watchTransferStatusBanner : nil, openWatch: openWatchList, dismissWatch: { watchTransferBannerDismissed = true }))
+            .onChange(of: phoneAudioRelay.watchTransferStatusBanner == nil) { _, isEmpty in
+                if isEmpty { watchTransferBannerDismissed = false }
+            }
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environment(playback)
@@ -164,13 +177,59 @@ private struct DeepLinkedBook: Identifiable {
     let id: UUID
 }
 
+extension Notification.Name {
+    static let showMyWatchBooks = Notification.Name("voxglass.showMyWatchBooks")
+}
+
 private struct MiniPlayerBottomAccessory: ViewModifier {
     @Environment(PlaybackCoordinator.self) private var playback
+    let watchBanner: WatchTransferStatusBanner?
+    let openWatch: () -> Void
+    let dismissWatch: () -> Void
 
     @ViewBuilder
     func body(content: Content) -> some View {
         content.tabViewBottomAccessory {
-            MiniPlayerAccessory().environment(playback)
+            VStack(spacing: 6) {
+                if let watchBanner {
+                    WatchTransferPill(banner: watchBanner, open: openWatch, dismiss: dismissWatch)
+                }
+                MiniPlayerAccessory().environment(playback)
+            }
+        }
+    }
+}
+
+private struct WatchTransferPill: View {
+    let banner: WatchTransferStatusBanner
+    let open: () -> Void
+    let dismiss: () -> Void
+
+    var body: some View {
+        let label = WatchTransferStatusBannerResolver.label(for: banner)
+        HStack(spacing: 0) {
+            Button(action: open) {
+                HStack(spacing: 8) {
+                    Image(systemName: banner.hasFailure ? "exclamationmark.triangle.fill" : "applewatch")
+                    Text(label).voxType(.body).lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+                .foregroundStyle(banner.hasFailure ? Color.red : Palette.ink)
+                .padding(.leading, 16)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(label)
+            .accessibilityHint("Opens books on Apple Watch")
+            .accessibilityIdentifier("watch.transferBanner")
+            Button(action: dismiss) {
+                Image(systemName: "xmark").frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss Apple Watch status")
+            .accessibilityIdentifier("watch.transferBanner.dismiss")
         }
     }
 }
