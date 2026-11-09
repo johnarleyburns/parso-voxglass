@@ -25,6 +25,7 @@ final class WatchPlaybackEngine {
     private let speedStore: WatchSpeedStore
     private let smokeMode: Bool
     private let smokeFailure: Bool
+    private let smokeNoOutput: Bool
     private var player: AVPlayer?
     private var playerItemObservation: NSKeyValueObservation?
     private var playerStatusObservation: NSKeyValueObservation?
@@ -40,13 +41,14 @@ final class WatchPlaybackEngine {
     private var sleepTask: Task<Void, Never>?
     private(set) var volume: Double = 1
 
-    init(root: URL? = nil, smokeMode: Bool = false, smokeFailure: Bool = false) {
+    init(root: URL? = nil, smokeMode: Bool = false, smokeFailure: Bool = false, smokeNoOutput: Bool = false) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         downloadsRoot = support.appendingPathComponent("DownloadedBooks", isDirectory: true)
         positionStore = WatchPlaybackPositionStore(url: support.appendingPathComponent("watch-playback-positions.json"))
         speedStore = WatchSpeedStore(url: support.appendingPathComponent("watch-playback-speeds.json"))
         self.smokeMode = smokeMode
         self.smokeFailure = smokeFailure
+        self.smokeNoOutput = smokeNoOutput
         if !smokeMode {
             installNotifications()
             installRemoteCommands()
@@ -96,6 +98,12 @@ final class WatchPlaybackEngine {
             snapshot.position = savedPosition
             publish(.rate(rate), token: currentToken)
             if smokeMode {
+                if smokeNoOutput {
+                    publish(.problem(.noOutput,
+                                     message: "Choose an audio output, then try again.",
+                                     code: "routeLost"), token: currentToken)
+                    return
+                }
                 if smokeFailure {
                     publish(.problem(.chapterUnavailable,
                                      message: String(localized: "Send this book to Apple Watch from your iPhone."),
