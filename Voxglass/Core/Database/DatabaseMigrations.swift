@@ -381,6 +381,22 @@ private struct DatabaseMigration {
                   )
                 """
             ]
+        ),
+        DatabaseMigration(
+            id: 18,
+            name: "local_media_fingerprints",
+            statements: [
+                // Local-only cache of portable audio identity. Never synced.
+                """
+                CREATE TABLE local_media_fingerprints (
+                    book_id TEXT PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+                    scheme TEXT NOT NULL,
+                    book_digest TEXT NOT NULL,
+                    manifest_json TEXT NOT NULL,
+                    computed_at REAL NOT NULL
+                )
+                """
+            ]
         )
     ]
 }
