@@ -609,6 +609,63 @@ import ParsoAudioStreaming
         )
         #expect(readiness == .transferAlreadyInProgress)
     }
+
+    @Test func catalogAcceptance_reconcilesForwardProgressWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 48, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_skipsExactRepeatWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 47, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
+
+    /// The genuinely out-of-order case the original device-level guard protected against: a lower
+    /// revision from the SAME install is stale, and must still be skipped, or a late-arriving older
+    /// catalog could wipe out acknowledgements for books that installed correctly in between.
+    @Test func catalogAcceptance_skipsStaleLowerRevisionWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 46, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
+
+    /// The exact regression this resolver exists to fix: a watch app delete + reinstall resets its
+    /// local report counter to 1, numerically far below whatever the phone last accepted — but the
+    /// install epoch changed too, so this must reconcile instead of being dropped as "stale" forever.
+    @Test func catalogAcceptance_reconcilesAfterWatchReinstallDespiteLowerRevision() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "B", incomingRevision: 1, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_reconcilesFirstEverReportWithNoStoredEpoch() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 1, lastAcceptedEpoch: nil, lastAcceptedRevision: 0
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    /// An older watch build that predates `installEpoch` reports `nil`; fall back to the original
+    /// comparison exactly so those builds keep today's behavior.
+    @Test func catalogAcceptance_legacyFallbackReconcilesForwardProgressWhenEpochMissing() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: nil, incomingRevision: 5, lastAcceptedEpoch: "A", lastAcceptedRevision: 4
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_legacyFallbackSkipsStaleRevisionWhenEpochMissing() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: nil, incomingRevision: 3, lastAcceptedEpoch: "A", lastAcceptedRevision: 4
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
 }
 
 @Suite struct WatchNarrationEstimateTests {

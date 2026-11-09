@@ -323,3 +323,45 @@ public enum WatchSendReadinessResolver {
         return .ready
     }
 }
+
+/// Outcome of deciding whether to reconcile against an incoming whole-device watch catalog report.
+public enum WatchCatalogAcceptance: Equatable, Sendable {
+    case reconcile
+    case skipDuplicate
+}
+
+/// Whether `PhoneAudioRelay` should reconcile its watch-projection store against an incoming
+/// `.watchCatalog` report. Pure, host-testable.
+///
+/// The watch's own local report counter lives in its own `UserDefaults` and is wiped by deleting
+/// and reinstalling the watch app, so it restarts at 1. A plain `incoming >= lastAccepted`
+/// comparison against the phone's durably-remembered high-water mark rejected that first honest
+/// "nothing installed" report forever, leaving every previously-downloaded book stuck showing as
+/// still installed with no way to self-correct.
+///
+/// A lower revision is not, on its own, proof of a stale/out-of-order delivery — that is exactly
+/// what a legitimate reinstall produces — but it can't be ignored outright either:
+/// `PhoneWatchProjectionStore.reconcile` deletes the acknowledgement of any book missing from the
+/// catalog with no per-book revision check, so reconciling on every non-repeat revision could wipe
+/// out an acknowledgement for a book that installed correctly in between two reports delivered out
+/// of order (the watch sends each report over both `updateApplicationContext` and, when reachable,
+/// a live `sendMessage`, which are not guaranteed to arrive in the same order). The watch's
+/// `installEpoch` — a random ID minted once per fresh install, wiped by the same reinstall that
+/// resets the revision counter — tells the two apart: a changed epoch means the lower revision is a
+/// legitimate reset, while a matching epoch means the ordering check still applies. An absent
+/// incoming epoch (an older watch build that predates this field) falls back to the original,
+/// pre-epoch comparison exactly, for compatibility.
+public enum WatchCatalogAcceptanceResolver {
+    public static func resolve(
+        incomingEpoch: String?,
+        incomingRevision: Int64,
+        lastAcceptedEpoch: String?,
+        lastAcceptedRevision: Int64
+    ) -> WatchCatalogAcceptance {
+        guard let incomingEpoch else {
+            return incomingRevision >= lastAcceptedRevision ? .reconcile : .skipDuplicate
+        }
+        guard incomingEpoch == lastAcceptedEpoch else { return .reconcile }
+        return incomingRevision > lastAcceptedRevision ? .reconcile : .skipDuplicate
+    }
+}

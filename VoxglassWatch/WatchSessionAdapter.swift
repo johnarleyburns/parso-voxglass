@@ -33,9 +33,20 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
     private static let snapshotKey = "watch.librarySnapshot"
     static let resetKey = "watch.listeningResetPending"
+    private static let installEpochKey = "watch.installEpoch"
     private static var audioRoot: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("DownloadedBooks", isDirectory: true)
+    }
+    /// A random ID minted once per fresh watch-app install, persisted in this app's own
+    /// `UserDefaults` — which a delete + reinstall wipes, same as `"watch.reportRevision"`. Lets the
+    /// phone's `WatchCatalogAcceptanceResolver` tell "this report's revision is lower because the
+    /// watch was reinstalled" apart from a genuinely stale/out-of-order delivery.
+    private static var installEpoch: String {
+        if let existing = UserDefaults.standard.string(forKey: installEpochKey) { return existing }
+        let fresh = UUID().uuidString
+        UserDefaults.standard.set(fresh, forKey: installEpochKey)
+        return fresh
     }
 
     override init() {
@@ -91,8 +102,14 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
             isSyncing = false
             return
         }
-        WCSession.default.sendMessage(WatchProtocolEnvelope.dictionary(for: data), replyHandler: { _ in },
-            errorHandler: { [weak self] error in
+        // `replyHandler`/`errorHandler` closures written inline inside this @MainActor class
+        // silently inherit MainActor isolation — but WCSession (imported `@preconcurrency`) invokes
+        // them on its own background delegate queue, not the main actor. That mismatch isn't a
+        // compile error here; it's a Swift 6 runtime isolation trap the instant Apple calls back,
+        // which is exactly what made tapping "Sync Now" crash. `@Sendable` keeps these closures from
+        // inheriting isolation; any state they touch still hops back via `Task { @MainActor in }`.
+        WCSession.default.sendMessage(WatchProtocolEnvelope.dictionary(for: data), replyHandler: { @Sendable _ in },
+            errorHandler: { @Sendable [weak self] error in
                 let message = error.localizedDescription
                 Task { @MainActor in
                     self?.isSyncing = false
@@ -212,7 +229,10 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         UserDefaults.standard.set(revision, forKey: "watch.reportRevision")
         guard let snapshot, WCSession.isSupported(), WCSession.default.activationState == .activated,
               let data = try? WatchProtocolEnvelope.encode(kind: .watchCatalog,
-                payload: WatchDeviceCatalog(reports: bookReports.values.sorted { $0.bookID.rawValue < $1.bookID.rawValue }),
+                payload: WatchDeviceCatalog(
+                    reports: bookReports.values.sorted { $0.bookID.rawValue < $1.bookID.rawValue },
+                    installEpoch: Self.installEpoch
+                ),
                 libraryID: snapshot.pairedLibraryID, revision: revision) else { return }
         let message = WatchProtocolEnvelope.dictionary(for: data)
         // Native context coalesces periodic inventory reports; live delivery is only a fast path.

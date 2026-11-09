@@ -494,6 +494,32 @@ check_no_ui_tests_in_ci() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# Rule — WCSession handler actor-isolation guard
+# A WCSession reply/error handler closure written inline inside a @MainActor
+# adapter silently inherits MainActor isolation (WatchConnectivity is
+# imported `@preconcurrency`), but WCSession invokes these callbacks on its
+# own background delegate queue — a Swift 6 runtime isolation trap the
+# instant Apple calls back, not a compile error. This crashed "Sync Now" on
+# watch (VoxglassWatch/WatchSessionAdapter.swift's syncNow()). Every such
+# closure must be explicitly @Sendable so it carries no inherited isolation;
+# any actor-isolated state it touches must still hop back via
+# `Task { @MainActor in ... }`.
+# ──────────────────────────────────────────────────────────────
+check_wcsession_handler_isolation() {
+  local had_failure=0
+  local matches
+
+  matches=$(grep -rn 'replyHandler: {\|errorHandler: {' VoxglassWatch --include='*.swift' 2>/dev/null | grep -v '@Sendable' || true)
+  if [ -n "$matches" ]; then
+    echo "::error title=WCSession handler isolation guard::Inline replyHandler/errorHandler closures must be @Sendable (WatchConnectivity invokes them off the main actor):"
+    printf '%s\n' "$matches"
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
 
@@ -535,6 +561,7 @@ run_check "no new KVS writes"          check_no_new_kvs_writes
 run_check "orphan removed"             check_orphan_removed
 run_check "watch target membership"    check_watch_target_membership
 run_check "no UI tests in CI"          check_no_ui_tests_in_ci
+run_check "WCSession handler isolation" check_wcsession_handler_isolation
 
 echo ""
 echo "=== Summary ==="

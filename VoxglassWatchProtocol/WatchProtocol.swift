@@ -86,7 +86,16 @@ public struct WatchManifestAcknowledgement: Codable, Equatable, Sendable {
 /// Complete device inventory, including an explicitly empty inventory after reset.
 public struct WatchDeviceCatalog: Codable, Equatable, Sendable {
     public var reports: [WatchManifestAcknowledgement]
-    public init(reports: [WatchManifestAcknowledgement]) { self.reports = reports }
+    /// Identifies the watch's current app install: a random ID minted once and persisted locally,
+    /// wiped (along with everything else) by a delete + reinstall of the watch app. `nil` from an
+    /// older watch build that predates this field. Lets the phone tell "this report's revision is
+    /// lower because the watch was reinstalled" apart from "this report genuinely arrived stale or
+    /// out of order" — see `WatchCatalogAcceptanceResolver`.
+    public var installEpoch: String?
+    public init(reports: [WatchManifestAcknowledgement], installEpoch: String? = nil) {
+        self.reports = reports
+        self.installEpoch = installEpoch
+    }
 }
 
 /// A durable playback savepoint produced by the Watch. It intentionally carries
