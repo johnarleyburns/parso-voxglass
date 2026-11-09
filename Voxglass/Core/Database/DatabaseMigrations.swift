@@ -397,6 +397,24 @@ private struct DatabaseMigration {
                 )
                 """
             ]
+        ),
+        DatabaseMigration(
+            id: 19,
+            name: "unresolved_portable_local",
+            statements: [
+                // Path-free synced metadata awaiting a matching local fingerprint.
+                // Not a book: nothing here is playable.
+                """
+                CREATE TABLE unresolved_portable_local (
+                    content_key TEXT PRIMARY KEY,
+                    book_record_name TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    received_at REAL NOT NULL,
+                    diagnostic TEXT,
+                    ambiguous_json TEXT
+                )
+                """
+            ]
         )
     ]
 }

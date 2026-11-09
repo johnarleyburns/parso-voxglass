@@ -38,6 +38,7 @@ public final class CloudKitSyncEngine: ObservableObject {
     private var sendingChanges = false
     private var starting = false
     private var scheduledPush: Task<Void, Never>?
+    private lazy var portableLocal = PortableLocalMetadataService(database: database)
 
     private var iCloudSyncEnabled: Bool {
         if defaults.object(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled) == nil {
@@ -689,6 +690,15 @@ public final class CloudKitSyncEngine: ObservableObject {
         case CloudKitRecordMapper.RecordType.book.rawValue:
             guard let book = CloudKitRecordMapper.book(from: record),
                   let contentKey = CloudKitRecordMapper.contentKey(from: record) else { throw LibraryCloudImportError.invalidRecord(record.recordType) }
+            // Portable local book without matching local media: keep path-free metadata
+            // (never a playable book) until a rescan/reselection fingerprints a match.
+            if let placeholder = CloudKitRecordMapper.portableLocalPlaceholder(from: record),
+               try await database.query("SELECT 1 FROM books WHERE content_key = ? LIMIT 1",
+                                        [.string(contentKey)]).isEmpty {
+                try await portableLocal.retainBook(placeholder)
+                try await portableLocal.resolvePending()
+                return true
+            }
             let chapters = try CloudKitRecordMapper.chaptersData(from: record)
             try await upsertBook(book, chapters: chapters, contentKey: contentKey)
             if let localID = await localBookID(forBookRecordName: record.recordID.recordName) {
@@ -921,7 +931,10 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     private func upsertPosition(_ position: PlaybackPosition, bookRef record: CKRecord) async throws {
         guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference else { throw LibraryCloudImportError.invalidRecord("book reference") }
-        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { throw LibraryCloudImportError.invalidRecord("book reference") }
+        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else {
+            if try await portableLocal.retainPosition(position, bookRecordName: bookRef.recordID.recordName) { return }
+            throw LibraryCloudImportError.invalidRecord("book reference")
+        }
         let chapterID = try await localChapterID(position.chapterID, bookID: localBookID)
         let localUpdate = position.updatedAt.timeIntervalSince1970
 
@@ -977,7 +990,10 @@ public final class CloudKitSyncEngine: ObservableObject {
     private func upsertBookmark(_ bookmark: Bookmark, bookRef record: CKRecord) async throws {
         guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference,
               let bookmarkID = bookmark.id else { throw LibraryCloudImportError.invalidRecord("bookmark reference") }
-        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { throw LibraryCloudImportError.invalidRecord("book reference") }
+        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else {
+            if try await portableLocal.retainBookmark(bookmark, bookRecordName: bookRef.recordID.recordName) { return }
+            throw LibraryCloudImportError.invalidRecord("book reference")
+        }
 
         let chapterID = try await localChapterID(bookmark.chapterID, bookID: localBookID)
         try await database.execute("""
