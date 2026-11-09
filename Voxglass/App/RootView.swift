@@ -1,5 +1,6 @@
 import SwiftUI
 import VoxglassCore
+import VoxglassWatchCore
 
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
