@@ -533,3 +533,104 @@ import Testing
                 "Books from same source should have the same sourceID")
     }
 }
+
+@Suite struct PortableLocalBookMapperTests {
+    private let key = "local-media:v1:" + String(repeating: "ab", count: 32)
+
+    private func makeBook() -> (Book, [Chapter]) {
+        let book = Book(title: "Local", authors: ["A"], sourceID: UUID())
+        let chapter = Chapter(
+            bookID: book.id, title: "One", index: 1, duration: 10,
+            localURL: URL(fileURLWithPath: "/private/var/Users/x/one.mp3"),
+            localBookmark: Data([1, 2, 3])
+        )
+        return (book, [chapter])
+    }
+
+    @Test func portableLocalBookUsesExistingSourceAndBookRecordTypes() throws {
+        let (book, chapters) = makeBook()
+        let b = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        let s = try #require(CloudKitRecordMapper.portableLocalSourceRecord(title: "Local", contentKey: key, createdAt: Date()))
+        #expect(b.recordType == "Book")
+        #expect(s.recordType == "Source")
+        #expect(b[CloudKitRecordMapper.Field.contentKey] as? String == key)
+        #expect(s[CloudKitRecordMapper.Field.kind] as? String == "localFiles")
+        #expect(s[CloudKitRecordMapper.Field.title] as? String == "Local")
+    }
+
+    @Test func portableLocalSourceHasNilURLAndNoAbsolutePath() throws {
+        let s = try #require(CloudKitRecordMapper.portableLocalSourceRecord(title: "Local", contentKey: key, createdAt: Date()))
+        #expect(s[CloudKitRecordMapper.Field.url] == nil)
+        #expect(!s.recordID.recordName.contains("/"))
+    }
+
+    @Test func portableLocalBookRecordNameIsDeterministic() throws {
+        let (book, chapters) = makeBook()
+        let a = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        let b = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        #expect(a.recordID.recordName == b.recordID.recordName)
+        #expect(a.recordID.recordName == CloudKitRecordMapper.bookRecordName(contentKey: key))
+        #expect(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: "ia:x") == nil)
+    }
+
+    @Test func portableLocalBookReferencesPortableLocalSource() throws {
+        let (book, chapters) = makeBook()
+        let b = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        let ref = try #require(b[CloudKitRecordMapper.Field.sourceRef] as? CKRecord.Reference)
+        let expected = "source-local-media-\(CloudKitRecordMapper.sha256First12(key))"
+        #expect(ref.recordID.recordName == expected)
+        #expect(CloudKitRecordMapper.sourceRecordName(portableLocalContentKey: key) == expected)
+        #expect(ref.action == .deleteSelf)
+    }
+
+    @Test func chaptersPayloadHasNoLocalURLsOrBookmarks() throws {
+        let (book, chapters) = makeBook()
+        let b = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        let parsed = try CloudKitRecordMapper.chaptersData(from: b)
+        #expect(parsed.count == 1)
+        #expect(parsed.allSatisfy { $0.localURL == nil && $0.localBookmark == nil })
+    }
+
+    @Test func positionAndBookmarkUseCanonicalPortableBookReference() throws {
+        let position = PlaybackPosition(bookID: UUID(), chapterID: UUID(), position: 5)
+        let p = CloudKitRecordMapper.positionRecord(from: position, bookContentKey: key)
+        let bm = try #require(CloudKitRecordMapper.bookmarkRecord(
+            from: Bookmark(id: UUID(), bookID: UUID(), chapterID: UUID(), position: 1), bookContentKey: key))
+        let name = CloudKitRecordMapper.bookRecordName(contentKey: key)
+        #expect((p[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference)?.recordID.recordName == name)
+        #expect((bm[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference)?.recordID.recordName == name)
+    }
+
+    @Test func parserAcceptsPortableLocalSourceAndBook() throws {
+        let (book, chapters) = makeBook()
+        let b = try #require(CloudKitRecordMapper.portableLocalBookRecord(from: book, chapters: chapters, contentKey: key))
+        let s = try #require(CloudKitRecordMapper.portableLocalSourceRecord(title: "Local", contentKey: key, createdAt: Date()))
+        let source = try #require(CloudKitRecordMapper.source(from: s))
+        #expect(source.kind == .localFiles)
+        #expect(source.url == nil)
+        let placeholder = try #require(CloudKitRecordMapper.portableLocalPlaceholder(from: b))
+        #expect(placeholder.isPlayable == false)
+        #expect(placeholder.book.sourceID == source.id)
+        #expect(placeholder.contentKey == key)
+    }
+
+    @Test func legacyLocalRecordRemainsReadable() throws {
+        let url = URL(string: "file:///legacy/book")!
+        let name = try #require(CloudKitRecordMapper.sourceRecordName(sourceURL: url, kind: .localFiles))
+        #expect(name == "source-\(CloudKitRecordMapper.sha256First12(url.absoluteString))")
+        let (book, chapters) = makeBook()
+        let r = CloudKitRecordMapper.bookRecord(from: book, chapters: chapters, contentKey: "local:abc", sourceKey: "x")
+        #expect(CloudKitRecordMapper.book(from: r) != nil)
+        #expect(CloudKitRecordMapper.portableLocalPlaceholder(from: r) == nil)
+    }
+
+    @Test func internetArchiveAndReadWithAIRecordShapesAreUnchanged() throws {
+        let ia = URL(string: "https://archive.org/details/some_id")!
+        #expect(CloudKitRecordMapper.sourceRecordName(sourceURL: ia, kind: .internetArchive) == "source-some_id")
+        let g = URL(string: "https://www.gutenberg.org/ebooks/1")!
+        #expect(CloudKitRecordMapper.sourceRecordName(sourceURL: g, kind: .readWithAI)
+            == "source-read-with-ai-\(CloudKitRecordMapper.sha256First12(g.absoluteString))")
+        #expect(CloudKitRecordMapper.RecordType.source.rawValue == "Source")
+        #expect(CloudKitRecordMapper.Field.contentKey == "contentKey")
+    }
+}

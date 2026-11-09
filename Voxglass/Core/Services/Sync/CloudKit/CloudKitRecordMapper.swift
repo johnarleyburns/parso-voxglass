@@ -61,6 +61,69 @@ public enum CloudKitRecordMapper {
         return "source-\(identity)"
     }
 
+    // MARK: - Portable local books
+
+    public static let portableLocalContentKeyPrefix = "local-media:v1:"
+
+    public static func isPortableLocalContentKey(_ contentKey: String) -> Bool {
+        contentKey.hasPrefix(portableLocalContentKeyPrefix)
+            && contentKey.count > portableLocalContentKeyPrefix.count
+    }
+
+    /// Source key derived from the portable content identity, never a path.
+    public static func portableLocalSourceKey(contentKey: String) -> String {
+        "local-media-\(sha256First12(contentKey))"
+    }
+
+    public static func sourceRecordName(portableLocalContentKey contentKey: String) -> String? {
+        guard isPortableLocalContentKey(contentKey) else { return nil }
+        return "source-\(portableLocalSourceKey(contentKey: contentKey))"
+    }
+
+    /// Builds the URL-less `localFiles` Source record for a portable local book.
+    public static func portableLocalSourceRecord(
+        title: String,
+        contentKey: String,
+        createdAt: Date
+    ) -> CKRecord? {
+        guard isPortableLocalContentKey(contentKey) else { return nil }
+        let source = Source(kind: .localFiles, title: title, url: nil, createdAt: createdAt)
+        return sourceRecord(from: source, sourceKey: portableLocalSourceKey(contentKey: contentKey))
+    }
+
+    /// Book record referencing the portable local source.
+    public static func portableLocalBookRecord(
+        from book: Book,
+        chapters: [Chapter],
+        contentKey: String
+    ) -> CKRecord? {
+        guard isPortableLocalContentKey(contentKey) else { return nil }
+        return bookRecord(
+            from: book,
+            chapters: chapters,
+            contentKey: contentKey,
+            sourceKey: portableLocalSourceKey(contentKey: contentKey)
+        )
+    }
+
+    /// A parsed portable local book. Chapters carry no media location, so the
+    /// book is never playable until matching local files are found.
+    public struct PortableLocalPlaceholder: Sendable {
+        public let book: Book
+        public let chapters: [Chapter]
+        public let contentKey: String
+        public var isPlayable: Bool { false }
+    }
+
+    public static func portableLocalPlaceholder(from record: CKRecord) -> PortableLocalPlaceholder? {
+        guard record.recordType == RecordType.book.rawValue,
+              let key = contentKey(from: record),
+              isPortableLocalContentKey(key),
+              let book = book(from: record),
+              let chapters = try? chaptersData(from: record) else { return nil }
+        return PortableLocalPlaceholder(book: book, chapters: chapters, contentKey: key)
+    }
+
     public static func bookRecordName(contentKey: String) -> String {
         "book-\(sha256First12(contentKey))"
     }
@@ -153,6 +216,7 @@ public enum CloudKitRecordMapper {
         let strippedChapters = chapters.map { chapter -> Chapter in
             var c = chapter
             c.localURL = nil
+            c.localBookmark = nil
             return c
         }
         if let encoded = try? JSONEncoder().encode(strippedChapters),
@@ -220,6 +284,7 @@ public enum CloudKitRecordMapper {
         return chapters.map { chapter in
             var c = chapter
             c.localURL = nil
+            c.localBookmark = nil
             return c
         }
     }
