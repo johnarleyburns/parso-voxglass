@@ -26,6 +26,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// Per-book phone-side preparation stage, so only the selected book animates.
     @Published private(set) var watchPreparationByBook: [UUID: PhoneWatchPreparationState] = [:]
     private var watchPreparationTask: Task<Void, Error>?
+    /// Bounds per-chapter status publications to four per second.
+    private lazy var watchProgressCoalescer = WatchPreparationProgressCoalescer(
+        publish: { [weak self] progress in self?.watchSyncStatus = progress.detail },
+        publishCancelled: { _ in }
+    )
     @Published private(set) var lastWatchSyncDate: Date?
     @Published private(set) var watchSyncStatus: String?
     @Published var connectionToast: String?
@@ -617,7 +622,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 for (index, item) in resolvedChapterFiles.enumerated() {
                     try Task.checkCancellation()
                     let (chapter, key, source) = item
-                    watchSyncStatus = "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
+                    watchProgressCoalescer.submit(WatchPreparationProgress(
+                        bookID: book.book.id, phase: .preparing,
+                        completed: index, total: resolvedChapterFiles.count,
+                        detail: "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
+                    ))
                     if source.pathExtension.lowercased() == "voxtext" {
                         let url = try await ReadWithAIWatchNarrationRenderer().render(
                             textURL: source,
@@ -725,6 +734,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         // self-describing chapter set. Publish the typed manifest without
         // enqueueing a duplicate copy of every audio file.
         await publishTypedWatchProjection()
+        watchProgressCoalescer.cancel(bookID: book.book.id)
         watchSyncStatus = "\(book.book.title) queued for Apple Watch."
         watchTransferSupervisor(for: book.book.id, fileTransfers: fileTransfers)
         return .started
@@ -892,6 +902,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
         try? await watchProjectionStore?.setDesired(.paused, for: id)
         await publishTypedWatchProjection(force: true)
+        watchProgressCoalescer.cancel(bookID: bookID)
         watchSyncStatus = String(localized: "Apple Watch download paused.")
     }
 
