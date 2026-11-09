@@ -19,6 +19,10 @@ struct SettingsView: View {
     var body: some View {
         VoxglassScreen(title: "More") {
             VStack(alignment: .leading, spacing: 16) {
+                settingsGroup("Support") {
+                    SupportDevelopmentCard()
+                }
+
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Languages")
                     LanguagesCard()
@@ -87,10 +91,6 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Apple Watch")
                     WatchSyncCard()
-                }
-
-                settingsGroup("Support") {
-                    SupportDevelopmentCard()
                 }
 
                 settingsGroup("About") {
