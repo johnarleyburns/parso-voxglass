@@ -165,6 +165,7 @@ struct LibraryView: View {
                 let id = UUID(uuidString: book.id.rawValue)
                 let storage = id.flatMap { phoneAudioRelay.watchStorageInfo(for: $0) }
                 let desired = phoneAudioRelay.watchDesiredStates[book.id]
+                let resolved = WatchDisplayStateResolver.resolve(desiredState: desired, storageState: storage?.state)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -172,7 +173,7 @@ struct LibraryView: View {
                             if let author = book.author { Text(author).font(.caption).foregroundStyle(.secondary) }
                         }
                         Spacer()
-                        if storage?.state == .available, desired != .removing {
+                        if resolved == .available {
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                                 .accessibilityLabel("Installed on Apple Watch")
                         }
@@ -186,10 +187,10 @@ struct LibraryView: View {
                                 initialWatchTransferBook = original
                             } else { phoneAudioRelay.watchTransferError = "Add this book to My Books before sending it again." }
                         }.buttonStyle(.borderless).disabled(phoneAudioRelay.isTransferringToWatch)
-                    } else if case .transferring(let fraction)? = storage?.state {
+                    } else if case .transferring(let fraction) = resolved {
                         ProgressView(value: fraction)
                         Text("Transferring audio to Apple Watch").font(.caption)
-                    } else if storage?.state != .available {
+                    } else if resolved != .available {
                         Text(desired == .preparing ? String(localized: "Preparing watch AAC on iPhone…") : String(localized: "Submitted to Apple's transfer service; not yet installed.")).font(.caption)
                         ProgressView()
                     }
@@ -252,7 +253,7 @@ struct LibraryView: View {
                                 selectedBookID = book.book.id
                             }
                             Button {
-                                if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
+                                if watchDisplayState(for: book) == .available {
                                     pendingWatchRemoval = phoneAudioRelay.watchCatalogBooks.first { $0.id.rawValue == book.book.id.uuidString }
                                 } else {
                                     initialWatchTransferBook = book
@@ -262,7 +263,7 @@ struct LibraryView: View {
                             }
                             .disabled(phoneAudioRelay.isTransferringToWatch)
                             .accessibilityIdentifier(
-                                (phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available
+                                (watchDisplayState(for: book) == .available
                                     ? "library.watchRemove."
                                     : "library.watchDownload.") + book.book.id.uuidString
                             )
@@ -581,11 +582,15 @@ struct LibraryView: View {
         }
     }
 
+    private func watchDisplayState(for book: BookWithChapters) -> WatchTransferState {
+        WatchDisplayStateResolver.resolve(
+            desiredState: phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)],
+            storageState: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state
+        )
+    }
+
     private func watchContextTitle(for book: BookWithChapters) -> String {
-        guard let storage = phoneAudioRelay.watchStorageInfo(for: book.book.id) else {
-            return String(localized: "Download to Apple Watch")
-        }
-        switch storage.state {
+        switch watchDisplayState(for: book) {
         case .available:
             return String(localized: "Downloaded on Apple Watch")
         case .transferring, .queued, .waitingForPhone, .paused:

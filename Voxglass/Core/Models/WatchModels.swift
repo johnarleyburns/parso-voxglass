@@ -385,3 +385,31 @@ public enum WatchCatalogAcceptanceResolver {
         return incomingRevision > lastAcceptedRevision ? .reconcile : .skipDuplicate
     }
 }
+
+/// The single source of truth for what a book's watch-download status should *display* as,
+/// merging the authoritative `WatchDownloadState` the phone currently intends with the cached
+/// `WatchTransferState` snapshot (used only for in-flight progress detail). `desiredState`
+/// always wins for every terminal state; `storageState` can only ever add progress detail on
+/// top of an in-flight desired state, never override a terminal one. Every UI call site that
+/// shows or acts on watch-download status must route through this.
+public enum WatchDisplayStateResolver {
+    public static func resolve(
+        desiredState: WatchDownloadState?,
+        storageState: WatchTransferState?
+    ) -> WatchTransferState {
+        guard let desiredState else { return storageState ?? .notAvailable }
+        switch desiredState {
+        case .failed:
+            return .failed
+        case .paused:
+            return .paused
+        case .removing, .notRequested:
+            return .notAvailable
+        case .downloaded:
+            return .available
+        case .queued, .preparing, .transferring, .installing:
+            if case .transferring(let progress)? = storageState { return .transferring(progress: progress) }
+            return .queued
+        }
+    }
+}

@@ -722,3 +722,22 @@ import VoxglassWatchProtocol
             acknowledgement: ack(complete: false), desiredState: nil, priorStorageState: nil) == .queued)
     }
 }
+
+@Suite struct WatchDisplayStateResolverTests {
+    private func r(_ d: WatchDownloadState?, _ s: WatchTransferState?) -> WatchTransferState {
+        WatchDisplayStateResolver.resolve(desiredState: d, storageState: s)
+    }
+    @Test func displayState_desiredFailedWinsOverCachedAvailable() { #expect(r(.failed("x"), .available) == .failed) }
+    @Test func displayState_desiredFailedWinsOverCachedTransferring() { #expect(r(.failed("x"), .transferring(progress: 0.5)) == .failed) }
+    @Test func displayState_desiredPausedWinsOverCachedAvailable() { #expect(r(.paused, .available) == .paused) }
+    @Test func displayState_desiredRemovingNeverShowsAvailable() { #expect(r(.removing, .available) == .notAvailable) }
+    @Test func displayState_desiredDownloadedIsAvailableRegardlessOfCache() {
+        #expect(r(.downloaded, nil) == .available)
+        #expect(r(.downloaded, .queued) == .available)
+    }
+    @Test func displayState_inFlightDesiredPreservesCachedProgress() {
+        #expect(r(.transferring, .transferring(progress: 0.73)) == .transferring(progress: 0.73))
+    }
+    @Test func displayState_inFlightDesiredWithoutCachedProgressFallsBackToQueued() { #expect(r(.preparing, nil) == .queued) }
+    @Test func displayState_noDesiredStateTrustsCache() { #expect(r(nil, .available) == .available) }
+}
