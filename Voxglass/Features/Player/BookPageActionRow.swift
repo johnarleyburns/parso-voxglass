@@ -41,22 +41,10 @@ struct BookPageActionRow: View {
     }
 
     private var watchState: WatchTransferState {
-        if phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)] == .paused {
-            return .paused
-        }
-        if let state = phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state { return state }
-        switch phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)] {
-        case .paused:
-            return .paused
-        case .queued, .preparing, .transferring, .installing:
-            return .queued
-        case .downloaded:
-            return .available
-        case .failed:
-            return .failed
-        case .notRequested, .removing, .none:
-            return .notAvailable
-        }
+        WatchDisplayStateResolver.resolve(
+            desiredState: phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)],
+            storageState: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state
+        )
     }
 
     private var watchProgress: Double {
