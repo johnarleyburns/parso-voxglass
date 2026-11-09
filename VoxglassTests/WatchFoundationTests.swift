@@ -89,6 +89,40 @@ import Testing
         #expect(snapshot.books[0].chapters[0].resumePosition == 42)
     }
 
+    @MainActor private func resumeFixture(saved: (Int, TimeInterval, Bool)?) -> [Double?] {
+        let bookID = UUID()
+        let chapters = (0..<3).map { Chapter(bookID: bookID, title: "C\($0)", index: $0, startTime: 0, duration: 100) }
+        let source = BookWithChapters(book: Book(id: bookID, title: "B", authors: [], sourceID: UUID()), chapters: chapters)
+        let dto = WatchBookDTO(id: .init(bookID.uuidString), title: "B", chapters: chapters.map {
+            WatchChapterDTO(id: .init($0.id.uuidString), index: $0.index, title: $0.title, duration: 100, resumePosition: 9)
+        })
+        let position = saved.map {
+            PlaybackPosition(bookID: bookID, chapterID: chapters[$0.0].id, position: $0.1, duration: 100, isFinished: $0.2)
+        }
+        let result = PhoneWatchProjection.applyingResolvedResume(
+            book: source, saved: position,
+            to: WatchLibrarySnapshot(pairedLibraryID: "library", revision: 1, books: [dto])
+        )
+        return result.books[0].chapters.map(\.resumePosition)
+    }
+
+    @Test @MainActor func resolvedPhoneSavepointMarksOnlyItsLaterChapter() {
+        #expect(resumeFixture(saved: (2, 42, false)) == [nil, nil, 42])
+    }
+
+    @Test @MainActor func finishedPhoneChapterSeedsTheNextChapterAtZero() {
+        #expect(resumeFixture(saved: (1, 100, true)) == [nil, nil, 0])
+    }
+
+    @Test @MainActor func finalFinishedChapterRestartsAtFirstChapter() {
+        #expect(resumeFixture(saved: (2, 100, true)) == [0, nil, nil])
+    }
+
+    @Test @MainActor func subStartFloorSavepointSeedsZeroAndMissingSeedsFirst() {
+        #expect(resumeFixture(saved: (1, 2, false)) == [nil, 0, nil])
+        #expect(resumeFixture(saved: nil) == [0, nil, nil])
+    }
+
     @Test func installerCopiesStagesVerifiesAndAcknowledgesOnlyCompleteBooks() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let source = root.appendingPathComponent("source.m4a")
