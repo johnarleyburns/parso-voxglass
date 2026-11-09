@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import ParsoAudioStreaming
+import VoxglassWatchProtocol
 @testable import VoxglassCore
 
 @Suite struct WatchPositionMergeTests {
@@ -675,5 +676,49 @@ import ParsoAudioStreaming
         #expect(WatchNarrationEstimate.needsGeneratedAudio(for: [chapter]))
         #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 7_200) == 28_800_000)
         #expect(WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: 7_200) == 600)
+    }
+}
+
+@Suite struct WatchAcknowledgedStorageResolverTests {
+    private func ack(complete: Bool, failure: String? = nil) -> WatchManifestAcknowledgement {
+        var a = WatchManifestAcknowledgement(bookID: WatchBookID("b"), revision: 1, complete: complete, installedBytes: 0)
+        a.failureMessage = failure
+        return a
+    }
+
+    // A truly complete report wins even over a failed desired state.
+    @Test func acknowledgedStorage_completeIsAlwaysAvailable() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: true), desiredState: .failed("x"), priorStorageState: nil) == .available)
+    }
+
+    @Test func acknowledgedStorage_explicitFailureMessageIsFailed() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false, failure: "disk full"), desiredState: nil, priorStorageState: nil) == .failed)
+    }
+
+    @Test func acknowledgedStorage_failedDesiredStateWinsOverIncompleteReport() {
+        for prior in [nil, WatchTransferState.available, .transferring(progress: 0.6)] {
+            #expect(WatchAcknowledgedStorageResolver.resolve(
+                acknowledgement: ack(complete: false),
+                desiredState: .failed("Audio is no longer fully installed."),
+                priorStorageState: prior) == .failed)
+        }
+    }
+
+    @Test func acknowledgedStorage_pausedDesiredStateIsPaused() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: .paused, priorStorageState: nil) == .paused)
+    }
+
+    @Test func acknowledgedStorage_preservesTransferringProgressWhenDesiredIsInFlight() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: .transferring,
+            priorStorageState: .transferring(progress: 0.42)) == .transferring(progress: 0.42))
+    }
+
+    @Test func acknowledgedStorage_fallsBackToQueuedWithNoOtherSignal() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: nil, priorStorageState: nil) == .queued)
     }
 }

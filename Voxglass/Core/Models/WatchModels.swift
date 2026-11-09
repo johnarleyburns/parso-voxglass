@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassWatchProtocol
 
 /// On-watch book storage state machine. Pure model, host-testable.
 public enum WatchTransferState: Equatable, Sendable, Codable {
@@ -258,6 +259,25 @@ public enum WatchChapterCache {
 
     public static func key(for chapter: Chapter) -> String? {
         ChapterAudioIdentity.cacheKey(for: chapter)
+    }
+}
+
+/// What `WatchTransferState` an acknowledgement implies, given the phone's current intent for
+/// this book and (for progress continuity only) its previously-displayed storage state. Pure,
+/// host-testable — extracted so this decision can never again depend on whether some other
+/// `@Published` property has been refreshed yet at the call site.
+public enum WatchAcknowledgedStorageResolver {
+    public static func resolve(
+        acknowledgement: WatchManifestAcknowledgement,
+        desiredState: WatchDownloadState?,
+        priorStorageState: WatchTransferState?
+    ) -> WatchTransferState {
+        if acknowledgement.complete { return .available }
+        if acknowledgement.failureMessage != nil { return .failed }
+        if case .failed? = desiredState { return .failed }
+        if desiredState == .paused { return .paused }
+        if case .transferring(let progress)? = priorStorageState { return .transferring(progress: progress) }
+        return .queued
     }
 }
 

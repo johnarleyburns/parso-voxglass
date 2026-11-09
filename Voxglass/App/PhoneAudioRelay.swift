@@ -112,7 +112,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 }
                 let state = await watchProjectionStore.current()
                 watchSelectedBookIDs = Set(state.selectedBooks.keys.compactMap { UUID(uuidString: $0.rawValue) })
-                for value in state.acknowledgements.values { applyWatchAcknowledgement(value) }
+                for value in state.acknowledgements.values { applyWatchAcknowledgement(value, desiredStates: state.desired) }
             }
             await publishLibrarySnapshot()
             await publishTypedWatchProjection()
@@ -344,16 +344,13 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         watchStorageSnapshot = snapshot
     }
 
-    private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement) {
+    private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement, desiredStates: [WatchBookID: WatchDownloadState]) {
         guard let id = UUID(uuidString: acknowledgement.bookID.rawValue) else { return }
-        let state: WatchTransferState
-        if acknowledgement.complete { state = .available }
-        else if acknowledgement.failureMessage != nil { state = .failed }
-        else if case .failed? = watchDesiredStates[acknowledgement.bookID] { state = .failed }
-        else if watchDesiredStates[acknowledgement.bookID] == .paused { state = .paused }
-        else if case .transferring(let progress)? = watchStorageSnapshot?.books[id]?.state {
-            state = .transferring(progress: progress)
-        } else { state = .queued }
+        let state = WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: acknowledgement,
+            desiredState: desiredStates[acknowledgement.bookID],
+            priorStorageState: watchStorageSnapshot?.books[id]?.state
+        )
         let total = watchCatalogBooks.first { $0.id == acknowledgement.bookID }?.chapters.count
             ?? watchStorageSnapshot?.books[id]?.totalChapterCount ?? 0
         let installed = acknowledgement.installedChapterIDs?.count ?? (acknowledgement.complete ? total : 0)
@@ -1077,7 +1074,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 }
             }
             watchStorageSnapshot = WatchStorageSnapshot(books: progress)
-            for report in state.acknowledgements.values { applyWatchAcknowledgement(report) }
+            for report in state.acknowledgements.values { applyWatchAcknowledgement(report, desiredStates: state.desired) }
             lastWatchReportDate = SystemClock().now
             await publishTypedWatchProjection()
         case .watchManifest:
@@ -1097,7 +1094,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 var books = watchStorageSnapshot?.books ?? [:]
                 books.removeValue(forKey: id)
                 applyWatchStorageSnapshot(WatchStorageSnapshot(books: books))
-            } else { applyWatchAcknowledgement(acknowledgement) }
+            } else { applyWatchAcknowledgement(acknowledgement, desiredStates: state.desired) }
             await publishTypedWatchProjection()
         case .setBookDownload:
             // The watch is a local player, never an initiator of audio downloads.
