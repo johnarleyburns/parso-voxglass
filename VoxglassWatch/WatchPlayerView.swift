@@ -142,7 +142,7 @@ struct WatchPlayerView: View {
             Text("\(WatchTimeFormat.short(max(0, playback.duration - playback.position))) left in chapter")
                 .font(.caption2).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 4).padding(.top, 8)
+                .padding(.horizontal, 4)
         } else {
             WatchProgressHairline(fraction: playback.progress)
                 .padding(.horizontal, 4)
