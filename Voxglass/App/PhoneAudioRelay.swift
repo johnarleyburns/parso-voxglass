@@ -26,6 +26,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// Per-book phone-side preparation stage, so only the selected book animates.
     @Published private(set) var watchPreparationByBook: [UUID: PhoneWatchPreparationState] = [:]
     private var watchPreparationTask: Task<Void, Error>?
+    private var watchPreparationGenerations = WatchPreparationGenerations()
     /// Bounds per-chapter status publications to four per second.
     private lazy var watchProgressCoalescer = WatchPreparationProgressCoalescer(
         publish: { [weak self] progress in self?.watchSyncStatus = progress.detail },
@@ -615,9 +616,54 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             // Media conversion needs foreground execution or a finite iOS
             // background assertion. Prevent automatic screen locking during the
             // explicit operation, then restore the user's prior idle-timer state.
+            let generation = watchPreparationGenerations.begin(book.book.id)
             let preparation = Task { @MainActor () async throws -> Void in
                 let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                     .appendingPathComponent("Voxglass/WatchAAC96", isDirectory: true)
+                let hasReadWithAI = resolvedChapterFiles.contains { $0.url.pathExtension.lowercased() == "voxtext" }
+                if !hasReadWithAI {
+                    // Ordinary audio: all heavy work runs in the worker actor and
+                    // returns one immutable result; only the commit is on MainActor.
+                    let chapterInputs = resolvedChapterFiles.map { chapter, key, source in
+                        let remote = chapter.remoteURL
+                        let mime = remote.flatMap { RemoteAudioURL.contentTypeMIME(for: $0) }
+                            ?? (remote?.pathExtension.lowercased() == "mp3" ? "audio/mpeg" : nil)
+                        return OrdinaryWatchChapterInput(
+                            chapterID: chapter.id, chapterKey: key, index: chapter.index, title: chapter.title,
+                            source: source, startTime: max(0, chapter.startTime),
+                            duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil }, mimeType: mime)
+                    }
+                    let coverURL = book.book.coverURL
+                    let worker = WatchAudioPreparationWorker(dependencies: .live(artwork: { directory in
+                        guard let coverURL else { return nil }
+                        return await PhoneAudioRelay.renderWatchArtwork(coverURL: coverURL, directory: directory)
+                    }))
+                    let prepared = try await worker.prepare(
+                        OrdinaryWatchPreparationInput(bookID: book.book.id, chapters: chapterInputs, directory: directory)
+                    ) { [weak self] progress in await self?.watchProgressCoalescer.submit(progress) }
+                    try Task.checkCancellation()
+                    // A newer submission superseded this one: commit nothing.
+                    guard watchPreparationGenerations.isCurrent(generation, for: book.book.id) else {
+                        throw CancellationError()
+                    }
+                    selected.chapters = prepared.chapters
+                    selected.duration = prepared.chapters.reduce(0) { $0 + $1.duration }
+                    let chaptersByID = Dictionary(uniqueKeysWithValues: book.chapters.map { ($0.id, $0) })
+                    preparedFiles = prepared.files.compactMap { file in
+                        chaptersByID[file.chapterID].map { ($0, file.chapterKey, file.url, file.bytes, file.sha256) }
+                    }
+                    artwork = prepared.artwork.map { ($0.url, $0.bytes, $0.hash) }
+                    if let artwork { selected.artworkKey = "\(book.book.id.uuidString)/\(artwork.hash).jpg" }
+                    else if book.book.coverURL != nil {
+                        watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
+                    }
+                    try await watchProjectionStore.select(selected)
+                    watchSelectedBookIDs.insert(book.book.id)
+                    try await watchProjectionStore.setDesiredRoot(WatchManifest(bookID: selected.id, revision: revision,
+                        requiredChapterIDs: selected.chapters.map(\.id)))
+                    await publishTypedWatchProjection()
+                    return
+                }
                 selected.chapters = []
                 for (index, item) in resolvedChapterFiles.enumerated() {
                     try Task.checkCancellation()
@@ -743,6 +789,15 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// Prepare a bounded cover on the phone. The watch never fetches an artwork URL.
     private func prepareWatchArtwork(book: BookWithChapters, directory: URL) async -> (url: URL, bytes: Int64, hash: String)? {
         guard let cover = book.book.coverURL else { return nil }
+        if let result = await Self.renderWatchArtwork(coverURL: cover, directory: directory) {
+            return (result.url, result.bytes, result.hash)
+        }
+        watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
+        return nil
+    }
+
+    /// Off-MainActor cover rendering; any failure is nonfatal and yields nil.
+    nonisolated static func renderWatchArtwork(coverURL cover: URL, directory: URL) async -> PreparedWatchArtwork? {
         let source = LocalArtworkStore.resolve(cover.absoluteString) ?? cover
         do {
             let data: Data
@@ -761,10 +816,10 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             guard let jpeg = thumbnail.jpegData(compressionQuality: 0.8) else { return nil }
             let hash = SHA256Hex.hex(jpeg)
             let url = directory.appendingPathComponent(hash + ".jpg")
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if !FileManager.default.fileExists(atPath: url.path) { try jpeg.write(to: url, options: .atomic) }
-            return (url, Int64(jpeg.count), hash)
+            return PreparedWatchArtwork(url: url, bytes: Int64(jpeg.count), hash: hash)
         } catch {
-            watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
             return nil
         }
     }
