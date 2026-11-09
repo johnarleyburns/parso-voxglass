@@ -523,6 +523,23 @@ check_wcsession_handler_isolation() {
   return $had_failure
 }
 
+# Regression guard: applyWatchAcknowledgement must receive the authoritative desired-state
+# dictionary explicitly (from the same store.current() that produced the acknowledgement).
+# Reading self.watchDesiredStates implicitly baked a stale `.queued` state in at app launch,
+# because configure() ran it before watchDesiredStates was populated. PhoneAudioRelay is not in
+# the host-tested package, so this source-level check is the automated coverage for the call sites.
+check_watch_ack_explicit_desired() {
+  local f=Voxglass/App/PhoneAudioRelay.swift
+  local matches
+  matches=$(grep -n 'applyWatchAcknowledgement(' "$f" 2>/dev/null | grep -v 'desiredStates:' || true)
+  if [ -n "$matches" ]; then
+    echo "::error title=Watch ack desired-state guard::applyWatchAcknowledgement must pass an explicit desiredStates: argument:"
+    printf '%s\n' "$matches"
+    return 1
+  fi
+  return 0
+}
+
 # ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
@@ -566,6 +583,7 @@ run_check "orphan removed"             check_orphan_removed
 run_check "watch target membership"    check_watch_target_membership
 run_check "no UI tests in CI"          check_no_ui_tests_in_ci
 run_check "WCSession handler isolation" check_wcsession_handler_isolation
+run_check "watch ack explicit desired"  check_watch_ack_explicit_desired
 
 echo ""
 echo "=== Summary ==="
