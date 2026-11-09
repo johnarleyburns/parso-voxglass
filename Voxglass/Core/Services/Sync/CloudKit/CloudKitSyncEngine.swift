@@ -616,6 +616,18 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     private func sourceRecordForBook(localID: String) async throws -> CKRecord? {
+        if let key = await contentKeyForBook(localID: localID), CloudKitRecordMapper.isPortableLocalContentKey(key) {
+            let titleRows = try? await database.query(
+                "SELECT s.title, s.created_at FROM sources s JOIN books b ON b.source_id = s.id WHERE b.id = ? LIMIT 1",
+                [.string(localID)]
+            )
+            guard let row = titleRows?.first else { return nil }
+            return CloudKitRecordMapper.portableLocalSourceRecord(
+                title: row.string("title") ?? "",
+                contentKey: key,
+                createdAt: ModelMapping.date(row, "created_at")
+            )
+        }
         let rows = try? await database.query(
             "SELECT s.url, s.kind, s.title, s.created_at FROM sources s JOIN books b ON b.source_id = s.id WHERE b.id = ? LIMIT 1",
             [.string(localID)]
@@ -1071,6 +1083,9 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     private func sourceKeyForBook(localID: String) async -> String? {
+        if let key = await contentKeyForBook(localID: localID), CloudKitRecordMapper.isPortableLocalContentKey(key) {
+            return CloudKitRecordMapper.portableLocalSourceKey(contentKey: key)
+        }
         let rows = try? await database.query(
             "SELECT s.url, s.kind FROM sources s JOIN books b ON b.source_id = s.id WHERE b.id = ? LIMIT 1",
             [.string(localID)]
