@@ -13,20 +13,6 @@ enum VoxglassSurface: Equatable {
     }
 }
 
-enum VoxglassPlatform {
-    static var isMacCatalyst: Bool {
-        #if targetEnvironment(macCatalyst)
-        true
-        #else
-        false
-        #endif
-    }
-
-    static var surfaceName: String {
-        isMacCatalyst ? "Mac Catalyst" : "iPhone or iPad"
-    }
-}
-
 /// Shared command names keep the keyboard map visible in one place. The
 /// actual bindings stay on the views that own each action, so a shortcut
 /// cannot accidentally target stale navigation state.

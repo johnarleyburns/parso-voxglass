@@ -165,17 +165,10 @@ bundle = pathlib.Path(sys.argv[1]) if sys.argv[1] else None
 if bundle:
     require(bundle.is_dir(), f"built app bundle does not exist: {bundle}")
     if bundle.is_dir():
-        manifest_candidates = [bundle / "PrivacyInfo.xcprivacy", bundle / "Contents/Resources/PrivacyInfo.xcprivacy"]
-        require(any(path.is_file() for path in manifest_candidates), f"built app is missing PrivacyInfo.xcprivacy: {bundle}")
-        extension_manifests = (
-            list(bundle.glob("PlugIns/*.appex/PrivacyInfo.xcprivacy")) +
-            list(bundle.glob("Contents/PlugIns/*.appex/PrivacyInfo.xcprivacy")) +
-            # Mac Catalyst extensions are macOS bundles, so their resources
-            # live in the nested Contents/Resources directory.
-            list(bundle.glob("Contents/PlugIns/*.appex/Contents/Resources/PrivacyInfo.xcprivacy"))
-        )
+        require((bundle / "PrivacyInfo.xcprivacy").is_file(), f"built app is missing PrivacyInfo.xcprivacy: {bundle}")
+        extension_manifests = list(bundle.glob("PlugIns/*.appex/PrivacyInfo.xcprivacy"))
         require(len(extension_manifests) >= 1, f"built app is missing extension PrivacyInfo.xcprivacy files: {bundle}")
-        info_path = bundle / "Info.plist" if (bundle / "Info.plist").is_file() else bundle / "Contents/Info.plist"
+        info_path = bundle / "Info.plist"
         info = read_plist(info_path)
         require(bool(info.get("CFBundleIdentifier")), f"built app is missing CFBundleIdentifier: {info_path}")
         require(bool(info.get("CFBundleShortVersionString")), f"built app is missing marketing version: {info_path}")
