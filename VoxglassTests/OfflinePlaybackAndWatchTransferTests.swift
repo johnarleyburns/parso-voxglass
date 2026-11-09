@@ -136,3 +136,38 @@ import ParsoAudioStreaming
         #expect(try Data(contentsOf: resolved).count == 200)
     }
 }
+
+// MARK: - Watch transfer stall detection
+
+@Suite struct WatchTransferStallTests {
+    @Test func predicateFalseRightAfterProgressTrueAfterThreshold() {
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        #expect(!WatchTransferStallPolicy.isStalled(lastProgressAt: t0, now: t0))
+        #expect(!WatchTransferStallPolicy.isStalled(lastProgressAt: t0, now: t0.addingTimeInterval(WatchTransferStallPolicy.stallThreshold)))
+        #expect(WatchTransferStallPolicy.isStalled(lastProgressAt: t0, now: t0.addingTimeInterval(WatchTransferStallPolicy.stallThreshold + 1)))
+    }
+
+    @Test func stallThresholdIsFarShorterThanAbsoluteTimeout() {
+        #expect(WatchTransferStallPolicy.stallThreshold <= 600)
+        #expect(WatchTransferStallPolicy.absoluteTimeout > WatchTransferStallPolicy.stallThreshold)
+    }
+
+    @Test func stalledStateRoundTripsAndExposesProgress() throws {
+        let data = try JSONEncoder().encode(WatchTransferState.stalled(progress: 0.4))
+        let decoded = try JSONDecoder().decode(WatchTransferState.self, from: data)
+        #expect(decoded == .stalled(progress: 0.4))
+        #expect(decoded.progressFraction == 0.4)
+        #expect(decoded != .transferring(progress: 0.4))
+    }
+
+    @Test func giveUpPathCancelsOutstandingTransfers() throws {
+        let text = try String(contentsOf: Self.root.appendingPathComponent("Voxglass/App/PhoneAudioRelay.swift"), encoding: .utf8)
+        let guardRange = try #require(text.range(of: "guard tooLong else { continue }"))
+        let tail = String(text[guardRange.upperBound...].prefix(200))
+        #expect(tail.contains("cancelOutstandingWatchTransfers(for: bookID)"))
+    }
+
+    private static var root: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    }
+}

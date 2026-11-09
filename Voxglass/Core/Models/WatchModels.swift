@@ -7,6 +7,8 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
     case queued
     case waitingForPhone
     case transferring(progress: Double)
+    /// Non-terminal: progress has not moved for the stall threshold. Recoverable in place by a retry.
+    case stalled(progress: Double)
     case paused
     case available
     case failed
@@ -21,6 +23,7 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
         case queued
         case waitingForPhone
         case transferring
+        case stalled
         case paused
         case available
         case failed
@@ -37,6 +40,8 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
             self = .waitingForPhone
         case .transferring:
             self = .transferring(progress: try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0)
+        case .stalled:
+            self = .stalled(progress: try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0)
         case .paused:
             self = .paused
         case .available:
@@ -58,6 +63,9 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
         case .transferring(let progress):
             try container.encode(Kind.transferring, forKey: .kind)
             try container.encode(progress, forKey: .progress)
+        case .stalled(let progress):
+            try container.encode(Kind.stalled, forKey: .kind)
+            try container.encode(progress, forKey: .progress)
         case .paused:
             try container.encode(Kind.paused, forKey: .kind)
         case .available:
@@ -68,10 +76,22 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
     }
 
     public var progressFraction: Double? {
-        if case .transferring(let progress) = self {
-            return progress
+        switch self {
+        case .transferring(let progress), .stalled(let progress): return progress
+        default: return nil
         }
-        return nil
+    }
+}
+
+/// Pure stall decision for phone→watch sends, separated from the polling task.
+public enum WatchTransferStallPolicy {
+    /// Zero progress for this long surfaces a recoverable `.stalled` state.
+    public static let stallThreshold: TimeInterval = 120
+    /// True last-resort give-up regardless of progress.
+    public static let absoluteTimeout: TimeInterval = 24 * 60 * 60
+
+    public static func isStalled(lastProgressAt: Date, now: Date, threshold: TimeInterval = stallThreshold) -> Bool {
+        now.timeIntervalSince(lastProgressAt) > threshold
     }
 }
 
@@ -144,6 +164,8 @@ public struct WatchBookStorageInfo: Equatable, Sendable, Codable {
             return String(localized: "\(completeChapterCount)/\(max(total, 1)) chapters on Watch", bundle: .module)
         case .waitingForPhone:
             return String(localized: "Watch download waiting", bundle: .module)
+        case .stalled:
+            return String(localized: "Watch download stalled", bundle: .module)
         case .paused:
             return String(localized: "Watch download paused", bundle: .module)
         case .failed:
@@ -277,6 +299,7 @@ public enum WatchAcknowledgedStorageResolver {
         if case .failed? = desiredState { return .failed }
         if desiredState == .paused { return .paused }
         if case .transferring(let progress)? = priorStorageState { return .transferring(progress: progress) }
+        if case .stalled(let progress)? = priorStorageState { return .stalled(progress: progress) }
         return .queued
     }
 }
@@ -409,6 +432,7 @@ public enum WatchDisplayStateResolver {
             return .available
         case .queued, .preparing, .transferring, .installing:
             if case .transferring(let progress)? = storageState { return .transferring(progress: progress) }
+            if case .stalled(let progress)? = storageState { return .stalled(progress: progress) }
             return .queued
         }
     }
