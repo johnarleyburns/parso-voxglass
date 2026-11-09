@@ -71,9 +71,18 @@ public final class FolderWatchService: ObservableObject {
     private var folderLeases: [PlaybackLease] = []
     private var foregroundObserver: ObserverToken?
     private var isScanning = false
+    private let worker: FolderIndexingWorker
+    private let now: @Sendable () -> Date
 
-    public init(repository: LibraryRepository, defaults: UserDefaults = .standard) {
+    public init(
+        repository: LibraryRepository,
+        defaults: UserDefaults = .standard,
+        worker: FolderIndexingWorker = FolderIndexingWorker(),
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
         self.repository = repository
+        self.worker = worker
+        self.now = now
         self.defaults = defaults
         reloadFolders()
         #if canImport(UIKit) && !os(watchOS)
@@ -106,7 +115,7 @@ public final class FolderWatchService: ObservableObject {
     // MARK: - Pure diff helper (testable, §4)
 
     /// The subset of `files` that are playable audio and not already known.
-    public static func newAudioFiles(in files: [URL], knownURLs: Set<URL>) -> [URL] {
+    nonisolated public static func newAudioFiles(in files: [URL], knownURLs: Set<URL>) -> [URL] {
         files.filter { url in
             let ext = url.pathExtension.lowercased()
             return AudioFormatSelection.allPlayableExtensions.contains(ext) && !knownURLs.contains(url)
@@ -174,15 +183,6 @@ public final class FolderWatchService: ObservableObject {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            errorMessage = "Could not read the watched folder \(folder.name). Open it in Files and make sure its audio is available on this iPhone."
-            return
-        }
-
         // Do not probe AVURLAsset duration for files that are already in the
         // database. This scan runs on every launch and used to reopen every
         // audiobook in every watched folder before bootstrap could finish.
@@ -195,41 +195,26 @@ public final class FolderWatchService: ObservableObject {
             return
         }
         let knownURLs = await repository.knownLocalFileURLs(forFolder: url)
-        let canonicalContents = contents.map { URL(fileURLWithPath: $0.path).standardizedFileURL.resolvingSymlinksInPath() }
-        let audioURLs = Self.newAudioFiles(in: canonicalContents, knownURLs: knownURLs)
-            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
 
-        var imports: [LocalAudioImport] = []
-        let startedAt = Date()
-        soundIndexProgress = SoundIndexProgress(
-            totalTracks: audioURLs.count,
-            indexedTracks: 0,
-            startedAt: startedAt,
-            now: startedAt
-        )
-
-        for (index, fileURL) in audioURLs.enumerated() {
-            if Task.isCancelled { return }
-            let bookmark: Data
-            do { bookmark = try fileURL.bookmarkData() }
-            catch {
-                errorMessage = "Could not save audio file access: \(error.localizedDescription)"
-                return
+        // All file/AV work runs in the worker, off the main actor. It reports
+        // throttled (<= 4/s) progress snapshots back here.
+        let startedAt = now()
+        let imports: [LocalAudioImport]
+        do {
+            imports = try await worker.index(folder: url, knownURLs: knownURLs) { [weak self] indexed, total in
+                await self?.applyProgress(indexed: indexed, total: total, startedAt: startedAt)
             }
-            let duration = await Self.duration(of: fileURL)
-            imports.append(LocalAudioImport(
-                url: fileURL,
-                title: fileURL.deletingPathExtension().lastPathComponent,
-                sortKey: fileURL.lastPathComponent,
-                duration: duration,
-                bookmark: bookmark
-            ))
-            soundIndexProgress = SoundIndexProgress(
-                totalTracks: audioURLs.count,
-                indexedTracks: index + 1,
-                startedAt: startedAt,
-                now: Date()
-            )
+        } catch is CancellationError {
+            return
+        } catch FolderIndexError.unreadableFolder {
+            errorMessage = "Could not read the watched folder \(folder.name). Open it in Files and make sure its audio is available on this iPhone."
+            return
+        } catch FolderIndexError.bookmark(let message) {
+            errorMessage = "Could not save audio file access: \(message)"
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+            return
         }
         guard !imports.isEmpty else { return }
 
@@ -243,6 +228,15 @@ public final class FolderWatchService: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func applyProgress(indexed: Int, total: Int, startedAt: Date) {
+        soundIndexProgress = SoundIndexProgress(
+            totalTracks: total,
+            indexedTracks: indexed,
+            startedAt: startedAt,
+            now: now()
+        )
     }
 
     private static func canonicalFolder(_ url: URL) -> URL {
@@ -296,13 +290,6 @@ public final class FolderWatchService: ObservableObject {
             NSFileCoordinator.removeFilePresenter(presenter)
         }
         presenters.removeAll()
-    }
-
-    private static func duration(of url: URL) async -> TimeInterval? {
-        let asset = AVURLAsset(url: url)
-        guard let cm = try? await asset.load(.duration) else { return nil }
-        let seconds = CMTimeGetSeconds(cm)
-        return seconds.isFinite && seconds > 0 ? seconds : nil
     }
 }
 
