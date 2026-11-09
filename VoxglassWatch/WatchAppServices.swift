@@ -45,7 +45,8 @@ final class WatchAppServices: ObservableObject {
             || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
         playbackEngine = WatchPlaybackEngine(
             smokeMode: smoke,
-            smokeFailure: ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_PLAYBACK_FAILURE"] == "1"
+            smokeFailure: ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_PLAYBACK_FAILURE"] == "1",
+            smokeNoOutput: ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_NO_OUTPUT"] == "1"
         )
         playbackEngine.onSnapshot = { [weak self] snapshot in self?.applyPlayback(snapshot) }
         playbackEngine.onBookChanged = { [weak self] book in self?.playbackBook = book }
