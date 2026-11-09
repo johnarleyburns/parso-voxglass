@@ -112,7 +112,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 }
                 let state = await watchProjectionStore.current()
                 watchSelectedBookIDs = Set(state.selectedBooks.keys.compactMap { UUID(uuidString: $0.rawValue) })
-                for value in state.acknowledgements.values { applyWatchAcknowledgement(value) }
+                for value in state.acknowledgements.values { applyWatchAcknowledgement(value, desiredStates: state.desired) }
             }
             await publishLibrarySnapshot()
             await publishTypedWatchProjection()
@@ -344,16 +344,13 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         watchStorageSnapshot = snapshot
     }
 
-    private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement) {
+    private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement, desiredStates: [WatchBookID: WatchDownloadState]) {
         guard let id = UUID(uuidString: acknowledgement.bookID.rawValue) else { return }
-        let state: WatchTransferState
-        if acknowledgement.complete { state = .available }
-        else if acknowledgement.failureMessage != nil { state = .failed }
-        else if case .failed? = watchDesiredStates[acknowledgement.bookID] { state = .failed }
-        else if watchDesiredStates[acknowledgement.bookID] == .paused { state = .paused }
-        else if case .transferring(let progress)? = watchStorageSnapshot?.books[id]?.state {
-            state = .transferring(progress: progress)
-        } else { state = .queued }
+        let state = WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: acknowledgement,
+            desiredState: desiredStates[acknowledgement.bookID],
+            priorStorageState: watchStorageSnapshot?.books[id]?.state
+        )
         let total = watchCatalogBooks.first { $0.id == acknowledgement.bookID }?.chapters.count
             ?? watchStorageSnapshot?.books[id]?.totalChapterCount ?? 0
         let installed = acknowledgement.installedChapterIDs?.count ?? (acknowledgement.complete ? total : 0)
@@ -414,11 +411,26 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
     ) async -> WatchTransferStart {
+        // `refreshConnectionState()` takes one synchronous, coherently-timed
+        // reading of all connection flags. `WatchSendReadinessResolver` must
+        // only ever see flags from that same reading — a later independent
+        // re-read of any one flag (e.g. `session.activationState`) can race
+        // `WCSession` activation and falsely report the watch app as not
+        // installed even though it is.
         refreshConnectionState()
-        guard !isTransferringToWatch else { return .failed("Another book is being prepared for Apple Watch.") }
-        guard session.activationState == .activated else { return .failed("The watch connection is still starting. Try again when connected.") }
-        guard isWatchAppInstalled else {
+        switch WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: isTransferringToWatch,
+            isActivated: isActivated,
+            isWatchAppInstalled: isWatchAppInstalled
+        ) {
+        case .transferAlreadyInProgress:
+            return .failed("Another book is being prepared for Apple Watch.")
+        case .sessionNotActivated:
+            return .failed("The watch connection is still starting. Try again when connected.")
+        case .watchAppNotInstalled:
             return .failed("The Voxglass app isn't installed on your Apple Watch.")
+        case .ready:
+            break
         }
         guard let offlineManager else {
             return .failed("The iPhone app is still starting.")
@@ -1026,10 +1038,26 @@ extension PhoneAudioRelay: WCSessionDelegate {
             guard envelope.pairedLibraryID == watchLibraryID,
                   let catalog = try? envelope.decodePayload(WatchDeviceCatalog.self),
                   let store = watchProjectionStore else { return }
-            // Reject older whole-device snapshots; receipt time alone is not ordering.
-            let reportKey = "voxglass.watch.reportRevision"
-            guard envelope.projectionRevision >= Int64(UserDefaults.standard.integer(forKey: reportKey)) else { return }
-            UserDefaults.standard.set(envelope.projectionRevision, forKey: reportKey)
+            // A reinstalled watch's local report counter restarts from zero, so its first honest
+            // "nothing installed" report can be numerically lower than whatever this phone
+            // remembered from before — comparing revisions alone dropped that report forever,
+            // leaving every previously-downloaded book stuck showing as still installed.
+            // `installEpoch` (reset by the same reinstall) lets the resolver tell that apart from a
+            // genuinely stale/out-of-order delivery.
+            let reportRevisionKey = "voxglass.watch.reportRevision"
+            let reportEpochKey = "voxglass.watch.reportEpoch"
+            let lastAcceptedRevision = Int64(UserDefaults.standard.integer(forKey: reportRevisionKey))
+            let lastAcceptedEpoch = UserDefaults.standard.string(forKey: reportEpochKey)
+            guard WatchCatalogAcceptanceResolver.resolve(
+                incomingEpoch: catalog.installEpoch,
+                incomingRevision: envelope.projectionRevision,
+                lastAcceptedEpoch: lastAcceptedEpoch,
+                lastAcceptedRevision: lastAcceptedRevision
+            ) == .reconcile else { return }
+            UserDefaults.standard.set(envelope.projectionRevision, forKey: reportRevisionKey)
+            if let incomingEpoch = catalog.installEpoch {
+                UserDefaults.standard.set(incomingEpoch, forKey: reportEpochKey)
+            }
             try? await store.reconcile(catalog)
             let state = await store.current()
             watchSelectedBookIDs = Set(state.selectedBooks.keys.compactMap { UUID(uuidString: $0.rawValue) })
@@ -1046,7 +1074,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 }
             }
             watchStorageSnapshot = WatchStorageSnapshot(books: progress)
-            for report in state.acknowledgements.values { applyWatchAcknowledgement(report) }
+            for report in state.acknowledgements.values { applyWatchAcknowledgement(report, desiredStates: state.desired) }
             lastWatchReportDate = SystemClock().now
             await publishTypedWatchProjection()
         case .watchManifest:
@@ -1066,7 +1094,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 var books = watchStorageSnapshot?.books ?? [:]
                 books.removeValue(forKey: id)
                 applyWatchStorageSnapshot(WatchStorageSnapshot(books: books))
-            } else { applyWatchAcknowledgement(acknowledgement) }
+            } else { applyWatchAcknowledgement(acknowledgement, desiredStates: state.desired) }
             await publishTypedWatchProjection()
         case .setBookDownload:
             // The watch is a local player, never an initiator of audio downloads.

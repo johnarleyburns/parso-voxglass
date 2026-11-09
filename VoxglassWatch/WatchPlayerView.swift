@@ -45,7 +45,9 @@ struct WatchPlayerView: View {
             refreshOutput()
         }
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingOutput) { WatchOutputSheet(outputName: outputName) }
+        .sheet(isPresented: $showingOutput, onDismiss: { services.retryPlayback() }) {
+            WatchOutputSheet(outputName: outputName)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityAdjustableAction { direction in
             // VoiceOver: swipe up/down skips forward 30 / back 15 (A3).
@@ -234,11 +236,12 @@ struct WatchPlayerView: View {
         case .noOutput:
             WatchProblemCard(
                 systemImage: "airplayaudio", title: "Choose Audio Output",
-                message: String(localized: "Choose Bluetooth headphones, or the Apple Watch speaker on supported Apple Watch models running watchOS 11 or later. The speaker is unavailable while charging."),
-                actions: [.init(title: "Choose Output", systemImage: "airplayaudio", identifier: "watch.book.retry") {
-                    services.retryPlayback()
+                message: String(localized: "Connect headphones or choose the Watch speaker."),
+                actions: [.init(title: "Choose Output", systemImage: "airplayaudio", identifier: "watch.book.chooseOutput") {
+                    showingOutput = true
                 }],
-                code: playback.failureCode)
+                code: playback.failureCode,
+                messageLineLimit: 2)
         case .chapterUnavailable:
             WatchProblemCard(
                 systemImage: "iphone.slash", title: "Chapter Not on This Watch", message: message,
@@ -301,6 +304,7 @@ struct WatchOutputSheet: View {
             .navigationTitle(Text("Output"))
             .navigationBarTitleDisplayMode(.inline)
         }
+        .accessibilityIdentifier("watch.book.outputSheet")
     }
 }
 

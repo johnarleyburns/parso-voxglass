@@ -144,6 +144,60 @@ final class VoxglassWatchUITests: XCTestCase {
                       app.staticTexts["watch.book.errorCode"].label)
     }
 
+    func testWatchNoOutputProblemIsActionableWithoutScrolling() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeed", "watch-library"]
+        app.launchEnvironment["VOXGLASS_WATCH_SMOKE_ALICE"] = "1"
+        app.launchEnvironment["VOXGLASS_WATCH_SMOKE_NO_OUTPUT"] = "1"
+        app.launch()
+
+        let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
+        XCTAssertTrue(alice.waitForExistence(timeout: 20))
+        alice.tap()
+        XCTAssertTrue(app.buttons["watch.book.start"].waitForExistence(timeout: 10))
+        tapFullyVisible(app.buttons["watch.book.start"], app: app)
+        XCTAssertTrue(app.descendants(matching: .any)["watch.book.problem"].waitForExistence(timeout: 10),
+                      app.debugDescription)
+        let choose = app.buttons["watch.book.chooseOutput"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 10), app.debugDescription)
+        let window = app.windows.firstMatch.frame
+        XCTAssertTrue(choose.isEnabled)
+        XCTAssertTrue(choose.isHittable)
+        XCTAssertGreaterThan(choose.frame.height, 0)
+        XCTAssertLessThanOrEqual(choose.frame.maxY, window.maxY)
+        let message = app.staticTexts["watch.book.phase"].label
+        XCTAssertEqual(message, "Connect headphones or choose the Watch speaker.")
+        XCTAssertFalse(message.contains("watchOS 11"))
+        try app.performAccessibilityAudit(for: [.elementDetection, .hitRegion, .textClipped, .sufficientElementDescription])
+        choose.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["watch.book.outputSheet"].waitForExistence(timeout: 10),
+                      app.debugDescription)
+    }
+
+    func testContinueOnPhoneHandoffGivesExplicitInstructions() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeed", "watch-library"]
+        app.launch()
+
+        let action = app.buttons["watch.empty.handoff"]
+        XCTAssertTrue(action.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(action.label, "Continue on iPhone")
+        XCTAssertTrue(action.isHittable)
+        action.tap()
+
+        let message = app.staticTexts["watch.empty.handoff.message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(message.label.contains("App Switcher"))
+        XCTAssertTrue(message.label.contains("Voxglass"))
+        XCTAssertFalse(message.label.contains("Ready on your iPhone"))
+        XCTAssertFalse(message.label.localizedCaseInsensitiveContains("opened"))
+        try app.performAccessibilityAudit(for: [.elementDetection, .hitRegion, .textClipped, .sufficientElementDescription])
+
+        action.tap()
+        XCTAssertEqual(app.staticTexts.matching(identifier: "watch.empty.handoff.message").count, 1)
+        XCTAssertTrue(action.isHittable)
+    }
+
     /// Scrolls with the Digital Crown until the element is wholly on screen, then taps it. A row
     /// under the bottom edge reports hittable but its centre is off the display.
     private func tapFullyVisible(_ element: XCUIElement, app: XCUIApplication) {

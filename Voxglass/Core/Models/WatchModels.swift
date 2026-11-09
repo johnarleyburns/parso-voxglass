@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassWatchProtocol
 
 /// On-watch book storage state machine. Pure model, host-testable.
 public enum WatchTransferState: Equatable, Sendable, Codable {
@@ -261,6 +262,25 @@ public enum WatchChapterCache {
     }
 }
 
+/// What `WatchTransferState` an acknowledgement implies, given the phone's current intent for
+/// this book and (for progress continuity only) its previously-displayed storage state. Pure,
+/// host-testable — extracted so this decision can never again depend on whether some other
+/// `@Published` property has been refreshed yet at the call site.
+public enum WatchAcknowledgedStorageResolver {
+    public static func resolve(
+        acknowledgement: WatchManifestAcknowledgement,
+        desiredState: WatchDownloadState?,
+        priorStorageState: WatchTransferState?
+    ) -> WatchTransferState {
+        if acknowledgement.complete { return .available }
+        if acknowledgement.failureMessage != nil { return .failed }
+        if case .failed? = desiredState { return .failed }
+        if desiredState == .paused { return .paused }
+        if case .transferring(let progress)? = priorStorageState { return .transferring(progress: progress) }
+        return .queued
+    }
+}
+
 /// Transfer state machine: determines the visible state for a give set of inputs.
 /// Pure, host-testable.
 public enum WatchTransferStateResolver {
@@ -289,5 +309,107 @@ public enum WatchTransferStateResolver {
         if needsPhoneTransfer && !isPhoneReachable { return .waitingForPhone }
         if isQueued { return .queued }
         return .notAvailable
+    }
+}
+
+/// Outcome of asking whether the phone may start sending a book to the watch.
+public enum WatchSendReadiness: Equatable, Sendable {
+    case ready
+    case transferAlreadyInProgress
+    case sessionNotActivated
+    case watchAppNotInstalled
+}
+
+/// Whether `PhoneAudioRelay.transferBookToWatch` may proceed. Pure, host-testable.
+public enum WatchSendReadinessResolver {
+
+    /// Resolves readiness from a single, coherently-timed reading of connection
+    /// state. All three flags must come from the same reading — mixing a cached
+    /// flag with a later, independently-timed live read of another flag can
+    /// race `WCSession` activation and falsely report `.watchAppNotInstalled`
+    /// even when the watch app is genuinely installed.
+    /// - Parameters:
+    ///   - isAlreadyTransferring: a transfer to the watch is already in flight
+    ///   - isActivated: `WCSession.activationState == .activated`
+    ///   - isWatchAppInstalled: `WCSession.isWatchAppInstalled`
+    public static func resolve(
+        isAlreadyTransferring: Bool,
+        isActivated: Bool,
+        isWatchAppInstalled: Bool
+    ) -> WatchSendReadiness {
+        if isAlreadyTransferring { return .transferAlreadyInProgress }
+        if !isActivated { return .sessionNotActivated }
+        if !isWatchAppInstalled { return .watchAppNotInstalled }
+        return .ready
+    }
+}
+
+/// Outcome of deciding whether to reconcile against an incoming whole-device watch catalog report.
+public enum WatchCatalogAcceptance: Equatable, Sendable {
+    case reconcile
+    case skipDuplicate
+}
+
+/// Whether `PhoneAudioRelay` should reconcile its watch-projection store against an incoming
+/// `.watchCatalog` report. Pure, host-testable.
+///
+/// The watch's own local report counter lives in its own `UserDefaults` and is wiped by deleting
+/// and reinstalling the watch app, so it restarts at 1. A plain `incoming >= lastAccepted`
+/// comparison against the phone's durably-remembered high-water mark rejected that first honest
+/// "nothing installed" report forever, leaving every previously-downloaded book stuck showing as
+/// still installed with no way to self-correct.
+///
+/// A lower revision is not, on its own, proof of a stale/out-of-order delivery — that is exactly
+/// what a legitimate reinstall produces — but it can't be ignored outright either:
+/// `PhoneWatchProjectionStore.reconcile` deletes the acknowledgement of any book missing from the
+/// catalog with no per-book revision check, so reconciling on every non-repeat revision could wipe
+/// out an acknowledgement for a book that installed correctly in between two reports delivered out
+/// of order (the watch sends each report over both `updateApplicationContext` and, when reachable,
+/// a live `sendMessage`, which are not guaranteed to arrive in the same order). The watch's
+/// `installEpoch` — a random ID minted once per fresh install, wiped by the same reinstall that
+/// resets the revision counter — tells the two apart: a changed epoch means the lower revision is a
+/// legitimate reset, while a matching epoch means the ordering check still applies. An absent
+/// incoming epoch (an older watch build that predates this field) falls back to the original,
+/// pre-epoch comparison exactly, for compatibility.
+public enum WatchCatalogAcceptanceResolver {
+    public static func resolve(
+        incomingEpoch: String?,
+        incomingRevision: Int64,
+        lastAcceptedEpoch: String?,
+        lastAcceptedRevision: Int64
+    ) -> WatchCatalogAcceptance {
+        guard let incomingEpoch else {
+            return incomingRevision >= lastAcceptedRevision ? .reconcile : .skipDuplicate
+        }
+        guard incomingEpoch == lastAcceptedEpoch else { return .reconcile }
+        return incomingRevision > lastAcceptedRevision ? .reconcile : .skipDuplicate
+    }
+}
+
+/// The single source of truth for what a book's watch-download status should *display* as,
+/// merging the authoritative `WatchDownloadState` the phone currently intends with the cached
+/// `WatchTransferState` snapshot (used only for in-flight progress detail). `desiredState`
+/// always wins for every terminal state; `storageState` can only ever add progress detail on
+/// top of an in-flight desired state, never override a terminal one. Every UI call site that
+/// shows or acts on watch-download status must route through this.
+public enum WatchDisplayStateResolver {
+    public static func resolve(
+        desiredState: WatchDownloadState?,
+        storageState: WatchTransferState?
+    ) -> WatchTransferState {
+        guard let desiredState else { return storageState ?? .notAvailable }
+        switch desiredState {
+        case .failed:
+            return .failed
+        case .paused:
+            return .paused
+        case .removing, .notRequested:
+            return .notAvailable
+        case .downloaded:
+            return .available
+        case .queued, .preparing, .transferring, .installing:
+            if case .transferring(let progress)? = storageState { return .transferring(progress: progress) }
+            return .queued
+        }
     }
 }

@@ -20,6 +20,8 @@ struct WatchProblemCard: View {
     var message: String?
     var actions: [Action] = []
     var code: String?
+    /// Only for a concise, complete instruction; generic errors leave this nil and are never truncated.
+    var messageLineLimit: Int?
     /// The message's accessibility identifier (the UI smoke test reads `watch.book.phase`).
     var messageIdentifier = "watch.book.phase"
 
@@ -38,6 +40,7 @@ struct WatchProblemCard: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineLimit(messageLineLimit)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(messageIdentifier)
             }

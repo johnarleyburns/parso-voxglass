@@ -1,5 +1,6 @@
 import SwiftUI
 import VoxglassCore
+import VoxglassWatchCore
 
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
@@ -101,10 +102,12 @@ struct RootView: View {
             .environmentObject(phoneAudioRelay)
             .presentationDragIndicator(.visible)
         }
-        // Watch redesign H3: "Show Me on iPhone" on the watch's empty state hands off here and
-        // opens My Books, where "Download to Apple Watch" lives.
-        .onContinueUserActivity("guru.parso.voxglass.watch.library") { _ in
-            selectedTab = .library
+        // Watch "Continue on iPhone" hands off here (after the person accepts it in the App
+        // Switcher) and opens My Books, where "Download to Apple Watch" lives.
+        .onContinueUserActivity(WatchHandoffRoute.activityType) { activity in
+            if WatchHandoffRoute.route(forActivityType: activity.activityType) == .library {
+                selectedTab = .library
+            }
         }
         .onOpenURL { url in
             guard url.scheme == "voxglass", url.host == "book",

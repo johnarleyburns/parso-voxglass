@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import ParsoAudioStreaming
+import VoxglassWatchProtocol
 @testable import VoxglassCore
 
 @Suite struct WatchPositionMergeTests {
@@ -572,6 +573,100 @@ import ParsoAudioStreaming
         )
         #expect(state == .notAvailable)
     }
+
+    @Test func sendReadiness_readyWhenActivatedInstalledAndIdle() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: true, isWatchAppInstalled: true
+        )
+        #expect(readiness == .ready)
+    }
+
+    @Test func sendReadiness_blocksWhenAlreadyTransferring() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: true, isActivated: true, isWatchAppInstalled: true
+        )
+        #expect(readiness == .transferAlreadyInProgress)
+    }
+
+    @Test func sendReadiness_blocksWhenNotActivated() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: false, isWatchAppInstalled: true
+        )
+        #expect(readiness == .sessionNotActivated)
+    }
+
+    /// The exact state that was reachable via the historical race: activation
+    /// completes but a stale, separately-timed read still reports not-installed.
+    @Test func sendReadiness_blocksWhenActivatedButNotInstalled() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: false, isActivated: true, isWatchAppInstalled: false
+        )
+        #expect(readiness == .watchAppNotInstalled)
+    }
+
+    @Test func sendReadiness_transferringTakesPrecedenceOverNotActivated() {
+        let readiness = WatchSendReadinessResolver.resolve(
+            isAlreadyTransferring: true, isActivated: false, isWatchAppInstalled: false
+        )
+        #expect(readiness == .transferAlreadyInProgress)
+    }
+
+    @Test func catalogAcceptance_reconcilesForwardProgressWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 48, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_skipsExactRepeatWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 47, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
+
+    /// The genuinely out-of-order case the original device-level guard protected against: a lower
+    /// revision from the SAME install is stale, and must still be skipped, or a late-arriving older
+    /// catalog could wipe out acknowledgements for books that installed correctly in between.
+    @Test func catalogAcceptance_skipsStaleLowerRevisionWithinSameInstall() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 46, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
+
+    /// The exact regression this resolver exists to fix: a watch app delete + reinstall resets its
+    /// local report counter to 1, numerically far below whatever the phone last accepted — but the
+    /// install epoch changed too, so this must reconcile instead of being dropped as "stale" forever.
+    @Test func catalogAcceptance_reconcilesAfterWatchReinstallDespiteLowerRevision() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "B", incomingRevision: 1, lastAcceptedEpoch: "A", lastAcceptedRevision: 47
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_reconcilesFirstEverReportWithNoStoredEpoch() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: "A", incomingRevision: 1, lastAcceptedEpoch: nil, lastAcceptedRevision: 0
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    /// An older watch build that predates `installEpoch` reports `nil`; fall back to the original
+    /// comparison exactly so those builds keep today's behavior.
+    @Test func catalogAcceptance_legacyFallbackReconcilesForwardProgressWhenEpochMissing() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: nil, incomingRevision: 5, lastAcceptedEpoch: "A", lastAcceptedRevision: 4
+        )
+        #expect(acceptance == .reconcile)
+    }
+
+    @Test func catalogAcceptance_legacyFallbackSkipsStaleRevisionWhenEpochMissing() {
+        let acceptance = WatchCatalogAcceptanceResolver.resolve(
+            incomingEpoch: nil, incomingRevision: 3, lastAcceptedEpoch: "A", lastAcceptedRevision: 4
+        )
+        #expect(acceptance == .skipDuplicate)
+    }
 }
 
 @Suite struct WatchNarrationEstimateTests {
@@ -582,4 +677,67 @@ import ParsoAudioStreaming
         #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 7_200) == 28_800_000)
         #expect(WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: 7_200) == 600)
     }
+}
+
+@Suite struct WatchAcknowledgedStorageResolverTests {
+    private func ack(complete: Bool, failure: String? = nil) -> WatchManifestAcknowledgement {
+        var a = WatchManifestAcknowledgement(bookID: WatchBookID("b"), revision: 1, complete: complete, installedBytes: 0)
+        a.failureMessage = failure
+        return a
+    }
+
+    // A truly complete report wins even over a failed desired state.
+    @Test func acknowledgedStorage_completeIsAlwaysAvailable() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: true), desiredState: .failed("x"), priorStorageState: nil) == .available)
+    }
+
+    @Test func acknowledgedStorage_explicitFailureMessageIsFailed() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false, failure: "disk full"), desiredState: nil, priorStorageState: nil) == .failed)
+    }
+
+    @Test func acknowledgedStorage_failedDesiredStateWinsOverIncompleteReport() {
+        for prior in [nil, WatchTransferState.available, .transferring(progress: 0.6)] {
+            #expect(WatchAcknowledgedStorageResolver.resolve(
+                acknowledgement: ack(complete: false),
+                desiredState: .failed("Audio is no longer fully installed."),
+                priorStorageState: prior) == .failed)
+        }
+    }
+
+    @Test func acknowledgedStorage_pausedDesiredStateIsPaused() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: .paused, priorStorageState: nil) == .paused)
+    }
+
+    @Test func acknowledgedStorage_preservesTransferringProgressWhenDesiredIsInFlight() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: .transferring,
+            priorStorageState: .transferring(progress: 0.42)) == .transferring(progress: 0.42))
+    }
+
+    @Test func acknowledgedStorage_fallsBackToQueuedWithNoOtherSignal() {
+        #expect(WatchAcknowledgedStorageResolver.resolve(
+            acknowledgement: ack(complete: false), desiredState: nil, priorStorageState: nil) == .queued)
+    }
+}
+
+@Suite struct WatchDisplayStateResolverTests {
+    private func r(_ d: WatchDownloadState?, _ s: WatchTransferState?) -> WatchTransferState {
+        WatchDisplayStateResolver.resolve(desiredState: d, storageState: s)
+    }
+    @Test func displayState_desiredFailedWinsOverCachedAvailable() { #expect(r(.failed("x"), .available) == .failed) }
+    @Test func displayState_desiredFailedWinsOverCachedTransferring() { #expect(r(.failed("x"), .transferring(progress: 0.5)) == .failed) }
+    @Test func displayState_desiredPausedWinsOverCachedAvailable() { #expect(r(.paused, .available) == .paused) }
+    @Test func displayState_desiredRemovingNeverShowsAvailable() { #expect(r(.removing, .available) == .notAvailable) }
+    @Test func displayState_desiredDownloadedIsAvailableRegardlessOfCache() {
+        #expect(r(.downloaded, nil) == .available)
+        #expect(r(.downloaded, .queued) == .available)
+    }
+    @Test func displayState_inFlightDesiredPreservesCachedProgress() {
+        #expect(r(.transferring, .transferring(progress: 0.73)) == .transferring(progress: 0.73))
+    }
+    @Test func displayState_inFlightDesiredWithoutCachedProgressFallsBackToQueued() { #expect(r(.preparing, nil) == .queued) }
+    @Test func displayState_noDesiredStateTrustsCache() { #expect(r(nil, .available) == .available) }
 }
