@@ -139,7 +139,14 @@ final class WatchAppServices: ObservableObject {
     /// The chapter a "Resume" button would continue from.
     func resumeChapterIndex(for book: WatchBookDTO) -> Int {
         if playbackBook?.id == book.id { return playback.chapterIndex }
-        return min(max(0, listened[book.id.rawValue]?.chapterIndex ?? 0), max(0, book.chapters.count - 1))
+        return Self.initialChapterIndex(chapters: book.chapters, localChapterIndex: listened[book.id.rawValue]?.chapterIndex)
+    }
+
+    /// Precedence: Watch-local listen state > the phone-projected resume marker > first chapter.
+    nonisolated static func initialChapterIndex(chapters: [WatchChapterDTO], localChapterIndex: Int?) -> Int {
+        let last = max(0, chapters.count - 1)
+        if let localChapterIndex { return min(max(0, localChapterIndex), last) }
+        return chapters.firstIndex { $0.resumePosition != nil } ?? 0
     }
 
     func resumePosition(for book: WatchBookDTO) -> TimeInterval? {

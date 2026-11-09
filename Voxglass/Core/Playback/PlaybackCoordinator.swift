@@ -810,6 +810,13 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// The effective saved point for a book (durable row merged with the
+    /// in-process snapshot), without touching the engine.
+    public func effectiveSavedPosition(forBookID bookID: UUID) async -> PlaybackPosition? {
+        let row = try? await positionStore.latestPosition(forBookID: bookID)
+        return Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.position(forBookID: bookID))
+    }
+
     public func present(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
         pushNavigationHistory()
         guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }

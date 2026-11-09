@@ -59,6 +59,30 @@ public enum PhoneWatchProjection {
         return result
     }
 
+    /// Seeds exactly one chapter of `bookID` with the iPhone "Resume" target
+    /// (same policy as `PlaybackCoordinator.resolveResume`), clearing stale markers.
+    @MainActor
+    public static func applyingResolvedResume(
+        book: BookWithChapters,
+        saved: PlaybackPosition?,
+        to snapshot: WatchLibrarySnapshot
+    ) -> WatchLibrarySnapshot {
+        let bookID = WatchBookID(book.book.id.uuidString)
+        guard let bookIndex = snapshot.books.firstIndex(where: { $0.id == bookID }),
+              let target = PlaybackCoordinator.resolveResume(chapters: book.chapters, saved: saved) else {
+            return snapshot
+        }
+        var result = snapshot
+        let targetID = WatchChapterID(target.chapter.id.uuidString)
+        for index in result.books[bookIndex].chapters.indices {
+            result.books[bookIndex].chapters[index].resumePosition = nil
+        }
+        if let chapterIndex = result.books[bookIndex].chapters.firstIndex(where: { $0.id == targetID }) {
+            result.books[bookIndex].chapters[chapterIndex].resumePosition = max(0, target.startTime)
+        }
+        return result
+    }
+
     public static func library(from books: [BookWithChapters], libraryID: WatchPairedLibraryID, revision: Int64) -> WatchLibrarySnapshot {
         .init(pairedLibraryID: libraryID, revision: revision, books: books.map { book(from: $0, revision: revision) })
     }
