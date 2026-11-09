@@ -674,16 +674,18 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                         detail: "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
                     ))
                     if source.pathExtension.lowercased() == "voxtext" {
-                        let url = try await ReadWithAIWatchNarrationRenderer().render(
+                        let narrationWorker = WatchAudioPreparationWorker(dependencies: .live(artwork: { _ in nil }))
+                        let adapter = ReadWithAIWatchPreparationAdapter(
+                            chapterID: chapter.id, chapterKey: key, directory: directory)
+                        let prepared = try await adapter.prepareNarration(
                             textURL: source,
-                            directory: directory,
-                            preference: ReadWithAIVoicePreferences.preference(for: book.book.id)
-                        )
-                        let size = Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
-                        let checksum = try await Task.detached { try WatchChecksum.sha256(of: url) }.value
-                        let duration = try await AVURLAsset(url: url).load(.duration).seconds
+                            preference: ReadWithAIVoicePreferences.preference(for: book.book.id),
+                            renderer: ReadWithAIWatchNarrationRenderer(directory: directory),
+                            cache: ReadWithAIWatchNarrationUserDefaultsCache(),
+                            worker: narrationWorker)
+                        let (url, size, checksum) = (prepared.url, prepared.bytes, prepared.sha256)
                         selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
-                            index: chapter.index, title: chapter.title, duration: duration, startTime: 0,
+                            index: chapter.index, title: chapter.title, duration: prepared.duration, startTime: 0,
                             expectedBytes: size, expectedSHA256: checksum, durableFilename: "\(chapter.id.uuidString).m4a"))
                         preparedFiles.append((chapter, key, url, size, checksum))
                         continue
