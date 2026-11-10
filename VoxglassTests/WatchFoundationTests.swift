@@ -162,4 +162,127 @@ import Testing
         let relaunched = PhoneWatchProjectionStore(url: url, libraryID: "library")
         #expect(await relaunched.isTruthfullyDownloaded(id))
     }
+
+    // MARK: WatchDownloadedFiles (off-MainActor reset/removal)
+
+    private func tempRoot() throws -> (support: URL, root: URL) {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("wdf-\(UUID().uuidString)", isDirectory: true)
+        let root = support.appendingPathComponent("DownloadedBooks", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return (support, root)
+    }
+
+    private final class BlockingOps: WatchFileOperations, @unchecked Sendable {
+        // Test double: state is guarded by the semaphores/lock below.
+        let entered = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        let lock = NSLock()
+        private var _threadWasMain = false
+        var threadWasMain: Bool { lock.lock(); defer { lock.unlock() }; return _threadWasMain }
+        func exists(_ url: URL) -> Bool { FileManager.default.fileExists(atPath: url.path) }
+        func awaitEntered() async {
+            await withCheckedContinuation { continuation in
+                DispatchQueue.global().async { self.entered.wait(); continuation.resume() }
+            }
+        }
+        func remove(_ url: URL) throws {
+            lock.lock(); _threadWasMain = Thread.isMainThread; lock.unlock()
+            entered.signal(); release.wait()
+            try FileManager.default.removeItem(at: url)
+        }
+    }
+
+    private struct FailingOps: WatchFileOperations {
+        func exists(_ url: URL) -> Bool { true }
+        func remove(_ url: URL) throws { throw CocoaError(.fileWriteNoPermission) }
+    }
+
+    @Test func resetRemovesDownloadedBooksAndPlaybackFilesButNotNarrationOutbox() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("book"), withIntermediateDirectories: true)
+        try Data("a".utf8).write(to: root.appendingPathComponent("book/c.m4a"))
+        for name in WatchDownloadedFiles.playbackFileNames + ["watch-narration-outbox.json"] {
+            try Data("x".utf8).write(to: support.appendingPathComponent(name))
+        }
+        let result = try await WatchDownloadedFiles().resetDownloadedState(at: root)
+        #expect(Set(result.removed) == Set(["DownloadedBooks"] + WatchDownloadedFiles.playbackFileNames))
+        #expect(!FileManager.default.fileExists(atPath: root.path))
+        #expect(FileManager.default.fileExists(atPath: support.appendingPathComponent("watch-narration-outbox.json").path))
+    }
+
+    @Test func resetFailureThrowsSoCallerKeepsPendingFlag() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        await #expect(throws: (any Error).self) {
+            _ = try await WatchDownloadedFiles(operations: FailingOps()).resetDownloadedState(at: root)
+        }
+    }
+
+    @Test func removeBookDeletesOnlyTheRequestedSafeBookDirectory() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        for id in ["a", "b"] {
+            try FileManager.default.createDirectory(at: root.appendingPathComponent(id), withIntermediateDirectories: true)
+        }
+        try await WatchDownloadedFiles().removeBook(bookID: "a", at: root)
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a").path))
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("b").path))
+    }
+
+    @Test func invalidBookIdentifierCannotEscapeDownloadsRoot() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        for bad in ["..", "../x", "a/b", ""] {
+            await #expect(throws: (any Error).self) {
+                try await WatchDownloadedFiles().removeBook(bookID: WatchBookID(bad), at: root)
+            }
+        }
+        #expect(FileManager.default.fileExists(atPath: root.path))
+    }
+
+    @Test func slowRemovalRunsOffMainThreadAndDoesNotBlockCaller() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("a"), withIntermediateDirectories: true)
+        let ops = BlockingOps()
+        let files = WatchDownloadedFiles(operations: ops)
+        let task = Task { try await files.removeBook(bookID: "a", at: root) }
+        await ops.awaitEntered()
+        // The worker is blocked inside removeItem; this actor is still free to do other work.
+        let state = await MainActor.run { "interaction-updated" }
+        #expect(state == "interaction-updated")
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("a").path))
+        ops.release.signal()
+        try await task.value
+        #expect(!ops.threadWasMain)
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a").path))
+    }
+
+    @Test func installAndRemoveAreSerializedWithoutPartialOrCrossBookOutput() async throws {
+        let (support, root) = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: support) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("a"), withIntermediateDirectories: true)
+        let source = support.appendingPathComponent("src.m4a")
+        let payload = Data("audio".utf8)
+        try payload.write(to: source)
+        let hash = try WatchChecksum.sha256(of: source)
+        let ops = BlockingOps()
+        let files = WatchDownloadedFiles(operations: ops)
+        let removal = Task { try await files.removeBook(bookID: "a", at: root) }
+        await ops.awaitEntered()
+        let install = Task.detached {
+            try files.install(source: source, root: root, bookID: "a", filename: "c.m4a",
+                expectedBytes: Int64(payload.count), expectedSHA256: hash)
+        }
+        try await Task.sleep(for: .milliseconds(150))
+        // Install must wait for the in-flight removal rather than interleave with it.
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a/c.m4a").path))
+        ops.release.signal()
+        try await removal.value
+        _ = try await install.value
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("a/c.m4a").path))
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a/.incoming-c.m4a").path))
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("b").path))
+    }
 }
