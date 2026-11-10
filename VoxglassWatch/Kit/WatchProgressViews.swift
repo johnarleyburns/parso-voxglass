@@ -45,14 +45,24 @@ struct WatchTransferRing: View {
 }
 
 /// A 3:4 book cover from installed local artwork, with a gold gradient placeholder.
+/// Artwork is loaded asynchronously and downsampled by `WatchArtworkStore`; `body` does no disk I/O.
 struct WatchCoverTile: View {
     let artworkKey: String?
     var width: CGFloat = 24
+    @Environment(\.displayScale) private var displayScale
+    @State private var artwork: WatchArtworkState = .placeholder
+
+    private static let store = WatchArtworkStore(
+        root: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DownloadedBooks", isDirectory: true))
+
+    private var targetPixelSize: Int { Int((width * 4 / 3 * displayScale * 1.25).rounded(.up)) }
+    private var requestID: String { "\(artworkKey ?? "")|\(targetPixelSize)" }
 
     var body: some View {
         Group {
-            if let image = localImage {
-                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+            if case .loaded(let image) = artwork {
+                Image(decorative: image, scale: displayScale).resizable().aspectRatio(contentMode: .fill)
             } else {
                 placeholder
             }
@@ -60,6 +70,13 @@ struct WatchCoverTile: View {
         .frame(width: width, height: width * 4 / 3)
         .clipShape(RoundedRectangle(cornerRadius: width * 0.18, style: .continuous))
         .accessibilityHidden(true)
+        .task(id: requestID) {
+            artwork = .placeholder
+            let key = artworkKey, size = targetPixelSize
+            let result = await Self.store.image(for: key, maxPixelSize: size)
+            guard !Task.isCancelled, key == artworkKey, size == targetPixelSize else { return }
+            artwork = result
+        }
     }
 
     private var placeholder: some View {
@@ -68,14 +85,5 @@ struct WatchCoverTile: View {
                            startPoint: .topLeading, endPoint: .bottomTrailing)
             Image(systemName: "book.closed").font(width > 30 ? .body : .caption2).foregroundStyle(.white.opacity(0.85))
         }
-    }
-
-    private var localImage: UIImage? {
-        guard let artworkKey else { return nil }
-        let parts = artworkKey.split(separator: "/").map(String.init)
-        guard parts.count == 2, parts.allSatisfy(WatchPhonePushFiles.safeComponent) else { return nil }
-        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("DownloadedBooks", isDirectory: true)
-        return UIImage(contentsOfFile: root.appendingPathComponent(artworkKey).path)
     }
 }
