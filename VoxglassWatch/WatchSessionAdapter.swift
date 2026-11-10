@@ -21,8 +21,10 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     @Published private(set) var artworkReceipt = "No artwork received this session."
     @Published private(set) var reportMessage = "No watch report sent this session."
     private var reportGeneration = 0
-    // Native file callbacks and MainActor removal/catalog callbacks share durable state.
-    nonisolated private static let fileIO = NSLock()
+    // Guards only small UserDefaults bookkeeping shared by native file callbacks and MainActor
+    // catalog callbacks. It is never held across file I/O; `files` owns all disk mutation.
+    nonisolated private static let metadataLock = NSLock()
+    nonisolated private static let files = WatchDownloadedFiles()
     nonisolated private static func validateAAC(_ url: URL) throws {
         let audio = try AVAudioFile(forReading: url)
         guard audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC,
@@ -52,30 +54,46 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     override init() {
         super.init()
         if UserDefaults.standard.bool(forKey: Self.resetKey) {
-            // A confirmed reset applies before opening the listening state. Narration outboxes
-            // are deliberately excluded: unsubmitted review events must never be erased.
-            do {
-                let root = Self.audioRoot
-                if FileManager.default.fileExists(atPath: root.path) { try FileManager.default.removeItem(at: root) }
-                for name in ["watch-playback-positions.json", "watch-playback-speeds.json"] {
-                    let url = root.deletingLastPathComponent().appendingPathComponent(name)
-                    if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
-                }
-                for key in [Self.snapshotKey, "watch.downloaded", "watch.listened", "watch.audioReceipt", "watch.removedBookIDs", "watch.bookRevisions", Self.resetKey] {
-                    UserDefaults.standard.removeObject(forKey: key)
-                }
-                WatchContinueListeningStore.save(nil)
-                audioReceipt = "No audio received yet."
-            } catch { connectionError = "Reset failed: \(error.localizedDescription)" }
-        }
-        if let data = UserDefaults.standard.data(forKey: Self.snapshotKey) {
-            snapshot = try? JSONDecoder().decode(WatchLibrarySnapshot.self, from: data)
-        }
+            // Deletion runs off MainActor; the reset flag survives until cleanup succeeds.
+            startPendingReset()
+        } else { loadSnapshot() }
         if smoke { seedSmoke(); return }
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
         reconcileFiles(forceReport: true)
+    }
+
+    private func loadSnapshot() {
+        if let data = UserDefaults.standard.data(forKey: Self.snapshotKey) {
+            snapshot = try? JSONDecoder().decode(WatchLibrarySnapshot.self, from: data)
+        }
+    }
+
+    /// A confirmed reset applies before opening the listening state. Narration outboxes are
+    /// deliberately excluded: unsubmitted review events must never be erased.
+    private func startPendingReset() {
+        let root = Self.audioRoot
+        Task { [weak self] in
+            do {
+                _ = try await Self.files.resetDownloadedState(at: root)
+                guard let self else { return }
+                Self.metadataLock.lock(); defer { Self.metadataLock.unlock() }
+                for key in [Self.snapshotKey, "watch.downloaded", "watch.listened", "watch.audioReceipt", "watch.removedBookIDs", "watch.bookRevisions", Self.resetKey] {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+                WatchContinueListeningStore.save(nil)
+                snapshot = nil
+                bookReports = [:]
+                phoneTransferProgress = [:]
+                audioReceipt = "No audio received yet."
+            } catch {
+                guard let self else { return }
+                connectionError = "Reset failed: \(error.localizedDescription). Relaunch to retry."
+                if snapshot == nil { loadSnapshot() }
+                reconcileFiles(forceReport: true)
+            }
+        }
     }
 
     /// Refresh local diagnostics and consume the phone's latest retained context, never request it.
@@ -125,17 +143,9 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     }
 
     private func apply(_ dictionary: [String: Any]) {
-        // Never block the UI behind a large native file copy/checksum. Defer this
-        // already-received local value; this sends no request and retries no audio.
-        guard Self.fileIO.try() else {
-            let box = WatchUncheckedBox(dictionary)
-            Task { [weak self] in
-                try? await Task.sleep(for: .milliseconds(100))
-                self?.apply(box.value)
-            }
-            return
-        }
-        defer { Self.fileIO.unlock() }
+        // Only small metadata is guarded here; file I/O never runs under this lock.
+        Self.metadataLock.lock()
+        defer { Self.metadataLock.unlock() }
         guard let data = WatchProtocolEnvelope.payloadData(in: dictionary),
               let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
@@ -177,19 +187,29 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
             var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
             removed.insert(manifest.bookID.rawValue)
             UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
-            let directory = Self.audioRoot.appendingPathComponent(manifest.bookID.rawValue, isDirectory: true)
-            do {
-                if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
-                bookReports.removeValue(forKey: manifest.bookID)
-                phoneTransferProgress.removeValue(forKey: manifest.bookID)
-                snapshot?.books.removeAll { $0.id == manifest.bookID }
-                if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
-                var removal = WatchManifestAcknowledgement(bookID: manifest.bookID, revision: manifest.revision,
-                    complete: false, installedBytes: 0)
-                removal.isRemoval = true
-                report(removal, libraryID: envelope.pairedLibraryID)
-                reconcileFiles()
-            } catch { connectionError = "Removal failed: \(error.localizedDescription)" }
+            let root = Self.audioRoot
+            let bookID = manifest.bookID
+            let revision = manifest.revision
+            let libraryID = envelope.pairedLibraryID
+            Task { [weak self] in
+                do {
+                    try await Self.files.removeBook(bookID: bookID, at: root)
+                    guard let self else { return }
+                    Self.metadataLock.lock(); defer { Self.metadataLock.unlock() }
+                    bookReports.removeValue(forKey: bookID)
+                    phoneTransferProgress.removeValue(forKey: bookID)
+                    snapshot?.books.removeAll { $0.id == bookID }
+                    if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
+                    var removal = WatchManifestAcknowledgement(bookID: bookID, revision: revision,
+                        complete: false, installedBytes: 0)
+                    removal.isRemoval = true
+                    report(removal, libraryID: libraryID)
+                    reconcileFiles()
+                } catch {
+                    // No removal acknowledgement; catalog/report state stays so the phone can retry.
+                    self?.connectionError = "Removal failed: \(error.localizedDescription)"
+                }
+            }
         case .reconcileRequest:
             reconcileFiles(forceReport: true)
         default: break
@@ -317,26 +337,26 @@ extension WatchSessionAdapter: WCSessionDelegate {
               let revision = metadata["revision"] as? Int64,
               let kind = metadata["assetKind"] as? String,
               kind == "audio-aac96" || kind == "artwork" else { return }
-        Self.fileIO.lock()
-        defer { Self.fileIO.unlock() }
+        Self.metadataLock.lock()
         var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
         let latest = revisions[bookID] as? Int64 ?? 0
-        guard revision >= latest else { return }
+        guard revision >= latest else { Self.metadataLock.unlock(); return }
         var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
         if removed.contains(bookID) {
-            guard revision > latest else { return }
+            guard revision > latest else { Self.metadataLock.unlock(); return }
             removed.remove(bookID)
             UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
         }
         revisions[bookID] = revision
         UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
-        let validator: ((URL) throws -> Void)?
+        Self.metadataLock.unlock()
+        let validator: (@Sendable (URL) throws -> Void)?
         if kind == "audio-aac96" { validator = { url in try Self.validateAAC(url) } }
         else { validator = nil }
         do {
             let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("DownloadedBooks", isDirectory: true)
-            _ = try WatchPhonePushFiles.install(source: file.fileURL, root: root, bookID: bookID,
+            _ = try Self.files.install(source: file.fileURL, root: root, bookID: bookID,
                 filename: name, expectedBytes: bytes, expectedSHA256: hash,
                 validateAudio: validator)
             Task { @MainActor in
