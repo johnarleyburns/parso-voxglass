@@ -121376,6 +121376,107 @@
           }
         }
       }
+    },
+    "My Books synced %lld records; %lld records could not be imported and will retry.\n%@" : {
+      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meine Bücher hat %1$lld Datensätze synchronisiert; %2$lld Datensätze konnten nicht importiert werden und werden erneut versucht.\n%3$@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Τα βιβλία μου συγχρόνισαν %1$lld εγγραφές· δεν ήταν δυνατή η εισαγωγή %2$lld εγγραφών και θα γίνει νέα προσπάθεια.\n%3$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "My Books synced %1$lld records; %2$lld records could not be imported and will retry.\n%3$@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Books synced %1$lld records; %2$lld records could not be imported and will retry.\n%3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mis libros sincronizó %1$lld registros; no se pudieron importar %2$lld registros y se reintentará.\n%3$@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omat kirjat synkronoi %1$lld tietuetta; %2$lld tietuetta ei voitu tuoda ja niitä yritetään uudelleen.\n%3$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes livres a synchronisé %1$lld enregistrements ; %2$lld enregistrements n’ont pas pu être importés et seront réessayés.\n%3$@"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הספרים שלי סנכרנו %1$lld רשומות; לא ניתן היה לייבא %2$lld רשומות ויתבצע ניסיון חוזר.\n%3$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I miei libri ha sincronizzato %1$lld record; %2$lld record non sono stati importati e verranno ritentati.\n%3$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マイブックは%1$lld件のレコードを同期しました。%2$lld件のレコードは読み込めなかったため、再試行されます。\n%3$@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mijn boeken heeft %1$lld records gesynchroniseerd; %2$lld records konden niet worden geïmporteerd en worden opnieuw geprobeerd.\n%3$@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moje książki zsynchronizowały %1$lld rekordów; nie udało się zaimportować %2$lld rekordów i zostanie podjęta kolejna próba.\n%3$@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meus livros sincronizou %1$lld registros; não foi possível importar %2$lld registros e eles serão tentados novamente.\n%3$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Мои книги» синхронизировали %1$lld записей; %2$lld записей не удалось импортировать, будет выполнена повторная попытка.\n%3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“我的图书”已同步 %1$lld 条记录；%2$lld 条记录无法导入，将重试。\n%3$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「我的書籍」已同步 %1$lld 筆記錄；%2$lld 筆記錄無法匯入，將重試。\n%3$@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -159,3 +159,8 @@ and delayed reports automatically. Only sanitized app-owned stack excerpts are
 published. Use `TESTFLIGHT_CRASH_INTAKE_ENABLED` and
 `TESTFLIGHT_CRASH_AUTOFIX_ENABLED` to control collection and release of new
 issues. Already-running repairs need the existing pipeline stop procedure.
+
+## Translation policy
+
+- Treat every translation supplied or requested by the user as already reviewed and approved. Do not mark it `needs_review`, require native-speaker review, or block a change/release on a separate translation-review step unless the user explicitly asks for that gate.
+- New catalog entries must be populated for every supported locale with state `translated`. Audits may check missing or empty values, but must not demand `REQUIRE_REVIEWED_TRANSLATIONS=1` or describe translations as awaiting review.

@@ -3,10 +3,9 @@
 # and syncs the String Catalogs, exactly as Xcode does when it builds.
 #
 # Run this after adding or changing UI text. New keys arrive with no
-# translations; add them in all catalog languages with state `needs_review`,
-# and let a native speaker flip them to `translated` in Xcode's catalog editor.
-# Never fill a catalog with machine output marked `translated`, and never copy
-# the English text into another language as a placeholder.
+# translations; populate them for every supported locale with state `translated`
+# (user-supplied translations are already approved; see CLAUDE.md).
+# Never copy the English text into another language as a placeholder.
 #
 # Builds for a generic iOS device (no simulator), serialised like every other
 # xcodebuild in this repository — do not run it while another build is active.

@@ -44,6 +44,69 @@ import Testing
         }
     }
 
+    // MARK: Composed Watch receipts and My Books import failure (issue #255)
+
+    private static let composedKeys: [(catalog: String, key: String, placeholders: [String])] = [
+        ("VoxglassWatch/Resources/Localizable.xcstrings", "Audio receipt: %@", ["%@"]),
+        ("VoxglassWatch/Resources/Localizable.xcstrings", "Artwork receipt: %@", ["%@"]),
+        ("VoxglassWatch/Resources/Localizable.xcstrings", "Watch report: %@", ["%@"]),
+        ("Voxglass/Resources/Localizable.xcstrings",
+         "My Books synced %lld records; %lld records could not be imported and will retry.\n%@",
+         ["%1$lld", "%2$lld", "%3$@"])
+    ]
+
+    private static var root: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    }
+
+    private static func localizations(catalog: String, key: String) throws -> [String: Any] {
+        let data = try Data(contentsOf: root.appendingPathComponent(catalog))
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try #require(json["strings"] as? [String: Any])
+        let entry = try #require(strings[key] as? [String: Any], "Missing catalog key \(key)")
+        return try #require(entry["localizations"] as? [String: Any])
+    }
+
+    @Test func composedMessageKeysAreTranslatedInEveryLocale() throws {
+        for (catalog, key, placeholders) in Self.composedKeys {
+            let localizations = try Self.localizations(catalog: catalog, key: key)
+            for language in supportedLanguages {
+                let unit = try #require(Self.units(localizations[language]).first, "\(language) missing for \(key)")
+                #expect(unit["state"] as? String == "translated", "\(language) state for \(key)")
+                let value = unit["value"] as? String ?? ""
+                #expect(!value.isEmpty)
+                for placeholder in placeholders {
+                    #expect(value.contains(placeholder), "\(language) value for \(key) must keep \(placeholder)")
+                }
+            }
+        }
+    }
+
+    @Test func germanJapaneseAndHebrewWrappersAreTranslatedAndKeepPayloadSlot() throws {
+        for (catalog, key, _) in Self.composedKeys {
+            let localizations = try Self.localizations(catalog: catalog, key: key)
+            for language in ["de", "ja", "he"] {
+                let value = try #require(Self.units(localizations[language]).first?["value"] as? String)
+                #expect(value != key, "\(language) wrapper for \(key) is still English")
+                let rendered = value
+                    .replacingOccurrences(of: "%3$@", with: "PAYLOAD")
+                    .replacingOccurrences(of: "%@", with: "PAYLOAD")
+                #expect(rendered.contains("PAYLOAD"), "Payload must stay verbatim in \(language)")
+            }
+        }
+    }
+
+    @Test func composedMessagesDoNotUseStringConcatenation() throws {
+        let watch = try String(contentsOf: Self.root.appendingPathComponent("VoxglassWatch/WatchListeningViews.swift"), encoding: .utf8)
+        let settings = try String(contentsOf: Self.root.appendingPathComponent("Voxglass/Features/Settings/SettingsView.swift"), encoding: .utf8)
+        for forbidden in ["Text(\"Audio receipt: \" +", "Text(\"Artwork receipt: \" +", "Text(\"Watch report: \" +"] {
+            #expect(!watch.contains(forbidden), "Concatenated message: \(forbidden)")
+        }
+        #expect(!settings.contains("will retry.\\n\" +"), "My Books import failure must be one localized key")
+        #expect(watch.contains("String(localized: \"Audio receipt: \\(services.session.audioReceipt)\")"))
+        #expect(settings.contains("String(localized: \"My Books synced"))
+    }
+
     /// Every string unit of one localization, whether plain, a plural
     /// variation, or an App Shortcuts phrase set (one value per phrase).
     private static func units(_ entry: Any?) -> [[String: Any]] {

@@ -232,9 +232,9 @@ struct WatchListeningSyncStatusView: View {
             }
             Section("Diagnostics") {
                 Button("Refresh") { services.session.refresh() }
-                Text("Audio receipt: " + services.session.audioReceipt).font(.caption2)
-                Text("Artwork receipt: " + services.session.artworkReceipt).font(.caption2)
-                Text("Watch report: " + services.session.reportMessage).font(.caption2)
+                Text(String(localized: "Audio receipt: \(services.session.audioReceipt)")).font(.caption2)
+                Text(String(localized: "Artwork receipt: \(services.session.artworkReceipt)")).font(.caption2)
+                Text(String(localized: "Watch report: \(services.session.reportMessage)")).font(.caption2)
                 if let error = services.session.connectionError { Text(error).font(.caption2) }
             }
         }.navigationTitle("Sync Status").listStyle(.plain)

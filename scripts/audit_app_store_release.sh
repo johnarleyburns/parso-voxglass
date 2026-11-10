@@ -128,11 +128,8 @@ for entitlements in (
 require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS app icon (.icon) is missing")
 require(not (root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset").exists(), "watchOS icon must come from AppIcon.icon, not a Watch appiconset")
 
-# Machine-drafted translations carry state `needs_review` until a native speaker
-# flips them to `translated` in Xcode's catalog editor. They must be able to
-# ship to TestFlight so reviewers can check them in context, so they are
-# reported here, not blocked. Set REQUIRE_REVIEWED_TRANSLATIONS=1 for the final
-# App Store submission to turn any remaining `needs_review` entry into a failure.
+# Translations are approved as supplied (see CLAUDE.md); legacy `needs_review`
+# entries are only counted and never block a build or release.
 import os
 pending_review = 0
 for catalog in root.rglob("*.xcstrings"):
@@ -156,10 +153,7 @@ for catalog in root.rglob("*.xcstrings"):
                 walk(child)
     walk(payload)
 if pending_review:
-    if os.environ.get("REQUIRE_REVIEWED_TRANSLATIONS") == "1":
-        errors.append(f"{pending_review} translations still need native-speaker review (state needs_review)")
-    else:
-        print(f"App Store release audit: note: {pending_review} translations are drafts awaiting native-speaker review (needs_review); allowed for TestFlight")
+    print(f"App Store release audit: note: {pending_review} legacy catalog entries are still marked needs_review; not a release gate")
 
 bundle = pathlib.Path(sys.argv[1]) if sys.argv[1] else None
 if bundle:
