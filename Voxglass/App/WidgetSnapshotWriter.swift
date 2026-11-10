@@ -6,7 +6,7 @@ import VoxglassCore
 enum WidgetSnapshotWriter {
     static let appGroup = "group.guru.parso.voxglass"
     static let enabledKey = "settings.widgetSnapshot"
-    static let defaults = UserDefaults(suiteName: appGroup) ?? .standard
+    private static var defaults: UserDefaults { UserDefaults(suiteName: appGroup) ?? .standard }
 
     private struct FileSink: SnapshotSink {
         func write(_ snapshot: NowPlayingSnapshot) async throws {
