@@ -219,15 +219,15 @@ import VoxglassWatchProtocol
     }
 
     @Test func bytesFormat_small() {
-        #expect(WatchTimeFormat.bytes(500) == "500 B")
+        #expect(WatchTimeFormat.bytes(500, locale: Locale(identifier: "en")) == "500 byte")
     }
 
     @Test func bytesFormat_megabytes() {
-        #expect(WatchTimeFormat.bytes(5_000_000) == "4.8 MB")
+        #expect(WatchTimeFormat.bytes(5_000_000, locale: Locale(identifier: "en")) == "4.8 MB")
     }
 
     @Test func bytesFormat_gigabytes() {
-        #expect(WatchTimeFormat.bytes(2_000_000_000) == "1.9 GB")
+        #expect(WatchTimeFormat.bytes(2_000_000_000, locale: Locale(identifier: "en")) == "1.9 GB")
     }
 }
 
@@ -773,5 +773,43 @@ import VoxglassWatchProtocol
     }
     @Test func banner_authoritativeNotRequestedBeatsCachedAvailable() {
         #expect(r([id(1): .notRequested], [id(1): .available]) == nil)
+    }
+}
+
+@Suite struct LocaleAwareByteFormatTests {
+    private func bytes(_ n: Int64, _ id: String) -> String {
+        WatchTimeFormat.bytes(n, locale: Locale(identifier: id))
+    }
+
+    @Test func binaryBoundaries_english() {
+        #expect(bytes(0, "en") == "0 byte")
+        #expect(bytes(1023, "en") == "1,023 byte")
+        #expect(bytes(1024, "en") == "1 kB")
+        #expect(bytes(1_048_576, "en") == "1 MB")
+        #expect(bytes(1_073_741_824, "en") == "1 GB")
+    }
+
+    @Test func localeSpecificFormatting() {
+        #expect(bytes(1023, "de") == "1.023 Byte")
+        #expect(bytes(1_073_741_824, "fr") == "1\u{202F}Go")
+        #expect(bytes(1_048_576, "fr") == "1\u{202F}Mo")
+        #expect(bytes(1023, "fr").hasSuffix("\u{202F}o") || bytes(1023, "fr").hasSuffix("\u{00A0}o"))
+        #expect(bytes(1023, "zh-Hans") == "1,023 B")
+        #expect(bytes(1023, "ja") == "1,023 byte")
+        #expect(bytes(1024, "he").contains("kB"))
+        #expect(bytes(1024, "he") != bytes(1024, "en"))
+    }
+
+    @Test @MainActor func curatedBatchIsDecimalAndLocalized() {
+        let en = Locale(identifier: "en")
+        #expect(CatalogStore.formattedBatchSize(entryCount: 2, locale: en) == "500 MB")
+        #expect(CatalogStore.formattedBatchSize(entryCount: 20, locale: en) == "5 GB")
+        #expect(CatalogStore.formattedBatchSize(entryCount: 20, locale: Locale(identifier: "fr")) == "5\u{202F}Go")
+        #expect(CatalogStore.formattedBatchSize(entryCount: 2, locale: Locale(identifier: "fr")) == "500\u{202F}Mo")
+    }
+
+    @Test func timeCodesUnchanged() {
+        #expect(WatchTimeFormat.time(83) == "1:23")
+        #expect(WatchTimeFormat.time(125) == "2:05")
     }
 }
