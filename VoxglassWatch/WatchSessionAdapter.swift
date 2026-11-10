@@ -21,6 +21,9 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     @Published private(set) var artworkReceipt = "No artwork received this session."
     @Published private(set) var reportMessage = "No watch report sent this session."
     private var reportGeneration = 0
+    private var catalogGeneration: UInt64 = 0
+    private var committedGeneration: UInt64 = 0
+    nonisolated private static let catalogIngestor = WatchCatalogIngestor()
     // Guards only small UserDefaults bookkeeping shared by native file callbacks and MainActor
     // catalog callbacks. It is never held across file I/O; `files` owns all disk mutation.
     nonisolated private static let metadataLock = NSLock()
@@ -84,6 +87,7 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
                     }
                 }
                 WatchContinueListeningStore.save(nil)
+                await Self.catalogIngestor.resetState()
                 snapshot = nil
                 bookReports = [:]
                 phoneTransferProgress = [:]
@@ -143,41 +147,54 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         }
     }
 
+    /// Receipt only extracts immutable `Data` and a generation token; parsing, validation, and
+    /// snapshot persistence happen in `catalogIngestor`, off MainActor.
     private func apply(_ dictionary: [String: Any]) {
+        guard let data = WatchProtocolEnvelope.payloadData(in: dictionary) else { return }
+        catalogGeneration += 1
+        let generation = catalogGeneration
+        let current = snapshot
+        Task { [weak self] in
+            let route = await Self.catalogIngestor.route(data, generation: generation, current: current)
+            guard let self else { return }
+            switch route {
+            case .unreadable: break
+            case .other(let envelope): handle(envelope)
+            case .catalog(let result): commit(result)
+            }
+        }
+    }
+
+    /// The minimal atomic MainActor commit of an accepted catalog.
+    private func commit(_ result: WatchCatalogIngestionResult) {
+        guard case .accepted(let catalog) = result, catalog.generation > committedGeneration else { return }
+        committedGeneration = catalog.generation
+        Self.metadataLock.lock()
+        defer { Self.metadataLock.unlock() }
+        let value = catalog.snapshot
+        snapshot = value
+        lastCatalogDate = catalog.sentAt
+        isSyncing = false
+        syncMessage = "Sync updated."
+        connectionError = nil
+        var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
+        var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
+        for book in catalog.books {
+            let latest = revisions[book.bookID] as? Int64 ?? 0
+            if book.metadataRevision > latest, !book.isRemoving { removed.remove(book.bookID) }
+            revisions[book.bookID] = max(latest, book.metadataRevision)
+        }
+        UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
+        UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
+        if catalog.needsReconciliation { reconcileFiles(forceReport: true) }
+        else if !isReconciling { publishCurrentReports() }
+    }
+
+    private func handle(_ envelope: WatchProtocolEnvelope) {
         // Only small metadata is guarded here; file I/O never runs under this lock.
         Self.metadataLock.lock()
         defer { Self.metadataLock.unlock() }
-        guard let data = WatchProtocolEnvelope.payloadData(in: dictionary),
-              let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
-        case .librarySnapshot:
-            // A retained pre-rewrite full-library projection is not this local-only catalog.
-            guard envelope.version >= 2 else { return }
-            guard var value = try? envelope.decodePayload(WatchLibrarySnapshot.self) else { return }
-            if let current = snapshot, current.pairedLibraryID == value.pairedLibraryID,
-               current.revision > value.revision { return }
-            var seen = Set<WatchBookID>()
-            value.books = value.books.filter { seen.insert($0.id).inserted }
-            let needsScan = WatchPhonePushFiles.needsReconciliation(previous: snapshot, next: value)
-            snapshot = value
-            lastCatalogDate = envelope.sentAt
-            isSyncing = false
-            syncMessage = "Sync updated."
-            connectionError = nil
-            if let saved = try? JSONEncoder().encode(value) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
-            var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
-            var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
-            for book in value.books {
-                let latest = revisions[book.id.rawValue] as? Int64 ?? 0
-                if book.metadataRevision > latest, value.downloadStates?[book.id] != .removing {
-                    removed.remove(book.id.rawValue)
-                }
-                revisions[book.id.rawValue] = max(latest, book.metadataRevision)
-            }
-            UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
-            UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
-            if needsScan { reconcileFiles(forceReport: true) }
-            else if !isReconciling { publishCurrentReports() }
         case .removeBookDownload:
             guard let manifest = try? envelope.decodePayload(WatchManifest.self),
                   WatchPhonePushFiles.safeComponent(manifest.bookID.rawValue) else { return }
@@ -200,8 +217,8 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
                         bookReports.removeValue(forKey: bookID)
                         phoneTransferProgress.removeValue(forKey: bookID)
                         snapshot?.books.removeAll { $0.id == bookID }
-                        if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
                     }
+                    if let reduced = snapshot { Task { await Self.catalogIngestor.persist(reduced) } }
                     var removal = WatchManifestAcknowledgement(bookID: bookID, revision: revision,
                         complete: false, installedBytes: 0)
                     removal.isRemoval = true
