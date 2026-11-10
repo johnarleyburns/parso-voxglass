@@ -107,6 +107,36 @@ import Testing
         #expect(settings.contains("String(localized: \"My Books synced"))
     }
 
+    // MARK: Static Watch management UI (issue #256)
+
+    private static let staticWatchKeys = [
+        "Send and manage books from Voxglass on your iPhone.",
+        "No books installed on this watch.",
+        "Sync Now available when connected to iPhone.",
+        "Installed audio",
+        "Audio submitted by iPhone; installation is unconfirmed.",
+        "Diagnostics",
+        "Refresh",
+        "Sync Status",
+        "Reset watch listening data",
+        "Close and reopen Voxglass on this watch to finish reset.",
+        "Reset watch listening data?",
+        "Reset",
+        "Deletes watch audiobooks, artwork, and local listening settings on next launch. Your iPhone originals and unsubmitted narration review events are kept.",
+        "About Book"
+    ]
+
+    @Test func staticWatchManagementKeysAreTranslatedInEveryLocale() throws {
+        for key in Self.staticWatchKeys {
+            let localizations = try Self.localizations(catalog: "VoxglassWatch/Resources/Localizable.xcstrings", key: key)
+            for language in supportedLanguages {
+                let unit = try #require(Self.units(localizations[language]).first, "\(language) missing for \(key)")
+                #expect(unit["state"] as? String == "translated", "\(language) state for \(key)")
+                #expect((unit["value"] as? String)?.isEmpty == false, "\(language) blank for \(key)")
+            }
+        }
+    }
+
     /// Every string unit of one localization, whether plain, a plural
     /// variation, or an App Shortcuts phrase set (one value per phrase).
     private static func units(_ entry: Any?) -> [[String: Any]] {
