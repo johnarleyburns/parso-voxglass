@@ -15,7 +15,9 @@ grep -Fq 'No branch or PR was published.' "$script"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 printf 'Run logic tests\nTest LocalAudioRepairTests failed\nUpload artifact\n' >"$tmp/test-failure.log"
+printf 'CompileSwift VoxglassWatch\nWatchSessionAdapter.swift:81: error: lock is unavailable\nUpload artifact\nApp Store Connect upload skipped\n' >"$tmp/compiler-failure.log"
 printf 'App Store Connect authentication failed\n' >"$tmp/deployment-failure.log"
 [[ $(bash "$script" --classify-log "$tmp/test-failure.log") == code-test ]]
+[[ $(bash "$script" --classify-log "$tmp/compiler-failure.log") == code-build ]]
 [[ $(bash "$script" --classify-log "$tmp/deployment-failure.log") == deployment ]]
 echo 'Release repair policy: pre-publication validation; deployment failures escalate'

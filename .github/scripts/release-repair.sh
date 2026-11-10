@@ -3,13 +3,15 @@
 # issues and never retries credentials, signing, App Store Connect, or Apple failures.
 set -Eeuo pipefail
 
-# A test-suite failure is repairable application code even when its output
-# mentions an artifact/upload step.  Classify it before broad deployment words.
+# A repairable compiler/test failure can occur in a workflow that also logs
+# artifact upload and App Store activity.  Those broad deployment words are
+# not evidence that *this* failure was deployment-related, so recognize code
+# diagnostics before the deployment fallback.
 classify_failure_log() {
   local failed_log="$1"
   if grep -Eqi 'Run logic tests|Run Swift Package Tests|Run SwiftPM package tests|swift test|Test Suite.*failed|Test .*failed|XCTest.*failed' "$failed_log"; then echo code-test
-  elif grep -Eqi 'provision|signing|certificate|profile|keychain|app store connect|transporter|upload|authentication|credential|HTTP 4[0-9][0-9]|HTTP 5[0-9][0-9]' "$failed_log"; then echo deployment
   elif grep -Eqi 'error:|CompileSwift|SwiftCompile|BUILD FAILED|archive not found|xcodebuild.*failed' "$failed_log"; then echo code-build
+  elif grep -Eqi 'provision|signing|certificate|profile|keychain|app store connect|transporter|upload|authentication|credential|HTTP 4[0-9][0-9]|HTTP 5[0-9][0-9]' "$failed_log"; then echo deployment
   else echo unknown; fi
 }
 if [[ "${1:-}" == --classify-log ]]; then classify_failure_log "${2:?log path required}"; exit 0; fi
