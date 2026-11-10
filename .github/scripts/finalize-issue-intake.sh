@@ -2,7 +2,7 @@
 # Finalize only the matching controller reservation; stale runs cannot alter a
 # newer attempt's labels or retry state.
 set -euo pipefail
-repo="${GITHUB_REPOSITORY:?}"; issue="${ISSUE:?}"; result="${1:?}"; attempt="${2:?}"
+repo="${GITHUB_REPOSITORY:?}"; issue="${ISSUE:?}"; result="${1:?}"; attempt="${2:?}"; valid="${3:-true}"
 marker="<!-- claude-intake-reservation issue=${issue} attempt=${attempt} -->"
 run_url="${GITHUB_SERVER_URL:-https://github.com}/${repo}/actions/runs/${GITHUB_RUN_ID}"
 ensure_label() { gh label create "$1" --repo "$repo" --color "$2" --description "$3" --force >/dev/null; }
@@ -10,6 +10,25 @@ ensure_label intake-blocked D93F0B 'Pre-PR automation stopped; explicit owner re
 ensure_label retry-ai FBCA04 'Owner-authorized retry request; handled by the intake controller'
 reservation=$(gh api --paginate "repos/${repo}/issues/${issue}/comments?per_page=100" --jq ".[] | select(.body | contains(\"${marker}\")) | .body" | tail -1)
 [[ -n "$reservation" ]] || { echo "Stale attempt ${attempt}; state untouched."; exit 0; }
+
+# A reservation that verify-reservation rejected (main advanced before the
+# worker could start) is a timing race with a concurrent merge, not an
+# implementation failure: implement never ran, so there is nothing to
+# review. Release the lock and let the controller retry automatically,
+# bounded so a persistently racing main escalates instead of looping forever.
+if [[ "$valid" != true ]]; then
+  stale_marker="<!-- claude-intake-stale-retry issue=${issue} -->"
+  prior_stale=$(gh api --paginate "repos/${repo}/issues/${issue}/comments?per_page=100" --jq '.[].body' | grep -Fxc "$stale_marker" || true)
+  if (( prior_stale >= 3 )); then
+    gh issue edit "$issue" --repo "$repo" --add-label intake-blocked --add-label needs-human-review --remove-label intake-running --remove-label ai-ready --remove-label retry-ai >/dev/null || true
+    gh issue comment "$issue" --repo "$repo" --body "**Issue intake status:** this reservation was rejected as stale (\`main\` advanced before the worker could start) for the 3rd consecutive attempt. Stopping automatic retries; apply \`retry-ai\` after review." >/dev/null
+  else
+    gh issue edit "$issue" --repo "$repo" --add-label retry-ai --remove-label intake-running >/dev/null || true
+    gh issue comment "$issue" --repo "$repo" --body "$stale_marker
+**Issue intake status:** this attempt's reservation was rejected because \`main\` advanced before the implementation worker started — a timing race with a concurrent merge, not an implementation failure. Releasing the lock and re-queuing automatically via \`retry-ai\`." >/dev/null
+  fi
+  exit 0
+fi
 marker_for_issue="<!-- claude-issue:${issue} -->"
 prs=$(gh pr list --repo "$repo" --state all --base main --limit 1000 --json number,state,body | jq --arg marker "$marker_for_issue" '[.[] | select((.body // "") | contains($marker))]')
 if jq -e 'any(.[]; .state == "OPEN" or .state == "MERGED")' <<<"$prs" >/dev/null; then
