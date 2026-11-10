@@ -137,6 +137,108 @@ import Testing
         }
     }
 
+    // MARK: Static iPhone/iPad labels (issue #257)
+
+    private static let staticPhoneKeys = [
+        "Find Failed",
+        "READ WITH AI · PROJECT GUTENBERG",
+        "Searching Project Gutenberg",
+        "Download to Apple Watch?",
+        "Reconnect Audio",
+        "Reselect Folder or File",
+        "Select AI Voice",
+        "This audiobook needs its audio file reconnected on this device.",
+        "Choose File or Folder",
+        "Choose…",
+        "Confirm and Reconnect",
+        "Add Bookmark?",
+        "View Bookmarks",
+        "Starts playback in the mini player",
+        "Read with AI Voice",
+        "Download more voices in iPhone Settings > Accessibility > Read & Speak > System Voice, then return here.",
+        "Your My Books library, playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.",
+        "Only books you send from this iPhone appear on Apple Watch, prepared as 96 kbps AAC. Use “Download to Apple Watch” on a book page or in its My Books context menu; manage them in My Books → On My Watch.",
+        "No watch report received this session.",
+        "Cancel watch audio preparation",
+        "Read with AI",
+        "Voxglass will download the EPUB once, keep its text on this iPhone, and read it aloud with your selected system voice.",
+        "Book Preview",
+        "Couldn't Prepare Book",
+        "All Books",
+        "On My Watch",
+        "Remove from Apple Watch",
+        "The iPhone original stays in My Books.",
+        "Installed on Apple Watch",
+        "Removal sent to Apple Watch.",
+        "Transferring audio to Apple Watch",
+        "Read a document with AI",
+        "Choose an EPUB or text-based PDF from Files. Voxglass keeps a local text copy and reads it with the iPhone’s built-in voice.",
+        "Choose EPUB or PDF"
+    ]
+
+    @Test func staticPhoneLabelsAreTranslatedInEveryLocale() throws {
+        #expect(Self.staticPhoneKeys.count == 34)
+        for key in Self.staticPhoneKeys {
+            let localizations = try Self.localizations(catalog: "Voxglass/Resources/Localizable.xcstrings", key: key)
+            for language in supportedLanguages {
+                let unit = try #require(Self.units(localizations[language]).first, "\(language) missing for \(key)")
+                #expect(unit["state"] as? String == "translated", "\(language) state for \(key)")
+                #expect((unit["value"] as? String)?.isEmpty == false, "\(language) blank for \(key)")
+            }
+        }
+    }
+
+    @Test func staticPhoneLabelsAreNotEnglishFallbacksInDeJaHeZhHans() throws {
+        for key in Self.staticPhoneKeys {
+            let localizations = try Self.localizations(catalog: "Voxglass/Resources/Localizable.xcstrings", key: key)
+            for language in ["de", "ja", "he", "zh-Hans"] {
+                let value = try #require(Self.units(localizations[language]).first?["value"] as? String)
+                #expect(value != key, "\(language) is still English for \(key)")
+            }
+        }
+    }
+
+    @Test func staticPhoneLabelsKeepPunctuationArrowsAndBitrate() throws {
+        let catalog = "Voxglass/Resources/Localizable.xcstrings"
+        let watchKey = "Only books you send from this iPhone appear on Apple Watch, prepared as 96 kbps AAC. Use “Download to Apple Watch” on a book page or in its My Books context menu; manage them in My Books → On My Watch."
+        #expect(watchKey.contains("“Download to Apple Watch”") && watchKey.contains("→") && watchKey.contains("96 kbps"))
+        let watch = try Self.localizations(catalog: catalog, key: watchKey)
+        for language in supportedLanguages {
+            let value = try #require(Self.units(watch[language]).first?["value"] as? String)
+            #expect(value.contains("96 kbps"), "\(language) lost the 96 kbps value")
+            #expect(value.contains("→") || value.contains("←"), "\(language) lost the navigation arrow")
+        }
+        let document = "Choose an EPUB or text-based PDF from Files. Voxglass keeps a local text copy and reads it with the iPhone’s built-in voice."
+        let doc = try Self.localizations(catalog: catalog, key: document)
+        #expect(doc["en"] != nil && doc["en-GB"] != nil)
+        let en = try #require(Self.units(doc["en"]).first?["value"] as? String)
+        #expect(en.contains("’"), "en curly apostrophe lost")
+        for key in Self.staticPhoneKeys where key.contains("?") || key.contains("…") || key.contains("·") {
+            let localizations = try Self.localizations(catalog: catalog, key: key)
+            let en = try #require(Self.units(localizations["en"]).first?["value"] as? String)
+            #expect(en == key, "English value must equal the source key for \(key)")
+        }
+        // Question-mark titles keep a question mark in every locale (Greek uses ;).
+        for key in ["Download to Apple Watch?", "Add Bookmark?"] {
+            let localizations = try Self.localizations(catalog: catalog, key: key)
+            for language in supportedLanguages {
+                let value = try #require(Self.units(localizations[language]).first?["value"] as? String)
+                let mark = language == "el" ? ";" : "?"
+                #expect(value.hasSuffix(mark) || value.hasSuffix("?"), "\(language) lost the question mark for \(key)")
+            }
+        }
+    }
+
+    @Test func reconnectMessageIsTranslatedInCoreCatalog() throws {
+        let key = "This audiobook needs its audio file reconnected on this device."
+        let localizations = try Self.localizations(catalog: "Voxglass/Core/Resources/Localizable.xcstrings", key: key)
+        for language in supportedLanguages {
+            let unit = try #require(Self.units(localizations[language]).first)
+            #expect(unit["state"] as? String == "translated")
+            #expect((unit["value"] as? String)?.isEmpty == false)
+        }
+    }
+
     /// Every string unit of one localization, whether plain, a plural
     /// variation, or an App Shortcuts phrase set (one value per phrase).
     private static func units(_ entry: Any?) -> [[String: Any]] {

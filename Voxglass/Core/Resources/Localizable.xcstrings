@@ -37729,6 +37729,107 @@
           }
         }
       }
+    },
+    "This audiobook needs its audio file reconnected on this device." : {
+      "comment" : "Static UI text shown in: Voxglass/Core/Playback/LocalPlaybackAccess.swift",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für dieses Hörbuch muss die Audiodatei auf diesem Gerät neu verbunden werden."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αυτό το ηχητικό βιβλίο χρειάζεται επανασύνδεση του αρχείου ήχου του σε αυτή τη συσκευή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This audiobook needs its audio file reconnected on this device."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This audiobook needs its audio file reconnected on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este audiolibro necesita que se vuelva a conectar su archivo de audio en este dispositivo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tämän äänikirjan äänitiedosto on yhdistettävä uudelleen tällä laitteella."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce livre audio nécessite de reconnecter son fichier audio sur cet appareil."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "יש לחבר מחדש את קובץ האודיו של ספר שמע זה במכשיר הזה."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo audiolibro richiede che il suo file audio venga ricollegato su questo dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このオーディオブックは、このデバイスでオーディオファイルを再接続する必要があります。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor dit luisterboek moet het audiobestand op dit apparaat opnieuw worden gekoppeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten audiobook wymaga ponownego połączenia pliku audio na tym urządzeniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este audiolivro precisa que o arquivo de áudio seja reconectado neste dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для этой аудиокниги нужно заново подключить аудиофайл на этом устройстве."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此有声书需要在此设备上重新连接其音频文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此有聲書需要在此裝置上重新連接其音訊檔案。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
