@@ -259,13 +259,22 @@ public final class CatalogStore: ObservableObject {
         Int64(entryCount) * 250_000_000
     }
 
-    public static func formattedBatchSize(entryCount: Int) -> String {
-        let bytes = estimatedBatchSize(entryCount: entryCount)
-        let gb = Double(bytes) / 1_000_000_000.0
-        if gb >= 1.0 {
-            return String(format: "%.1f GB", gb)
-        }
-        return String(format: "%.0f MB", Double(bytes) / 1_000_000.0)
+    /// Locale-aware batch size. Intentionally *decimal* (1 GB = 10^9 bytes),
+    /// matching how publishers and networks quote download sizes, unlike
+    /// `WatchTimeFormat.bytes`, which is binary.
+    public static func formattedBatchSize(entryCount: Int, locale: Locale = .autoupdatingCurrent) -> String {
+        let bytes = Double(estimatedBatchSize(entryCount: entryCount))
+        let gigabytes = bytes / 1_000_000_000
+        let measurement = gigabytes >= 1
+            ? Measurement(value: gigabytes, unit: UnitInformationStorage.gigabytes)
+            : Measurement(value: bytes / 1_000_000, unit: UnitInformationStorage.megabytes)
+        let formatter = MeasurementFormatter()
+        formatter.locale = locale
+        formatter.unitOptions = .providedUnit
+        formatter.unitStyle = .medium
+        formatter.numberFormatter.locale = locale
+        formatter.numberFormatter.maximumFractionDigits = gigabytes >= 1 ? 1 : 0
+        return formatter.string(from: measurement)
     }
 
     /// Downloads and imports all items in the curated collection.

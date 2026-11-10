@@ -239,15 +239,26 @@ public enum WatchTimeFormat {
         return String(format: "%d:%02d", mins, secs)
     }
 
-    /// Formats bytes for display on small screens.
-    public static func bytes(_ count: Int64) -> String {
-        if count < 1024 { return String(localized: "\(count) B", bundle: .module) }
-        let kb = Double(count) / 1024
-        if kb < 1024 { return String(format: "%.0f KB", kb) }
-        let mb = kb / 1024
-        if mb < 1024 { return String(format: "%.1f MB", mb) }
-        let gb = mb / 1024
-        return String(format: "%.1f GB", gb)
+    /// Formats bytes for display on small screens using Foundation's
+    /// locale-aware byte-count formatting. Uses *binary* (1024-based)
+    /// semantics, matching on-device storage; curated batch estimates in
+    /// `CatalogStore.formattedBatchSize` intentionally use *decimal* units.
+    public static func bytes(_ count: Int64, locale: Locale = .autoupdatingCurrent) -> String {
+        let units: [UnitInformationStorage] = [.bytes, .kilobytes, .megabytes, .gigabytes]
+        var value = Double(max(count, 0))
+        var index = 0
+        while value >= 1024, index < units.count - 1 {
+            value /= 1024
+            index += 1
+        }
+        let formatter = MeasurementFormatter()
+        formatter.locale = locale
+        formatter.unitOptions = .providedUnit
+        formatter.unitStyle = .medium
+        formatter.numberFormatter.locale = locale
+        formatter.numberFormatter.maximumFractionDigits = index >= 2 ? 1 : 0
+        formatter.numberFormatter.minimumFractionDigits = 0
+        return formatter.string(from: Measurement(value: value, unit: units[index]))
     }
 }
 
