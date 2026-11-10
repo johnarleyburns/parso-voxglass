@@ -12,16 +12,11 @@ if [[ "$pipeline_enabled" != true ]]; then
   exit 0
 fi
 
-# Never start a second implementation lifecycle while a generated PR is open.
-# The next worker is admitted only after main's release for the current SHA has
-# completed successfully, so it always begins from settled main rather than a
-# pre-merge snapshot that would need rebasing.
-open_generated_pr=$(gh pr list --repo "$repo" --state open --base main --limit 1000 --json number,body \
-  --jq '.[] | select((.body // "") | contains("<!-- claude-issue:")) | .number' | head -1)
-if [[ -n "$open_generated_pr" ]]; then
-  echo "Generated PR #${open_generated_pr} is still open; admission waits for merge and main release."
-  exit 0
-fi
+# Open generated PRs do not block independent issue admission. A failed PR is
+# repaired by PR maintenance while the controller may dispatch the next issue
+# once the prior macOS worker has exited. Each new worker still starts from a
+# successful, settled `main` revision; the PR maintainer handles any later
+# rebase required before merge.
 main_sha=$(gh api "${api}/git/ref/heads/main" --jq '.object.sha')
 # A manual retry can be cancelled before it starts.  That does not invalidate a
 # prior successful release for the identical immutable main SHA.  Still wait
