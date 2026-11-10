@@ -86,7 +86,7 @@ jobs:
           retention-days: 7
   finalize:
     needs: [verify-reservation, implement]
-    if: always() && needs.verify-reservation.outputs.valid == 'true'
+    if: always()
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.CLAUDE_WORKFLOW_TOKEN }}
@@ -94,4 +94,4 @@ jobs:
       ATTEMPT: ${{ inputs.attempt_id }}
     steps:
       - uses: actions/checkout@v7
-      - run: bash .github/scripts/finalize-issue-intake.sh "${{ needs.implement.result }}" "$ATTEMPT"
+      - run: bash .github/scripts/finalize-issue-intake.sh "${{ needs.implement.result }}" "$ATTEMPT" "${{ needs.verify-reservation.outputs.valid }}"
