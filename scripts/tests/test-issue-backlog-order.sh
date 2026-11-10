@@ -9,6 +9,10 @@ grep -Fq -- 'sort_by([if any(.labels[]?.name; . == "priority-high") then 0 elif 
 grep -Fq -- 'A manual retry can be cancelled before it starts.' "$script"
 grep -Fq -- 'select(.status == "completed" and .conclusion == "success")' "$script"
 grep -Fq -- 'select(.status != "completed")' "$script"
+# A failed generated PR is repaired independently. It must not hold the
+# repository-wide intake queue once its macOS worker has finished.
+grep -Fq -- 'Open generated PRs do not block independent issue admission.' "$script"
+! grep -Fq -- 'open_generated_pr=' "$script"
 
 order() {
   jq -r 'sort_by([if any(.labels[]?.name; . == "priority-high") then 0 else 1 end, .createdAt, .number])[] | .number'
