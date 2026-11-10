@@ -3,19 +3,45 @@ import WidgetKit
 import VoxglassCore
 
 /// Writes the small, on-device playback handoff shared by widgets and controls.
-@MainActor
 enum WidgetSnapshotWriter {
     static let appGroup = "group.guru.parso.voxglass"
     static let enabledKey = "settings.widgetSnapshot"
     static let defaults = UserDefaults(suiteName: appGroup) ?? .standard
 
+    private struct FileSink: SnapshotSink {
+        func write(_ snapshot: NowPlayingSnapshot) async throws {
+            guard let url = fileURL else { throw CocoaError(.fileNoSuchFile) }
+            let data = try JSONEncoder().encode(snapshot)
+            try data.write(to: url, options: .atomic)
+        }
+
+        func remove() async throws {
+            guard let url = fileURL else { return }
+            do { try FileManager.default.removeItem(at: url) }
+            catch let error as CocoaError where error.code == .fileNoSuchFile || error.code == .fileReadNoSuchFile {}
+        }
+
+        private var fileURL: URL? {
+            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetSnapshotWriter.appGroup)?
+                .appendingPathComponent("now-playing.json")
+        }
+    }
+
+    private struct Reloader: WidgetTimelineReloader {
+        func reloadTimelines() async {
+            await MainActor.run { WidgetCenter.shared.reloadTimelines(ofKind: "guru.parso.voxglass.continue") }
+        }
+    }
+
+    private static let publisher = WidgetSnapshotPublisher(sink: FileSink(), reloader: Reloader())
+
+    @MainActor
     static func write(playback: PlaybackCoordinator) {
         guard isEnabled else {
             remove()
             return
         }
-        guard let session = playback.currentSession,
-              let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else {
+        guard let session = playback.currentSession else {
             remove()
             return
         }
@@ -45,16 +71,11 @@ enum WidgetSnapshotWriter {
             isPlaying: session.isPlaying,
             updatedAt: .now
         )
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        let url = container.appendingPathComponent("now-playing.json")
-        try? data.write(to: url, options: .atomic)
-        WidgetCenter.shared.reloadTimelines(ofKind: "guru.parso.voxglass.continue")
+        Task { await publisher.submit(snapshot) }
     }
 
     static func remove() {
-        guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return }
-        try? FileManager.default.removeItem(at: container.appendingPathComponent("now-playing.json"))
-        WidgetCenter.shared.reloadTimelines(ofKind: "guru.parso.voxglass.continue")
+        Task { await publisher.submit(nil) }
     }
 
     private static var isEnabled: Bool {
