@@ -78,9 +78,10 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
             do {
                 _ = try await Self.files.resetDownloadedState(at: root)
                 guard let self else { return }
-                Self.metadataLock.lock(); defer { Self.metadataLock.unlock() }
-                for key in [Self.snapshotKey, "watch.downloaded", "watch.listened", "watch.audioReceipt", "watch.removedBookIDs", "watch.bookRevisions", Self.resetKey] {
-                    UserDefaults.standard.removeObject(forKey: key)
+                Self.metadataLock.withLock {
+                    for key in [Self.snapshotKey, "watch.downloaded", "watch.listened", "watch.audioReceipt", "watch.removedBookIDs", "watch.bookRevisions", Self.resetKey] {
+                        UserDefaults.standard.removeObject(forKey: key)
+                    }
                 }
                 WatchContinueListeningStore.save(nil)
                 snapshot = nil
@@ -195,11 +196,12 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
                 do {
                     try await Self.files.removeBook(bookID: bookID, at: root)
                     guard let self else { return }
-                    Self.metadataLock.lock(); defer { Self.metadataLock.unlock() }
-                    bookReports.removeValue(forKey: bookID)
-                    phoneTransferProgress.removeValue(forKey: bookID)
-                    snapshot?.books.removeAll { $0.id == bookID }
-                    if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
+                    Self.metadataLock.withLock {
+                        bookReports.removeValue(forKey: bookID)
+                        phoneTransferProgress.removeValue(forKey: bookID)
+                        snapshot?.books.removeAll { $0.id == bookID }
+                        if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
+                    }
                     var removal = WatchManifestAcknowledgement(bookID: bookID, revision: revision,
                         complete: false, installedBytes: 0)
                     removal.isRemoval = true
