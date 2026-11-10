@@ -374,11 +374,14 @@ public final class PlaybackCoordinator {
             return loaded && owns(generation)
         }
         let task = Task { @MainActor [weak self] in
-            await self?.loadEngineForPresentedSession(generation: generation) ?? false
+            let loaded = await self?.loadEngineForPresentedSession(generation: generation) ?? false
+            // Clear on completion, in the same main-actor turn that publishes
+            // the failure, so an immediate retry never joins a finished task.
+            self?.engineLoadTask = nil
+            return loaded
         }
         engineLoadTask = task
         let loaded = await task.value
-        if engineLoadTask == task { engineLoadTask = nil }
         return loaded && owns(generation)
     }
 
