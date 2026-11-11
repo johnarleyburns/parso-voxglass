@@ -17,7 +17,7 @@ struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
 
     var body: some View {
-        VoxglassScreen(title: "More") {
+        VoxglassScreen(title: "Settings") {
             VStack(alignment: .leading, spacing: 16) {
                 settingsGroup("Support") {
                     SupportDevelopmentCard()
@@ -108,6 +108,8 @@ struct SettingsView: View {
                 }
             }
             .padding(.top, 12)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("settings.root")
         }
     }
 
