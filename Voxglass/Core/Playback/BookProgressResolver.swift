@@ -43,6 +43,8 @@ public enum BookProgressResolver {
             let ahead: Bool
             if r.index != current.index {
                 ahead = r.index > current.index
+            } else if position.isFinished != current.position.isFinished {
+                ahead = position.isFinished
             } else if abs(position.position - current.position.position) > 0.001 {
                 ahead = position.position > current.position.position
             } else {
