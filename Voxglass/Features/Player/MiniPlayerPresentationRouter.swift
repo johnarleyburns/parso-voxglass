@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import VoxglassCore
 
 enum BookPagePresentationContext {
     case pushedDetail
@@ -9,20 +10,35 @@ enum BookPagePresentationContext {
 @MainActor
 @Observable
 final class MiniPlayerPresentationRouter {
-    var isNowPlayingPresented = false
+    private var state = NowPlayingPresentationState()
     private var pushedPlayerCount = 0
+
+    var isNowPlayingPresented: Bool { state.isNowPlayingPresented }
+    var pendingNowPlayingBookID: UUID? { state.pendingBookID }
 
     func bindNowPlaying() -> Binding<Bool> {
         Binding(
-            get: { self.isNowPlayingPresented },
-            set: { self.isNowPlayingPresented = $0 }
+            get: { self.state.isNowPlayingPresented },
+            set: { self.state.setPresented($0) }
         )
     }
 
     /// Navigation-only dismissal; never stops or mutates playback.
     func dismissNowPlayingForNavigation() {
-        isNowPlayingPresented = false
+        state.setPresented(false)
     }
+
+    func requestNowPlayingAfterSelection(bookID: UUID) {
+        state.requestPresentation(for: bookID)
+    }
+
+    /// Called by the root when the coordinator publishes a session.
+    @discardableResult
+    func presentWhenSessionIsReady(bookID: UUID?) -> Bool {
+        state.consumeReadySession(bookID: bookID)
+    }
+
+    func cancelPendingNowPlaying() { state.cancelPending() }
 
     func playerPushed() { pushedPlayerCount += 1 }
     func playerPopped() { pushedPlayerCount = max(0, pushedPlayerCount - 1) }
@@ -36,6 +52,6 @@ final class MiniPlayerPresentationRouter {
 
     func presentNowPlayingFromMiniPlayer(currentBookID: UUID?) {
         guard shouldShowMiniPlayer(currentBookID: currentBookID) else { return }
-        isNowPlayingPresented = true
+        state.setPresented(true)
     }
 }
