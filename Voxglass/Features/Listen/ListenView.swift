@@ -328,14 +328,20 @@ struct ListenView: View {
         .accessibilityLabel("Settings")
     }
 
+    private var jumpBackInBooks: [BookWithChapters] {
+        let heroBookID = heroPresentation.sessionBookID ?? libraryStore.recentlyPlayed.first?.book.id
+        return JumpBackInPresenter.books(recentlyPlayed: libraryStore.recentlyPlayed, heroBookID: heroBookID)
+    }
+
     @ViewBuilder
     private var jumpBackIn: some View {
-        if libraryStore.recentlyPlayed.count > 1 {
+        let books = jumpBackInBooks
+        if !books.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(title: "Jump Back In")
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
-                        ForEach(Array(libraryStore.recentlyPlayed.dropFirst())) { book in
+                        ForEach(books) { book in
                             NavigationLink {
                                 BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                             } label: {
