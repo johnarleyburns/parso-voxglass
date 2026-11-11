@@ -364,9 +364,12 @@ extension WatchSessionAdapter: WCSessionDelegate {
         revisions[bookID] = revision
         UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
         Self.metadataLock.unlock()
-        let validator: (@Sendable (URL) throws -> Void)? = kind == "audio-aac96"
-            ? { try WatchAACAssetValidator.validate($0) }
-            : nil
+        let validator: (@Sendable (URL) throws -> Void)?
+        if kind == "audio-aac96" {
+            validator = { @Sendable url in try WatchAACAssetValidator.validate(url) }
+        } else {
+            validator = nil
+        }
         do {
             let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("DownloadedBooks", isDirectory: true)
