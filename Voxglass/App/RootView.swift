@@ -43,7 +43,10 @@ struct RootView: View {
             miniPlayerRouter.presentWhenSessionIsReady(bookID: id)
         }
         .onChange(of: playback.playbackPhase) { _, phase in
-            if phase == .idle || phase == .failed { miniPlayerRouter.cancelPendingNowPlaying() }
+            switch phase {
+            case .idle, .failed: miniPlayerRouter.cancelPendingNowPlaying()
+            case .preparing, .paused, .playing: break
+            }
         }
         .onChange(of: playback.currentSession?.isPlaying) { _, _ in
             WidgetSnapshotWriter.write(playback: playback)
