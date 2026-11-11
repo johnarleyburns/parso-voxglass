@@ -247,6 +247,16 @@ public actor WatchPlaybackPositionStore {
         values.positions[key(bookID: bookID, chapterID: chapterID)] ?? 0
     }
 
+    /// Read-only snapshot of every saved chapter position for one book.
+    public func positions(for bookID: WatchBookID) -> [WatchChapterID: TimeInterval] {
+        let prefix = "\(bookID.rawValue)|"
+        var result: [WatchChapterID: TimeInterval] = [:]
+        for (key, value) in values.positions where key.hasPrefix(prefix) {
+            result[WatchChapterID(String(key.dropFirst(prefix.count)))] = value
+        }
+        return result
+    }
+
     public func save(_ position: TimeInterval, bookID: WatchBookID, chapterID: WatchChapterID) throws {
         values.positions[key(bookID: bookID, chapterID: chapterID)] = position.isFinite ? max(0, position) : 0
         try persist()

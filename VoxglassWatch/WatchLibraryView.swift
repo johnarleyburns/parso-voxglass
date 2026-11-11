@@ -70,7 +70,7 @@ struct WatchHomeView: View {
 
             Button {
                 WKInterfaceDevice.current().play(.click)
-                if isCurrent { services.togglePlayPause() } else { services.play(book, chapterIndex: chapterIndex) }
+                if isCurrent { services.togglePlayPause() } else { Task { await services.resume(book) } }
             } label: {
                 Image(systemName: isCurrent && services.playback.isActuallyPlaying ? "pause.fill" : "play.fill")
                     .font(.callout.weight(.bold))

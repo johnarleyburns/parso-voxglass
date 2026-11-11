@@ -136,17 +136,29 @@ final class WatchAppServices: ObservableObject {
                                              position: record?.position ?? 0, rate: 1)
     }
 
-    /// The chapter a "Resume" button would continue from.
+    /// The chapter a "Resume" button would continue from. Runs the same resolver
+    /// as `resume(_:)` over the persisted listen record, so chapter 0 is never flashed.
     func resumeChapterIndex(for book: WatchBookDTO) -> Int {
         if playbackBook?.id == book.id { return playback.chapterIndex }
-        return Self.initialChapterIndex(chapters: book.chapters, localChapterIndex: listened[book.id.rawValue]?.chapterIndex)
+        return Self.provisionalTarget(chapters: book.chapters, record: listened[book.id.rawValue]).chapterIndex
     }
 
-    /// Precedence: Watch-local listen state > the phone-projected resume marker > first chapter.
-    nonisolated static func initialChapterIndex(chapters: [WatchChapterDTO], localChapterIndex: Int?) -> Int {
-        let last = max(0, chapters.count - 1)
-        if let localChapterIndex { return min(max(0, localChapterIndex), last) }
-        return chapters.firstIndex { $0.resumePosition != nil } ?? 0
+    /// Local state is the listen record mapped onto its chapter; it is merged with phone markers, never preferred.
+    nonisolated static func provisionalTarget(chapters: [WatchChapterDTO], record: WatchListenedRecord?) -> WatchResumeTarget {
+        var local: [WatchChapterID: TimeInterval] = [:]
+        if let record, chapters.indices.contains(record.chapterIndex) {
+            local[chapters[record.chapterIndex].id] = record.position
+        }
+        return WatchResumeResolver.resolve(chapters: chapters, localPositions: local)
+    }
+
+    /// Resolves once against the durable position store, then starts playback at that single target.
+    func resume(_ book: WatchBookDTO) async {
+        guard !book.chapters.isEmpty else { error = String(localized: "No playable chapters."); return }
+        let target = await playbackEngine.resumeTarget(for: book)
+        let provisional = Self.provisionalTarget(chapters: book.chapters, record: listened[book.id.rawValue])
+        let best = (target.chapterIndex, target.position) >= (provisional.chapterIndex, provisional.position) ? target : provisional
+        play(book, chapterIndex: best.chapterIndex, initialPosition: best.position)
     }
 
     func resumePosition(for book: WatchBookDTO) -> TimeInterval? {
@@ -207,10 +219,10 @@ final class WatchAppServices: ObservableObject {
 
     // MARK: - Transport
 
-    func play(_ book: WatchBookDTO, chapterIndex: Int = 0) {
+    func play(_ book: WatchBookDTO, chapterIndex: Int = 0, initialPosition: TimeInterval? = nil) {
         guard !book.chapters.isEmpty else { error = String(localized: "No playable chapters."); return }
         let index = min(max(0, chapterIndex), book.chapters.count - 1)
-        playbackEngine.play(book, chapterIndex: index, allowsStreaming: false)
+        playbackEngine.play(book, chapterIndex: index, initialPosition: initialPosition, allowsStreaming: false)
     }
     func togglePlayPause() { playbackEngine.togglePlayPause() }
     func nextChapter() { playbackEngine.nextChapter() }

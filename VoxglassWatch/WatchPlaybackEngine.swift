@@ -65,7 +65,14 @@ final class WatchPlaybackEngine {
 
     // MARK: - Transport
 
-    func play(_ book: WatchBookDTO, chapterIndex: Int, allowsStreaming: Bool) {
+    /// Resolves the furthest of Watch-local and phone-projected progress for `book`.
+    func resumeTarget(for book: WatchBookDTO) async -> WatchResumeTarget {
+        let local = await positionStore.positions(for: book.id)
+        return WatchResumeResolver.resolve(chapters: book.chapters, localPositions: local)
+    }
+
+    /// `initialPosition` is an already-resolved resume offset; nil keeps per-chapter lookup (manual navigation).
+    func play(_ book: WatchBookDTO, chapterIndex: Int, initialPosition: TimeInterval? = nil, allowsStreaming: Bool) {
         guard book.chapters.indices.contains(chapterIndex) else {
             publishFailure(String(localized: "No playable chapter is available."))
             return
@@ -91,7 +98,8 @@ final class WatchPlaybackEngine {
             // The first time a book is opened on the watch, its local store is
             // empty. Use the phone's savepoint in that case; later watch-local
             // progress remains authoritative for a reopened book.
-            let saved = localPosition > 0 ? localPosition : max(0, chapter.resumePosition ?? 0)
+            let saved = initialPosition.map { $0.isFinite ? max(0, $0) : 0 }
+                ?? (localPosition > 0 ? localPosition : max(0, chapter.resumePosition ?? 0))
             let savedPosition = WatchResumeRewind.position(saved, pausedAt: pausedAt, now: Date())
             pausedAt = nil
             guard currentToken == token else { return }
