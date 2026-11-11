@@ -130,3 +130,62 @@ struct WatchContinueListeningStateTests {
         #expect(state.relevance(at: Date(timeIntervalSince1970: 9 * 3600), calendar: calendar) == 0.2)
     }
 }
+
+@Suite("Watch resume resolver")
+struct WatchResumeResolverTests {
+    private func chapters(markerAt: Int? = nil, position: Double = 0, indices: [Int] = [0, 1, 2, 3, 4]) -> [WatchChapterDTO] {
+        indices.enumerated().map { offset, index in
+            WatchChapterDTO(id: .init("c\(offset)"), index: index, title: "C\(offset)", duration: 100,
+                            resumePosition: offset == markerAt ? position : nil)
+        }
+    }
+
+    @Test func phoneLaterChapterBeatsLocalBeginning() {
+        let c = chapters(markerAt: 3, position: 42)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[0].id: 0]) == .init(chapterIndex: 3, position: 42))
+    }
+
+    @Test func fartherLocalWatchProgressBeatsBehindPhoneMarker() {
+        let c = chapters(markerAt: 1, position: 90)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[2].id: 4]) == .init(chapterIndex: 2, position: 4))
+    }
+
+    @Test func sameChapterMaxWins() {
+        let c = chapters(markerAt: 2, position: 10)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[2].id: 30]).position == 30)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[2].id: 5]).position == 10)
+    }
+
+    @Test func localZeroInLaterChapterIsValid() {
+        let c = chapters(markerAt: 1, position: 50)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[3].id: 0]) == .init(chapterIndex: 3, position: 0))
+    }
+
+    @Test func singleAndNoSources() {
+        let c = chapters(markerAt: 3, position: 42)
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [:]) == .init(chapterIndex: 3, position: 42))
+        let n = chapters()
+        #expect(WatchResumeResolver.resolve(chapters: n, localPositions: [n[1].id: 7]) == .init(chapterIndex: 1, position: 7))
+        #expect(WatchResumeResolver.resolve(chapters: n, localPositions: [:]) == .init(chapterIndex: 0, position: 0))
+        #expect(WatchResumeResolver.resolve(chapters: [], localPositions: [:]) == .init(chapterIndex: 0, position: 0))
+    }
+
+    @Test func invalidValuesNormalize() {
+        let n = chapters()
+        #expect(WatchResumeResolver.resolve(chapters: n, localPositions: [n[1].id: .nan]) == .init(chapterIndex: 1, position: 0))
+        #expect(WatchResumeResolver.resolve(chapters: n, localPositions: [n[1].id: -5]) == .init(chapterIndex: 1, position: 0))
+    }
+
+    @Test func nonContiguousIndicesUseArrayOrder() {
+        let c = chapters(markerAt: 1, position: 8, indices: [10, 20, 30])
+        #expect(WatchResumeResolver.resolve(chapters: c, localPositions: [c[0].id: 99]) == .init(chapterIndex: 1, position: 8))
+    }
+
+    @Test func positionStoreSnapshotIsPerBook() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("p.json")
+        let store = WatchPlaybackPositionStore(url: url)
+        try await store.save(4, bookID: "a", chapterID: "x")
+        try await store.save(9, bookID: "b", chapterID: "y")
+        #expect(await store.positions(for: "a") == ["x": 4])
+    }
+}

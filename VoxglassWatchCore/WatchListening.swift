@@ -202,3 +202,35 @@ public struct WatchBookDownload: Equatable, Sendable {
         }
     }
 }
+
+/// The single (chapter, offset) a Watch "Resume" continues from. Shared by UI selection and engine startup.
+public struct WatchResumeTarget: Equatable, Sendable {
+    public let chapterIndex: Int
+    public let position: TimeInterval
+    public init(chapterIndex: Int, position: TimeInterval) {
+        self.chapterIndex = chapterIndex
+        self.position = position
+    }
+}
+
+/// Chooses the furthest progress (by book order, then offset) of Watch-local per-chapter positions and
+/// the phone-projected `resumePosition` markers. Neither source has blanket precedence, and wall-clock
+/// time is never consulted. `chapterIndex` in the result is an array index into `chapters`.
+public enum WatchResumeResolver {
+    public static func resolve(chapters: [WatchChapterDTO],
+                               localPositions: [WatchChapterID: TimeInterval]) -> WatchResumeTarget {
+        func clean(_ value: Double) -> Double { value.isFinite ? max(0, value) : 0 }
+        for index in chapters.indices.reversed() {
+            let chapter = chapters[index]
+            let local = localPositions[chapter.id].map(clean)
+            let phone = chapter.resumePosition.map(clean)
+            switch (local, phone) {
+            case let (local?, phone?): return WatchResumeTarget(chapterIndex: index, position: max(local, phone))
+            case let (local?, nil): return WatchResumeTarget(chapterIndex: index, position: local)
+            case let (nil, phone?): return WatchResumeTarget(chapterIndex: index, position: phone)
+            case (nil, nil): continue
+            }
+        }
+        return WatchResumeTarget(chapterIndex: 0, position: 0)
+    }
+}

@@ -19,7 +19,7 @@ struct ResumeListeningIntent: AudioPlaybackIntent {
             if services.playbackBook?.id == book.id {
                 services.togglePlayPause()
             } else {
-                services.play(book, chapterIndex: services.resumeChapterIndex(for: book))
+                await services.resume(book)
             }
         }
         #endif

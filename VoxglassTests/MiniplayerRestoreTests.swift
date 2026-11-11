@@ -394,7 +394,12 @@ import Foundation
         await waitUntil { h.coordinator.currentSession?.chapter.id == chapters[1].id }
         #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)
 
-        let newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
+        // The session flips before the durable row is awaited; poll for the row.
+        var newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
+        for _ in 0..<250 where newRow == nil {
+            try await Task.sleep(nanoseconds: 20_000_000)
+            newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
+        }
         #expect(newRow != nil)  // The new chapter must have a durable row immediately after the advance
         #expect(abs((newRow?.position ?? -1) - (0)) <= 0.001)
         #expect(newRow?.isFinished == false)
