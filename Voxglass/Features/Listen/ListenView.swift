@@ -7,6 +7,9 @@ struct ListenView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
+    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
+    @State private var heroHandoff = ListenHeroHandoffState()
+    @State private var handoffBook: BookWithChapters?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
@@ -26,6 +29,16 @@ struct ListenView: View {
     @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
 
     var body: some View {
+        content
+            .onChange(of: showingNowPlaying) { _, presented in
+                if presented { heroHandoff.didPresentNowPlayingSheet(); handoffBook = nil }
+            }
+            .onChange(of: miniPlayerRouter.pendingNowPlayingBookID) { _, pending in
+                if pending == nil, !showingNowPlaying { heroHandoff.didCancel(); handoffBook = nil }
+            }
+    }
+
+    private var content: some View {
         VoxglassScreen(title: "Listen", headerTrailingContent: AnyView(
             HStack(spacing: 14) {
                 if isSupporter { supporterBadge }
@@ -114,7 +127,10 @@ struct ListenView: View {
     @ViewBuilder
     private var continueListening: some View {
         let hero = heroPresentation
-        if hero.showsNowPlaying, let session = playback.currentSession {
+        if heroHandoff.isHandingOff, let pinned = handoffBook {
+            // Keep the tapped card mounted until the root sheet covers it.
+            continueCard(book: pinned, resumeLabel: String(localized: "Resume"))
+        } else if hero.showsNowPlaying, let session = playback.currentSession {
             nowPlayingCard(session: session, kind: hero.kind)
         } else if hero.kind == .paused, let session = playback.currentSession {
             continueCard(book: BookWithChapters(book: session.book, chapters: session.chapters), resumeLabel: String(localized: "Resume"))
@@ -222,11 +238,20 @@ struct ListenView: View {
     }
 
 
+    private func resumeFromListen(_ book: BookWithChapters) {
+        // Idempotent: a second tap while the same request is pending is ignored.
+        if miniPlayerRouter.pendingNowPlayingBookID == book.book.id { return }
+        handoffBook = book
+        heroHandoff.didTapResume()
+        miniPlayerRouter.requestNowPlayingAfterSelection(bookID: book.book.id)
+        playback.selectAndPlay(book)
+    }
+
     private func continueCard(book: BookWithChapters, resumeLabel: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "Continue Listening")
             Button {
-                playback.selectAndPlay(book)
+                resumeFromListen(book)
             } label: {
                 HStack(spacing: 14) {
                     CoverPlate(
