@@ -39,15 +39,14 @@ private func tempDir() -> URL {
     return u
 }
 
-private func workerDeps(log: Log = Log(), failHE: Bool = false) -> WatchAudioPreparationWorker.Dependencies {
+private func workerDeps(log: Log = Log()) -> WatchAudioPreparationWorker.Dependencies {
     .init(
         hash: { _ in log.add("hash:main=\(onMain())"); return String(repeating: "a", count: 64) },
         prepareAAC: { _, d, _ in d },
         fileInfo: { _ in log.add("info:main=\(onMain())"); return (4, String(repeating: "b", count: 64), 7) },
         artwork: { _ in nil },
         convertPCM: { _, dir, _, rate, format in
-            log.add("convert:\(rate):main=\(onMain())")
-            if failHE && format == kAudioFormatMPEG4AAC_HE { struct E: Error {}; throw E() }
+            log.add("convert:\(rate):\(format):main=\(onMain())")
             let out = dir.appendingPathComponent("out-\(rate).m4a")
             try Data("aac".utf8).write(to: out)
             return out
@@ -82,17 +81,38 @@ private func textFile(_ dir: URL) throws -> URL {
         #expect(log.all.allSatisfy { $0.hasSuffix("main=false") })
     }
 
-    @Test func heaacFailureFallsBackToAacLC() async throws {
+    @Test func narrationUsesOnlyAacLCAt48kbps() async throws {
         let dir = tempDir(); let log = Log()
         let pcm = dir.appendingPathComponent("s.caf"); try Data("pcm".utf8).write(to: pcm)
         let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
         let chapter = try await adapter.prepareRenderedPCM(
-            pcm, worker: WatchAudioPreparationWorker(dependencies: workerDeps(log: log, failHE: true)))
+            pcm, worker: WatchAudioPreparationWorker(dependencies: workerDeps(log: log)))
         let converts = log.all.filter { $0.hasPrefix("convert") }
-        #expect(converts.count == 2)
-        #expect(converts[0].hasPrefix("convert:\(WatchNarrationEstimate.preferredBitRate)"))
-        #expect(converts[1].hasPrefix("convert:48000"))
+        #expect(converts == ["convert:48000:\(kAudioFormatMPEG4AAC):main=false"])
         #expect(chapter.duration == 7 && chapter.bytes == 4)
+    }
+
+    @Test func narrationByteEstimateUsesFixedAacLCProfile() {
+        #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 10) == 60_000)
+    }
+
+    @Test func liveConversionProducesRealAacLCM4A() async throws {
+        let dir = tempDir()
+        let pcm = dir.appendingPathComponent("tone.caf")
+        let fmt = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+        let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 44_100)!
+        buf.frameLength = 44_100
+        for i in 0..<Int(buf.frameLength) { buf.floatChannelData![0][i] = sinf(Float(i) * 0.05) * 0.3 }
+        do { let f = try AVAudioFile(forWriting: pcm, settings: fmt.settings); try f.write(from: buf) }
+        let hash = String(repeating: "c", count: 64)
+        let output = try await WatchAudioPreparationWorker.Dependencies.liveConvertPCM(
+            pcm, dir, hash, WatchNarrationEstimate.watchAACLCBitRate, kAudioFormatMPEG4AAC)
+        let audio = try AVAudioFile(forReading: output)
+        #expect(audio.length > 0)
+        #expect(audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC)
+        #expect(output.pathExtension.lowercased() == "m4a")
+        #expect(output.lastPathComponent.contains("watch-aac48"))
+        #expect(!output.lastPathComponent.contains("heaac"))
     }
 
     @Test @MainActor func cancellationStopsSpeechAndLeavesNoPartialManifest() async throws {
