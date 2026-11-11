@@ -820,6 +820,17 @@ public final class PlaybackCoordinator {
         return Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.position(forBookID: bookID))
     }
 
+    /// The phone's furthest valid saved point for a book: every durable row,
+    /// the in-process snapshot, and an optional live point, merged by book order.
+    public func effectiveFurthestSavedPosition(
+        for book: BookWithChapters,
+        including live: PlaybackPosition? = nil
+    ) async -> PlaybackPosition? {
+        let stored = (try? await positionStore.positions(forBookID: book.book.id)) ?? []
+        let candidates = stored + [snapshotStore.position(forBookID: book.book.id), live].compactMap { $0 }
+        return BookProgressResolver.furthest(candidates, in: book.chapters)
+    }
+
     public func present(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
         pushNavigationHistory()
         guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }

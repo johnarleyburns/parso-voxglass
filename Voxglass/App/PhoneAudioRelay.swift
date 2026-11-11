@@ -208,14 +208,15 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         if let playback = playbackCoordinator {
             for dto in snapshot.books {
                 guard let source = libraryStore.books.first(where: { $0.book.id.uuidString == dto.id.rawValue }) else { continue }
-                var saved = await playback.effectiveSavedPosition(forBookID: source.book.id)
+                var live: PlaybackPosition?
                 if let session = playback.currentSession, session.book.id == source.book.id {
-                    saved = PlaybackPosition(
+                    live = PlaybackPosition(
                         bookID: source.book.id, chapterID: session.chapter.id,
                         position: playback.playhead, duration: session.chapter.duration,
                         updatedAt: SystemClock().now
                     )
                 }
+                let saved = await playback.effectiveFurthestSavedPosition(for: source, including: live)
                 snapshot = PhoneWatchProjection.applyingResolvedResume(book: source, saved: saved, to: snapshot)
             }
         }
