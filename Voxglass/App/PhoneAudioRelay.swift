@@ -1139,7 +1139,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 bookID: bookID, chapterID: chapterID, position: checkpoint.position,
                 duration: checkpoint.duration ?? chapter.duration,
                 updatedAt: checkpoint.recordedAt, isFinished: checkpoint.isFinished
-            )) ?? false
+            ), chapters: book.chapters) ?? false
             if accepted { await publishTypedWatchProjection(force: true) }
         case .watchCatalog:
             guard envelope.pairedLibraryID == watchLibraryID,
