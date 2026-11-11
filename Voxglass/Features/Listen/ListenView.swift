@@ -46,11 +46,6 @@ struct ListenView: View {
         .sheet(isPresented: $showSettings) {
             NavigationStack {
                 SettingsView(showingNowPlaying: $showingNowPlaying)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showSettings = false }
-                        }
-                    }
             }
             .presentationDragIndicator(.visible)
         }

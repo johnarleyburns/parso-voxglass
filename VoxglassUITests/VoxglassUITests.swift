@@ -423,6 +423,20 @@ final class VoxglassUITests: XCTestCase {
         app.buttons["home.settingsButton"].tap()
 
         XCTAssertTrue(
+            app.descendants(matching: .any)["settings.root"].waitForExistence(timeout: 10),
+            "Settings root missing.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(app.navigationBars["Settings"].exists, "Settings sheet must be titled Settings.")
+        XCTAssertFalse(app.navigationBars["More"].exists, "Settings sheet must not be titled More.")
+        XCTAssertFalse(app.buttons["Close"].exists, "Settings sheet must not inject a Close button.")
+        XCTAssertFalse(app.buttons["settings.close"].exists)
+        app.buttons["Sheet Grabber"].swipeDown()
+        XCTAssertTrue(app.buttons["home.settingsButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["settings.root"].waitForNonExistence(timeout: 5),
+                      "Settings root should be gone after dismissal.")
+        app.buttons["home.settingsButton"].tap()
+
+        XCTAssertTrue(
             app.staticTexts["Languages"].waitForExistence(timeout: 10),
             "Settings did not render after tapping the Listen tab's settings button.\n\(app.debugDescription)"
         )

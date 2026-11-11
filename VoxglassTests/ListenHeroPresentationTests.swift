@@ -69,4 +69,23 @@ import Testing
         #expect(listen.contains("accessibilityHidden(true)"))
         #expect(listen.contains("listen.nowPlaying.pause"))
     }
+
+    @Test func listenSettingsUsesStandardDismissibleSheetContract() throws {
+        let presentation = SettingsSheetPresentation.listenEntry
+        #expect(presentation.title == "Settings")
+        #expect(!presentation.showsAppDismissButton)
+        #expect(presentation.showsDragIndicator)
+
+        let listen = try source("Voxglass/Features/Listen/ListenView.swift")
+        let start = try #require(listen.range(of: ".sheet(isPresented: $showSettings)"))
+        let tail = listen[start.upperBound...]
+        let block = String(tail[..<(tail.range(of: ".sheet(isPresented: $showStats)")?.lowerBound ?? tail.endIndex)])
+        #expect(block.contains("SettingsView(showingNowPlaying: $showingNowPlaying)"))
+        #expect(block.contains(".presentationDragIndicator(.visible)"))
+        #expect(!block.contains("Close"))
+
+        let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(settings.contains("VoxglassScreen(title: \"Settings\")"))
+        #expect(!settings.contains("VoxglassScreen(title: \"More\")"))
+    }
 }
