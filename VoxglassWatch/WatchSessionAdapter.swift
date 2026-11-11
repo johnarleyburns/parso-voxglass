@@ -28,11 +28,6 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     // catalog callbacks. It is never held across file I/O; `files` owns all disk mutation.
     nonisolated private static let metadataLock = NSLock()
     nonisolated private static let files = WatchDownloadedFiles()
-    nonisolated private static func validateAAC(_ url: URL) throws {
-        let audio = try AVAudioFile(forReading: url)
-        guard audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC,
-              audio.length > 0 else { throw CocoaError(.fileReadCorruptFile) }
-    }
     private var lastReceivedBookID: WatchBookID?
     private let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed")
         || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
@@ -369,9 +364,9 @@ extension WatchSessionAdapter: WCSessionDelegate {
         revisions[bookID] = revision
         UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
         Self.metadataLock.unlock()
-        let validator: (@Sendable (URL) throws -> Void)?
-        if kind == "audio-aac96" { validator = { url in try Self.validateAAC(url) } }
-        else { validator = nil }
+        let validator: (@Sendable (URL) throws -> Void)? = kind == "audio-aac96"
+            ? { try WatchAACAssetValidator.validate($0) }
+            : nil
         do {
             let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("DownloadedBooks", isDirectory: true)

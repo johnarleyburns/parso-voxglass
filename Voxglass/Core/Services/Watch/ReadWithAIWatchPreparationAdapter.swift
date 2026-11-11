@@ -12,6 +12,8 @@ public protocol ReadWithAIWatchSpeechRendering: Sendable {
 public protocol ReadWithAIWatchNarrationCaching: Sendable {
     func cachedOutput(for key: String) -> URL?
     func store(_ output: URL, for key: String)
+    /// Forgets (and deletes from disk) an output that failed validation.
+    func remove(for key: String)
 }
 
 /// Runs the non-speech half of Read with AI Watch preparation off MainActor.
@@ -40,12 +42,26 @@ public actor ReadWithAIWatchPreparationAdapter {
     ) async throws -> PreparedWatchChapter {
         let key = try Self.cacheKey(textURL: textURL, preference: preference)
         if let cached = cache.cachedOutput(for: key) {
-            return try await worker.prepareCachedNarration(cached, chapterID: chapterID, chapterKey: chapterKey)
+            do {
+                try WatchAACAssetValidator.validate(cached)
+                return try await worker.prepareCachedNarration(cached, chapterID: chapterID, chapterKey: chapterKey)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // A cache hit that fails validation is a miss: drop it and regenerate.
+                cache.remove(for: key)
+                try? FileManager.default.removeItem(at: cached)
+            }
         }
         try Task.checkCancellation()
         let pcm = try await renderer.renderPCM(textURL: textURL, preference: preference)
         defer { try? FileManager.default.removeItem(at: pcm) }
         let chapter = try await prepareRenderedPCM(pcm, worker: worker)
+        do { try WatchAACAssetValidator.validate(chapter.url) }
+        catch {
+            try? FileManager.default.removeItem(at: chapter.url)
+            throw error
+        }
         cache.store(chapter.url, for: key)
         return chapter
     }

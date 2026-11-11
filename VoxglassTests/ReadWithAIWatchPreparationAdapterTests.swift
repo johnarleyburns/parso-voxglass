@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import Testing
 @testable import VoxglassCore
+import VoxglassWatchCore
 
 private final class Log: @unchecked Sendable {
     private let lock = NSLock()
@@ -14,7 +15,25 @@ private final class MemoryCache: ReadWithAIWatchNarrationCaching, @unchecked Sen
     private let lock = NSLock()
     private var map: [String: URL] = [:]
     func cachedOutput(for key: String) -> URL? { lock.lock(); defer { lock.unlock() }; return map[key] }
-    func store(_ output: URL, for key: String) { lock.lock(); map[key] = output; lock.unlock() }
+    func store(_ output: URL, for key: String) { lock.lock(); map[key] = output; storedKeys.append(key); lock.unlock() }
+    func remove(for key: String) { lock.lock(); map[key] = nil; lock.unlock() }
+    private(set) var storedKeys: [String] = []
+}
+
+/// Real AAC-LC M4A produced by AVFoundation.
+func writeRealAAC(to url: URL) throws {
+    let pcm = url.deletingPathExtension().appendingPathExtension("tmp-\(UUID().uuidString).caf")
+    defer { try? FileManager.default.removeItem(at: pcm) }
+    let fmt = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+    let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 44_100)!
+    buf.frameLength = 44_100
+    for i in 0..<Int(buf.frameLength) { buf.floatChannelData![0][i] = sinf(Float(i) * 0.05) * 0.3 }
+    do { let f = try AVAudioFile(forWriting: pcm, settings: fmt.settings); try f.write(from: buf) }
+    do {
+        let out = try AVAudioFile(forWriting: url, settings: [
+            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100, AVNumberOfChannelsKey: 1])
+        try out.write(from: buf)
+    }
 }
 
 @MainActor
@@ -48,7 +67,7 @@ private func workerDeps(log: Log = Log()) -> WatchAudioPreparationWorker.Depende
         convertPCM: { _, dir, _, rate, format in
             log.add("convert:\(rate):\(format):main=\(onMain())")
             let out = dir.appendingPathComponent("out-\(rate).m4a")
-            try Data("aac".utf8).write(to: out)
+            try writeRealAAC(to: out)
             return out
         })
 }
@@ -158,6 +177,40 @@ private func textFile(_ dir: URL) throws -> URL {
                 renderer: FakeRenderer(pcm: dir.appendingPathComponent("s\(i).caf")), cache: cache, worker: worker))
         }
         #expect(results.map(\.chapterID) == ids)
+    }
+
+    @Test @MainActor func invalidGeneratedNarrationIsNotCached() async throws {
+        let dir = tempDir(); let cache = MemoryCache()
+        var deps = workerDeps()
+        deps.convertPCM = { _, d, _, _, _ in
+            let out = d.appendingPathComponent("bad.m4a"); try Data("aac".utf8).write(to: out); return out
+        }
+        let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
+        let text = try textFile(dir)
+        let renderer = FakeRenderer(pcm: dir.appendingPathComponent("s.caf"))
+        await #expect(throws: WatchAACAssetValidationError.self) {
+            _ = try await adapter.prepareNarration(textURL: text, preference: pref, renderer: renderer,
+                cache: cache, worker: WatchAudioPreparationWorker(dependencies: deps))
+        }
+        #expect(cache.storedKeys.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("bad.m4a").path))
+    }
+
+    @Test @MainActor func invalidCachedNarrationIsNotReturnedForTransfer() async throws {
+        let dir = tempDir(); let cache = MemoryCache()
+        let text = try textFile(dir)
+        let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
+        let corrupt = dir.appendingPathComponent("corrupt.m4a")
+        try Data("aac".utf8).write(to: corrupt)
+        cache.store(corrupt, for: key)
+        let renderer = FakeRenderer(pcm: dir.appendingPathComponent("s.caf"))
+        let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
+        let chapter = try await adapter.prepareNarration(textURL: text, preference: pref, renderer: renderer,
+            cache: cache, worker: WatchAudioPreparationWorker(dependencies: workerDeps()))
+        #expect(renderer.calls == 1)
+        #expect(chapter.url != corrupt)
+        #expect(!FileManager.default.fileExists(atPath: corrupt.path))
+        try WatchAACAssetValidator.validate(chapter.url)
     }
 
     @Test @MainActor func cachedNarrationOutputAvoidsRepeatingSpeech() async throws {
