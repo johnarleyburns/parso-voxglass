@@ -698,6 +698,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                             renderer: ReadWithAIWatchNarrationRenderer(directory: directory),
                             cache: ReadWithAIWatchNarrationUserDefaultsCache(),
                             worker: narrationWorker)
+                        try WatchAACAssetValidator.validate(prepared.url)
                         let (url, size, checksum) = (prepared.url, prepared.bytes, prepared.sha256)
                         selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
                             index: chapter.index, title: chapter.title, duration: prepared.duration, startTime: 0,
@@ -765,7 +766,9 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 return .failed(String(localized: "Download paused."))
             }
             let reason: String
-            if error is CancellationError {
+            if let invalid = error as? WatchAACAssetValidationError {
+                reason = "Couldn’t prepare Apple Watch audio: generated narration is not a playable AAC-LC M4A. \(invalid.localizedDescription)"
+            } else if error is CancellationError {
                 reason = "Watch audio preparation stopped. Keep Voxglass open and send the book again when ready. Prepared chapters are saved; no audio file was submitted."
             } else if (error as NSError).domain == AVFoundationErrorDomain,
                       (error as NSError).code == AVError.operationInterrupted.rawValue {
