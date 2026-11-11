@@ -1,5 +1,7 @@
 import Testing
 import Foundation
+@testable import VoxglassWatchProtocol
+@testable import VoxglassWatchCore
 @testable import VoxglassCore
 
 @MainActor
@@ -22,6 +24,9 @@ import Foundation
         }
         func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {
             positions[Key(bookID: bookID, chapterID: chapterID)]
+        }
+        func positions(forBookID bookID: UUID) async throws -> [PlaybackPosition] {
+            positions.values.filter { $0.bookID == bookID }
         }
         func latestPosition() async throws -> PlaybackPosition? {
             positions.values.max { $0.updatedAt < $1.updatedAt }
@@ -434,5 +439,65 @@ import Foundation
 
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(h.coordinator.currentSession != nil)
+    }
+
+    // MARK: - Furthest saved point (Watch catalog projection)
+
+    private func catalogMarkers(_ h: Harness, _ book: BookWithChapters) async -> [Double?] {
+        let saved = await h.coordinator.effectiveFurthestSavedPosition(for: book)
+        let dto = WatchBookDTO(id: .init(book.book.id.uuidString), title: "B", chapters: book.chapters.map {
+            WatchChapterDTO(id: .init($0.id.uuidString), index: $0.index, title: $0.title, duration: 100, resumePosition: 9)
+        })
+        let snapshot = PhoneWatchProjection.applyingResolvedResume(
+            book: book, saved: saved,
+            to: WatchLibrarySnapshot(pairedLibraryID: "library", revision: 1, books: [dto]))
+        return snapshot.books[0].chapters.map(\.resumePosition)
+    }
+
+    @Test func catalogMarksFartherPhoneChapterEvenWhenBeginningRowIsNewer() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 0, 0, 999))
+        try await h.store.save(watchPoint(book, 3, 42, 100))
+        #expect(await catalogMarkers(h, book) == [nil, nil, nil, 42])
+    }
+
+    @Test func fartherInMemorySnapshotBeatsEarlierDurableRow() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 1, 10, 100))
+        h.snapshotStore.save(watchPoint(book, 2, 30, 50))
+        #expect(await catalogMarkers(h, book) == [nil, nil, 30, nil])
+    }
+
+    @Test func laterChapterAtZeroBeatsNonzeroEarlierChapter() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 1, 50, 999))
+        try await h.store.save(watchPoint(book, 2, 0, 1))
+        #expect(await catalogMarkers(h, book) == [nil, nil, 0, nil])
+    }
+
+    @Test func finishedChaptersAndMissingPositionResolveAsBefore() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 3)
+        #expect(await catalogMarkers(h, book) == [0, nil, nil])
+        var done = watchPoint(book, 1, 100, 10)
+        done.isFinished = true
+        try await h.store.save(done)
+        #expect(await catalogMarkers(h, book) == [nil, nil, 0])
+        var last = watchPoint(book, 2, 100, 11)
+        last.isFinished = true
+        try await h.store.save(last)
+        #expect(await catalogMarkers(h, book) == [0, nil, nil])
+    }
+
+    @Test func booksResolveIndependently() async throws {
+        let h = makeHarness()
+        let a = makeBook(chapters: 3)
+        let b = makeBook(chapters: 3)
+        try await h.store.save(watchPoint(a, 2, 5, 1))
+        #expect(await catalogMarkers(h, a) == [nil, nil, 5])
+        #expect(await catalogMarkers(h, b) == [0, nil, nil])
     }
 }
