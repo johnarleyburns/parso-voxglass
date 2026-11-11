@@ -2107,16 +2107,33 @@ public final class PlaybackCoordinator {
     /// handoffs use the same SQLite, snapshot, and cloud-sync path as iPhone
     /// and CarPlay playback.
     @discardableResult
-    public func persistExternalPlaybackCheckpoint(_ checkpoint: PlaybackPosition) async -> Bool {
+    public func persistExternalPlaybackCheckpoint(
+        _ checkpoint: PlaybackPosition,
+        chapters: [Chapter]? = nil
+    ) async -> Bool {
         guard checkpoint.position.isFinite, checkpoint.position >= 0,
               checkpoint.duration.map({ $0.isFinite && $0 >= 0 }) ?? true else { return false }
         // Never let a delayed Watch transfer move an actively playing iPhone
         // session backwards. The currently audible device owns the position.
         if currentSession?.isPlaying == true { return false }
+        // Authoritative chapter order is required; fail closed without it.
+        let orderedChapters = chapters
+            ?? (currentSession?.book.id == checkpoint.bookID ? currentSession?.chapters : nil)
+        guard let orderedChapters,
+              orderedChapters.contains(where: { $0.id == checkpoint.chapterID }) else { return false }
         do {
-            if let existing = try await positionStore.position(for: checkpoint.bookID, chapterID: checkpoint.chapterID),
-               existing.updatedAt > checkpoint.updatedAt {
-                return false
+            // Known chapter ordering beats timestamps: an earlier Watch point
+            // is rejected even when newer than the phone's furthest point.
+            if let furthest = try await furthestSavedPosition(forBookID: checkpoint.bookID, chapters: orderedChapters) {
+                if !Self.hasProgressAtLeast(checkpoint, asFarAs: furthest, chapters: orderedChapters) {
+                    return false
+                }
+                // Same chapter and indeterminate (within tolerance): LWW by timestamp.
+                if furthest.chapterID == checkpoint.chapterID,
+                   checkpoint.position <= furthest.position + 2,
+                   furthest.updatedAt > checkpoint.updatedAt {
+                    return false
+                }
             }
             snapshotStore.save(checkpoint)
             try await positionStore.save(checkpoint)
@@ -2136,6 +2153,20 @@ public final class PlaybackCoordinator {
             if !handleStalePositionWrite(error, checkpoint) { playbackError = error.localizedDescription }
             return false
         }
+    }
+
+    /// The furthest saved point for a book, by chapter order then offset.
+    private func furthestSavedPosition(forBookID bookID: UUID, chapters: [Chapter]) async throws -> PlaybackPosition? {
+        var best: (index: Int, position: PlaybackPosition)?
+        for (index, chapter) in chapters.enumerated() {
+            guard let saved = try await positionStore.position(for: bookID, chapterID: chapter.id) else { continue }
+            if let current = best,
+               current.index > index || (current.index == index && current.position.position >= saved.position) {
+                continue
+            }
+            best = (index, saved)
+        }
+        return best?.position
     }
 
     /// Takes a point-in-time copy of the live playhead.  This deliberately

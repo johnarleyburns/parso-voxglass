@@ -107,6 +107,82 @@ import Foundation
         #expect(saved == nil)
     }
 
+    private func watchPoint(_ book: BookWithChapters, _ chapter: Int, _ pos: TimeInterval, _ at: TimeInterval) -> PlaybackPosition {
+        PlaybackPosition(bookID: book.book.id, chapterID: book.chapters[chapter].id, position: pos,
+                         duration: 100, updatedAt: Date(timeIntervalSince1970: at))
+    }
+
+    private func furthestSaved(_ h: Harness, _ book: BookWithChapters) async -> PlaybackPosition? {
+        var best: PlaybackPosition?
+        for c in book.chapters {
+            if let p = try? await h.store.position(for: book.book.id, chapterID: c.id) { best = p }
+        }
+        return best
+    }
+
+    @Test func watchCheckpointAtBeginningCannotReplaceFartherPhoneChapter() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 2, 42, 100))
+        await h.coordinator.present(book)
+        let accepted = await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 0, 0, 999))
+        #expect(!accepted)
+        let saved = try await h.store.position(for: book.book.id, chapterID: book.chapters[0].id)
+        #expect(saved == nil)
+        #expect(await furthestSaved(h, book)?.position == 42)
+    }
+
+    @Test func fartherWatchChapterIsAcceptedEvenWhenItsTimestampIsOlder() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 80, 999))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 2, 4, 100), chapters: book.chapters))
+    }
+
+    @Test func sameChapterBehindIsRejectedAndAheadAccepted() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 10, 999), chapters: book.chapters)))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 60, 50), chapters: book.chapters))
+        #expect(await furthestSaved(h, book)?.position == 60)
+    }
+
+    @Test func samePointWithNewerTimestampPersists() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 50, 200), chapters: book.chapters))
+    }
+
+    @Test func unknownChapterFailsClosed() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        let stray = PlaybackPosition(bookID: book.book.id, chapterID: UUID(), position: 5, duration: 100,
+                                     updatedAt: Date(timeIntervalSince1970: 999))
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(stray, chapters: book.chapters)))
+        #expect(await furthestSaved(h, book)?.position == 50)
+    }
+
+    @Test func rejectedCheckpointLeavesPausedSessionUnchanged() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 0, 30, 100))
+        await h.coordinator.present(book)
+        let before = h.coordinator.playhead
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 0, 0, 999))))
+        #expect(h.coordinator.playhead == before)
+    }
+
+    @Test func activePhoneRejectsFartherWatchCheckpoint() async {
+        let h = makeHarness()
+        let book = makeBook()
+        h.coordinator.selectAndPlay(book)
+        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 2, 5, 999), chapters: book.chapters)))
+    }
+
     /// Polls (yielding to the main actor) so contended parallel runs cannot
     /// outlast a fixed sleep.
     private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 10_000_000_000) async {
