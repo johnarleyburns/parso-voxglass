@@ -19,6 +19,11 @@ final class MiniPlayerPresentationRouter {
         )
     }
 
+    /// Navigation-only dismissal; never stops or mutates playback.
+    func dismissNowPlayingForNavigation() {
+        isNowPlayingPresented = false
+    }
+
     func playerPushed() { pushedPlayerCount += 1 }
     func playerPopped() { pushedPlayerCount = max(0, pushedPlayerCount - 1) }
 

@@ -67,8 +67,26 @@ struct RootView: View {
         phoneAudioRelay.watchTransferStatusBanner != nil && !watchTransferBannerDismissed
     }
 
+    /// Single root-owned transition: an explicit change of tab dismisses the
+    /// Now Playing sheet (navigation only; playback is untouched).
+    private var tabSelection: Binding<VoxglassTab> {
+        Binding(
+            get: { selectedTab },
+            set: { destination in
+                let result = RootTabNavigation.reduce(
+                    selectedTab: selectedTab,
+                    destination: destination,
+                    isNowPlayingPresented: miniPlayerRouter.isNowPlayingPresented
+                )
+                guard result.didChangeSelection else { return }
+                if result.dismissNowPlaying { miniPlayerRouter.dismissNowPlayingForNavigation() }
+                selectedTab = result.selectedTab
+            }
+        )
+    }
+
     private func openWatchList() {
-        selectedTab = .library
+        tabSelection.wrappedValue = .library
         NotificationCenter.default.post(name: .showMyWatchBooks, object: nil)
     }
 
@@ -85,7 +103,7 @@ struct RootView: View {
                 .environmentObject(offlineDownloadManager)
                 .presentationDragIndicator(.visible)
         }
-        .overlay(alignment: .topLeading) { AdaptiveNavigationShortcuts(selection: $selectedTab) }
+        .overlay(alignment: .topLeading) { AdaptiveNavigationShortcuts(selection: tabSelection) }
         .task {
             if libraryStore.books.isEmpty { await libraryStore.refresh() }
             WidgetSnapshotWriter.write(playback: playback)
@@ -130,7 +148,7 @@ struct RootView: View {
     }
 
     private var tabShell: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             Tab("Listen", systemImage: "headphones", value: VoxglassTab.listen) {
                 ListenView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
             }

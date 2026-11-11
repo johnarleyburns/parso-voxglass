@@ -1155,6 +1155,25 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["import.gutenberg"].exists)
     }
 
+    func testSwitchingTabDismissesNowPlaying() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-VoxglassInitialTab", "listen", "-uiTestDisableCloudKit"]
+        app.launch()
+        let mini = app.otherElements["chrome.miniPlayer"]
+        guard mini.waitForExistence(timeout: 10) else {
+            throw XCTSkip("No seeded playback session; mini-player unavailable.")
+        }
+        mini.tap()
+        let nowPlaying = app.otherElements["nowplaying.cover"]
+        XCTAssertTrue(nowPlaying.waitForExistence(timeout: 5))
+
+        tab("My Books", in: app).tap()
+
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: nowPlaying)
+        wait(for: [gone], timeout: 5)
+        XCTAssertTrue(app.otherElements["chrome.miniPlayer"].waitForExistence(timeout: 5))
+    }
+
     private func tab(_ label: String, in app: XCUIApplication) -> XCUIElement {
         app.tabBars.buttons[label]
     }
