@@ -674,7 +674,7 @@ import VoxglassWatchProtocol
         let chapter = Chapter(bookID: UUID(), title: "PDF", index: 0, duration: 7_200,
                               localURL: URL(fileURLWithPath: "/tmp/chapter.voxtext"))
         #expect(WatchNarrationEstimate.needsGeneratedAudio(for: [chapter]))
-        #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 7_200) == 28_800_000)
+        #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 7_200) == 43_200_000)
         #expect(WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: 7_200) == 600)
     }
 }

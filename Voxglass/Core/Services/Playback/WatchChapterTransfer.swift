@@ -52,16 +52,18 @@ public enum WatchChapterTransfer {
         let reader = try AVAssetReader(asset: asset)
         let start = CMTime(seconds: startTime, preferredTimescale: 44_100)
         reader.timeRange = CMTimeRange(start: start, duration: CMTime(seconds: length, preferredTimescale: 44_100))
+        // Low-rate profiles (48 kbps narration) are mono: stereo AAC-LC cannot encode at that rate.
+        let channels = bitRate < 64_000 ? 1 : 2
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
             AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 44_100,
-            AVNumberOfChannelsKey: 2, AVLinearPCMBitDepthKey: 32,
+            AVNumberOfChannelsKey: channels, AVLinearPCMBitDepthKey: 32,
             AVLinearPCMIsFloatKey: true, AVLinearPCMIsNonInterleaved: false])
         guard reader.canAdd(output) else { throw CocoaError(.fileReadCorruptFile) }
         reader.add(output)
         let writer = try AVAssetWriter(outputURL: temporary, fileType: .m4a)
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
             AVFormatIDKey: formatID, AVSampleRateKey: 44_100,
-            AVNumberOfChannelsKey: 2, AVEncoderBitRateKey: bitRate,
+            AVNumberOfChannelsKey: channels, AVEncoderBitRateKey: bitRate,
             AVEncoderBitRateStrategyKey: AVAudioBitRateStrategy_Constant])
         input.expectsMediaDataInRealTime = false
         guard writer.canAdd(input) else { throw CocoaError(.fileWriteUnknown) }

@@ -4,16 +4,15 @@ import Foundation
 /// audiobook. This is intentionally conservative: voice generation speed
 /// varies with the selected system voice and the phone's thermal state.
 public enum WatchNarrationEstimate {
-    /// Mono HE-AAC target. AAC-LC uses a slightly larger fallback when the
-    /// selected device cannot create HE-AAC.
-    public static let preferredBitRate = 32_000
+    /// Fixed, interoperable profile for locally transferred Read With AI chapters.
+    public static let watchAACLCBitRate = 48_000
 
     public static func needsGeneratedAudio(for chapters: [Chapter]) -> Bool {
         chapters.contains { $0.localURL?.pathExtension.lowercased() == "voxtext" }
     }
 
     public static func estimatedAudioBytes(duration: TimeInterval) -> Int64 {
-        Int64(max(0, duration) * Double(preferredBitRate) / 8)
+        Int64(max(0, duration) * Double(watchAACLCBitRate) / 8)
     }
 
     /// A deliberately rounded, pre-flight estimate for offline speech render.

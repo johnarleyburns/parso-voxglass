@@ -177,7 +177,7 @@ public actor WatchAudioPreparationWorker {
         }
     }
 
-    /// Converts an already-rendered narration PCM file (HE-AAC first, then AAC-LC)
+    /// Converts an already-rendered narration PCM file (AAC-LC at 48 kbps only)
     /// and assembles its chapter record. Runs on this actor, never on MainActor.
     /// Cancellation or failure removes only unfinished `.preparing` derivatives.
     func prepareNarrationPCM(
@@ -186,16 +186,8 @@ public actor WatchAudioPreparationWorker {
         do {
             try Task.checkCancellation()
             let hash = try await dependencies.hash(pcm)
-            let url: URL
-            do {
-                url = try await dependencies.convertPCM(
-                    pcm, directory, hash, WatchNarrationEstimate.preferredBitRate, kAudioFormatMPEG4AAC_HE)
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                try Task.checkCancellation()
-                url = try await dependencies.convertPCM(pcm, directory, hash, 48_000, kAudioFormatMPEG4AAC)
-            }
+            let url = try await dependencies.convertPCM(
+                pcm, directory, hash, WatchNarrationEstimate.watchAACLCBitRate, kAudioFormatMPEG4AAC)
             try Task.checkCancellation()
             let info = try await dependencies.fileInfo(url)
             try Task.checkCancellation()
