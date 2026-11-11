@@ -777,13 +777,7 @@ public final class PlaybackCoordinator {
         asFarAs local: PlaybackPosition,
         chapters: [Chapter]
     ) -> Bool {
-        guard remote.bookID == local.bookID else { return true }
-        guard let remoteIndex = chapters.firstIndex(where: { $0.id == remote.chapterID }),
-              let localIndex = chapters.firstIndex(where: { $0.id == local.chapterID }) else {
-            return true
-        }
-        if remoteIndex != localIndex { return remoteIndex > localIndex }
-        return remote.position >= local.position - 2
+        BookProgressResolver.compare(remote, to: local, in: chapters) != .behind
     }
 
     /// Pure tie-break between a SQLite row and a UserDefaults snapshot for the

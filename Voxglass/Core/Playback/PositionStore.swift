@@ -16,30 +16,6 @@ public extension PositionStore {
     }
 }
 
-/// Shared book-order policy: progress is the furthest chapter (by book order),
-/// then finished before unfinished, then the larger offset, then recency.
-public enum BookProgressResolver {
-    public static func furthest(_ candidates: [PlaybackPosition], in chapters: [Chapter]) -> PlaybackPosition? {
-        var order: [UUID: Int] = [:]
-        for (index, chapter) in chapters.enumerated() { order[chapter.id] = index }
-        var best: (index: Int, position: PlaybackPosition)?
-        for candidate in candidates {
-            guard let index = order[candidate.chapterID] else { continue }
-            if let current = best, !isFurther((index, candidate), than: current) { continue }
-            best = (index, candidate)
-        }
-        return best?.position
-    }
-
-    private static func isFurther(_ a: (index: Int, position: PlaybackPosition),
-                                  than b: (index: Int, position: PlaybackPosition)) -> Bool {
-        if a.index != b.index { return a.index > b.index }
-        if a.position.isFinished != b.position.isFinished { return a.position.isFinished }
-        if a.position.position != b.position.position { return a.position.position > b.position.position }
-        return a.position.updatedAt > b.position.updatedAt
-    }
-}
-
 /// The (book, chapter) a position write referenced no longer exists, or the
 /// chapter no longer belongs to the book (deleted/reimported library rows).
 public struct StalePlaybackReferenceError: Error, LocalizedError, Equatable {
