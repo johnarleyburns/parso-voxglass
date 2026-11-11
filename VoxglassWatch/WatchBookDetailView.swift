@@ -14,7 +14,7 @@ struct WatchBookPageView: View {
             Section {
                 header
                 Button {
-                    services.play(book, chapterIndex: services.resumeChapterIndex(for: book))
+                    Task { await services.resume(book) }
                     path.append(.player)
                 } label: { Label("Resume", systemImage: "play.fill") }
                 .buttonStyle(.watchPrimary)

@@ -5,6 +5,39 @@ public protocol PositionStore: Sendable {
     func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition?
     func latestPosition() async throws -> PlaybackPosition?
     func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition?
+    /// Every persisted row for a book (one per chapter), in no particular order.
+    func positions(forBookID bookID: UUID) async throws -> [PlaybackPosition]
+}
+
+public extension PositionStore {
+    /// Conservative default for stores that cannot enumerate rows.
+    func positions(forBookID bookID: UUID) async throws -> [PlaybackPosition] {
+        try await latestPosition(forBookID: bookID).map { [$0] } ?? []
+    }
+}
+
+/// Shared book-order policy: progress is the furthest chapter (by book order),
+/// then finished before unfinished, then the larger offset, then recency.
+public enum BookProgressResolver {
+    public static func furthest(_ candidates: [PlaybackPosition], in chapters: [Chapter]) -> PlaybackPosition? {
+        var order: [UUID: Int] = [:]
+        for (index, chapter) in chapters.enumerated() { order[chapter.id] = index }
+        var best: (index: Int, position: PlaybackPosition)?
+        for candidate in candidates {
+            guard let index = order[candidate.chapterID] else { continue }
+            if let current = best, !isFurther((index, candidate), than: current) { continue }
+            best = (index, candidate)
+        }
+        return best?.position
+    }
+
+    private static func isFurther(_ a: (index: Int, position: PlaybackPosition),
+                                  than b: (index: Int, position: PlaybackPosition)) -> Bool {
+        if a.index != b.index { return a.index > b.index }
+        if a.position.isFinished != b.position.isFinished { return a.position.isFinished }
+        if a.position.position != b.position.position { return a.position.position > b.position.position }
+        return a.position.updatedAt > b.position.updatedAt
+    }
 }
 
 /// The (book, chapter) a position write referenced no longer exists, or the
@@ -145,6 +178,17 @@ public struct SQLitePositionStore: PositionStore, LocalPlaybackCheckpointStore {
             ModelMapping.databaseValue(bookID)
         ])
         return try rows.first.map(Self.position(from:))
+    }
+
+    public func positions(forBookID bookID: UUID) async throws -> [PlaybackPosition] {
+        let rows = try await database.query("""
+        SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
+        FROM playback_positions
+        WHERE book_id = ?
+        """, [
+            ModelMapping.databaseValue(bookID)
+        ])
+        return try rows.map(Self.position(from:))
     }
 
     private static func position(from row: DatabaseRow) throws -> PlaybackPosition {

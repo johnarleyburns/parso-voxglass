@@ -1,5 +1,7 @@
 import Testing
 import Foundation
+@testable import VoxglassWatchProtocol
+@testable import VoxglassWatchCore
 @testable import VoxglassCore
 
 @MainActor
@@ -22,6 +24,9 @@ import Foundation
         }
         func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {
             positions[Key(bookID: bookID, chapterID: chapterID)]
+        }
+        func positions(forBookID bookID: UUID) async throws -> [PlaybackPosition] {
+            positions.values.filter { $0.bookID == bookID }
         }
         func latestPosition() async throws -> PlaybackPosition? {
             positions.values.max { $0.updatedAt < $1.updatedAt }
@@ -105,6 +110,82 @@ import Foundation
         #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(checkpoint)))
         let saved = try? await h.store.position(for: book.book.id, chapterID: chapter.id)
         #expect(saved == nil)
+    }
+
+    private func watchPoint(_ book: BookWithChapters, _ chapter: Int, _ pos: TimeInterval, _ at: TimeInterval) -> PlaybackPosition {
+        PlaybackPosition(bookID: book.book.id, chapterID: book.chapters[chapter].id, position: pos,
+                         duration: 100, updatedAt: Date(timeIntervalSince1970: at))
+    }
+
+    private func furthestSaved(_ h: Harness, _ book: BookWithChapters) async -> PlaybackPosition? {
+        var best: PlaybackPosition?
+        for c in book.chapters {
+            if let p = try? await h.store.position(for: book.book.id, chapterID: c.id) { best = p }
+        }
+        return best
+    }
+
+    @Test func watchCheckpointAtBeginningCannotReplaceFartherPhoneChapter() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 2, 42, 100))
+        await h.coordinator.present(book)
+        let accepted = await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 0, 0, 999))
+        #expect(!accepted)
+        let saved = try await h.store.position(for: book.book.id, chapterID: book.chapters[0].id)
+        #expect(saved == nil)
+        #expect(await furthestSaved(h, book)?.position == 42)
+    }
+
+    @Test func fartherWatchChapterIsAcceptedEvenWhenItsTimestampIsOlder() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 80, 999))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 2, 4, 100), chapters: book.chapters))
+    }
+
+    @Test func sameChapterBehindIsRejectedAndAheadAccepted() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 10, 999), chapters: book.chapters)))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 60, 50), chapters: book.chapters))
+        #expect(await furthestSaved(h, book)?.position == 60)
+    }
+
+    @Test func samePointWithNewerTimestampPersists() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 1, 50, 200), chapters: book.chapters))
+    }
+
+    @Test func unknownChapterFailsClosed() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 1, 50, 100))
+        let stray = PlaybackPosition(bookID: book.book.id, chapterID: UUID(), position: 5, duration: 100,
+                                     updatedAt: Date(timeIntervalSince1970: 999))
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(stray, chapters: book.chapters)))
+        #expect(await furthestSaved(h, book)?.position == 50)
+    }
+
+    @Test func rejectedCheckpointLeavesPausedSessionUnchanged() async throws {
+        let h = makeHarness()
+        let book = makeBook()
+        try await h.store.save(watchPoint(book, 0, 30, 100))
+        await h.coordinator.present(book)
+        let before = h.coordinator.playhead
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 0, 0, 999))))
+        #expect(h.coordinator.playhead == before)
+    }
+
+    @Test func activePhoneRejectsFartherWatchCheckpoint() async {
+        let h = makeHarness()
+        let book = makeBook()
+        h.coordinator.selectAndPlay(book)
+        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 2, 5, 999), chapters: book.chapters)))
     }
 
     /// Polls (yielding to the main actor) so contended parallel runs cannot
@@ -358,5 +439,65 @@ import Foundation
 
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(h.coordinator.currentSession != nil)
+    }
+
+    // MARK: - Furthest saved point (Watch catalog projection)
+
+    private func catalogMarkers(_ h: Harness, _ book: BookWithChapters) async -> [Double?] {
+        let saved = await h.coordinator.effectiveFurthestSavedPosition(for: book)
+        let dto = WatchBookDTO(id: .init(book.book.id.uuidString), title: "B", chapters: book.chapters.map {
+            WatchChapterDTO(id: .init($0.id.uuidString), index: $0.index, title: $0.title, duration: 100, resumePosition: 9)
+        })
+        let snapshot = PhoneWatchProjection.applyingResolvedResume(
+            book: book, saved: saved,
+            to: WatchLibrarySnapshot(pairedLibraryID: "library", revision: 1, books: [dto]))
+        return snapshot.books[0].chapters.map(\.resumePosition)
+    }
+
+    @Test func catalogMarksFartherPhoneChapterEvenWhenBeginningRowIsNewer() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 0, 0, 999))
+        try await h.store.save(watchPoint(book, 3, 42, 100))
+        #expect(await catalogMarkers(h, book) == [nil, nil, nil, 42])
+    }
+
+    @Test func fartherInMemorySnapshotBeatsEarlierDurableRow() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 1, 10, 100))
+        h.snapshotStore.save(watchPoint(book, 2, 30, 50))
+        #expect(await catalogMarkers(h, book) == [nil, nil, 30, nil])
+    }
+
+    @Test func laterChapterAtZeroBeatsNonzeroEarlierChapter() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 4)
+        try await h.store.save(watchPoint(book, 1, 50, 999))
+        try await h.store.save(watchPoint(book, 2, 0, 1))
+        #expect(await catalogMarkers(h, book) == [nil, nil, 0, nil])
+    }
+
+    @Test func finishedChaptersAndMissingPositionResolveAsBefore() async throws {
+        let h = makeHarness()
+        let book = makeBook(chapters: 3)
+        #expect(await catalogMarkers(h, book) == [0, nil, nil])
+        var done = watchPoint(book, 1, 100, 10)
+        done.isFinished = true
+        try await h.store.save(done)
+        #expect(await catalogMarkers(h, book) == [nil, nil, 0])
+        var last = watchPoint(book, 2, 100, 11)
+        last.isFinished = true
+        try await h.store.save(last)
+        #expect(await catalogMarkers(h, book) == [0, nil, nil])
+    }
+
+    @Test func booksResolveIndependently() async throws {
+        let h = makeHarness()
+        let a = makeBook(chapters: 3)
+        let b = makeBook(chapters: 3)
+        try await h.store.save(watchPoint(a, 2, 5, 1))
+        #expect(await catalogMarkers(h, a) == [nil, nil, 5])
+        #expect(await catalogMarkers(h, b) == [0, nil, nil])
     }
 }
