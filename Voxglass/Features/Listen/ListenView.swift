@@ -4,7 +4,7 @@ import VoxglassCore
 
 struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter

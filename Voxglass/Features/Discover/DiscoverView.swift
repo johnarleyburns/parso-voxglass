@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
@@ -235,7 +235,7 @@ struct BrowseView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Palette.ink3)
 
-                TextField("Search books, authors, or narrators", text: $catalogStore.query)
+                TextField("Search books, authors, or narrators", text: Binding(get: { catalogStore.query }, set: { catalogStore.query = $0 }))
                     .foregroundStyle(Palette.ink)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
