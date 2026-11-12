@@ -8,12 +8,13 @@ public protocol ReadWithAIWatchSpeechRendering: Sendable {
     func renderPCM(textURL: URL, preference: ReadWithAIVoicePreference) async throws -> URL
 }
 
-/// Cache of finished narration output keyed by text+voice.
+/// Cache of finished narration output keyed by profile+text+voice.
 public protocol ReadWithAIWatchNarrationCaching: Sendable {
-    func cachedOutput(for key: String) -> URL?
-    func store(_ output: URL, for key: String)
-    /// Forgets (and deletes from disk) an output that failed validation.
-    func remove(for key: String)
+    /// Returns a validated, managed `.m4a`, or nil (removing the bad entry).
+    func validCachedOutput(for key: String) -> URL?
+    func storeValidated(_ output: URL, for key: String)
+    func removeOutput(for key: String)
+    func purgeLegacyEntries() throws
 }
 
 /// Runs the non-speech half of Read with AI Watch preparation off MainActor.
@@ -41,16 +42,14 @@ public actor ReadWithAIWatchPreparationAdapter {
         worker: WatchAudioPreparationWorker
     ) async throws -> PreparedWatchChapter {
         let key = try Self.cacheKey(textURL: textURL, preference: preference)
-        if let cached = cache.cachedOutput(for: key) {
+        try cache.purgeLegacyEntries()
+        if let cached = cache.validCachedOutput(for: key) {
             do {
-                try WatchAACAssetValidator.validate(cached)
                 return try await worker.prepareCachedNarration(cached, chapterID: chapterID, chapterKey: chapterKey)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
-                // A cache hit that fails validation is a miss: drop it and regenerate.
-                cache.remove(for: key)
-                try? FileManager.default.removeItem(at: cached)
+                cache.removeOutput(for: key)
             }
         }
         try Task.checkCancellation()
@@ -62,13 +61,13 @@ public actor ReadWithAIWatchPreparationAdapter {
             try? FileManager.default.removeItem(at: chapter.url)
             throw error
         }
-        cache.store(chapter.url, for: key)
+        cache.storeValidated(chapter.url, for: key)
         return chapter
     }
 
     static func cacheKey(textURL: URL, preference: ReadWithAIVoicePreference) throws -> String {
         let textHash = try WatchChecksum.sha256(of: textURL)
         let voiceKey = preference.identifier.isEmpty ? "automatic" : preference.identifier
-        return textHash + "-" + SHA256Hex.hex(Data(voiceKey.utf8)).prefix(12)
+        return SHA256Hex.hex(Data("aaclc48-v1|\(textHash)|\(voiceKey)|44100|2|48000".utf8))
     }
 }

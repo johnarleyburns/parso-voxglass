@@ -696,7 +696,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                             textURL: source,
                             preference: ReadWithAIVoicePreferences.preference(for: book.book.id),
                             renderer: ReadWithAIWatchNarrationRenderer(directory: directory),
-                            cache: ReadWithAIWatchNarrationUserDefaultsCache(),
+                            cache: ReadWithAIWatchNarrationUserDefaultsCache(managedRoot: directory),
                             worker: narrationWorker)
                         try WatchAACAssetValidator.validate(prepared.url)
                         let (url, size, checksum) = (prepared.url, prepared.bytes, prepared.sha256)
