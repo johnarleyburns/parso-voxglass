@@ -14,9 +14,10 @@ private final class Log: @unchecked Sendable {
 private final class MemoryCache: ReadWithAIWatchNarrationCaching, @unchecked Sendable {
     private let lock = NSLock()
     private var map: [String: URL] = [:]
-    func cachedOutput(for key: String) -> URL? { lock.lock(); defer { lock.unlock() }; return map[key] }
-    func store(_ output: URL, for key: String) { lock.lock(); map[key] = output; storedKeys.append(key); lock.unlock() }
-    func remove(for key: String) { lock.lock(); map[key] = nil; lock.unlock() }
+    func validCachedOutput(for key: String) -> URL? { lock.lock(); defer { lock.unlock() }; return map[key] }
+    func storeValidated(_ output: URL, for key: String) { lock.lock(); map[key] = output; storedKeys.append(key); lock.unlock() }
+    func removeOutput(for key: String) { lock.lock(); map[key] = nil; lock.unlock() }
+    func purgeLegacyEntries() throws {}
     private(set) var storedKeys: [String] = []
 }
 
@@ -196,13 +197,56 @@ private func textFile(_ dir: URL) throws -> URL {
         #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("bad.m4a").path))
     }
 
-    @Test @MainActor func invalidCachedNarrationIsNotReturnedForTransfer() async throws {
-        let dir = tempDir(); let cache = MemoryCache()
+    private func isolatedCache(root: URL) -> (ReadWithAIWatchNarrationUserDefaultsCache, UserDefaults) {
+        let name = "rwai-test-\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: name)!
+        d.removePersistentDomain(forName: name)
+        return (ReadWithAIWatchNarrationUserDefaultsCache(suiteName: name, managedRoot: root), d)
+    }
+
+    @Test @MainActor func legacyEntryIsPurgedAndForcesFreshAacLCGeneration() async throws {
+        let dir = tempDir(); let outside = tempDir()
+        let (cache, defaults) = isolatedCache(root: dir)
+        let text = try textFile(dir)
+        let legacyInside = dir.appendingPathComponent("legacy.m4a"); try writeRealAAC(to: legacyInside)
+        let legacyOutside = outside.appendingPathComponent("keep.m4a"); try writeRealAAC(to: legacyOutside)
+        let old = ReadWithAIWatchNarrationUserDefaultsCache.legacyPrefix
+        defaults.set(legacyInside.path, forKey: old + "a")
+        defaults.set(legacyOutside.path, forKey: old + "b")
+        let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
+        defaults.set(legacyInside.path, forKey: old + key)
+        let renderer = FakeRenderer(pcm: dir.appendingPathComponent("s.caf"))
+        let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
+        let chapter = try await adapter.prepareNarration(textURL: text, preference: pref, renderer: renderer,
+            cache: cache, worker: WatchAudioPreparationWorker(dependencies: workerDeps()))
+        #expect(renderer.calls == 1)
+        #expect(chapter.url != legacyInside)
+        #expect(!FileManager.default.fileExists(atPath: legacyInside.path))
+        #expect(FileManager.default.fileExists(atPath: legacyOutside.path))
+        #expect(defaults.string(forKey: old + "a") == nil && defaults.string(forKey: old + "b") == nil)
+        #expect(defaults.string(forKey: old + key) == nil)
+        #expect(defaults.string(forKey: ReadWithAIWatchNarrationUserDefaultsCache.prefix + key) != nil)
+    }
+
+    @Test func cacheKeyChangesWhenProfileChanges() throws {
+        let dir = tempDir(); let text = try textFile(dir)
+        let k1 = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
+        let expected = SHA256Hex.hex(Data("aaclc48-v1|\(try WatchChecksum.sha256(of: text))|automatic|44100|2|48000".utf8))
+        #expect(k1 == expected)
+        let k2 = try ReadWithAIWatchPreparationAdapter.cacheKey(
+            textURL: text, preference: ReadWithAIVoicePreference(identifier: "voice.x"))
+        #expect(k1 != k2)
+        #expect(ReadWithAIWatchNarrationUserDefaultsCache.prefix == "readWithAI.watchNarration.aaclc48.v1.")
+    }
+
+    @Test @MainActor func corruptCachedM4AIsDeletedAndRegenerated() async throws {
+        let dir = tempDir()
+        let (cache, defaults) = isolatedCache(root: dir)
         let text = try textFile(dir)
         let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
         let corrupt = dir.appendingPathComponent("corrupt.m4a")
         try Data("aac".utf8).write(to: corrupt)
-        cache.store(corrupt, for: key)
+        defaults.set(corrupt.path, forKey: ReadWithAIWatchNarrationUserDefaultsCache.prefix + key)
         let renderer = FakeRenderer(pcm: dir.appendingPathComponent("s.caf"))
         let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
         let chapter = try await adapter.prepareNarration(textURL: text, preference: pref, renderer: renderer,
@@ -211,6 +255,42 @@ private func textFile(_ dir: URL) throws -> URL {
         #expect(chapter.url != corrupt)
         #expect(!FileManager.default.fileExists(atPath: corrupt.path))
         try WatchAACAssetValidator.validate(chapter.url)
+    }
+
+    @Test func cacheRefusingOutsideManagedRootNeverDeletesThatExternalFile() throws {
+        let dir = tempDir(); let outside = tempDir()
+        let (cache, defaults) = isolatedCache(root: dir)
+        let external = outside.appendingPathComponent("ext.m4a"); try writeRealAAC(to: external)
+        let wrongExt = dir.appendingPathComponent("x.mp3"); try Data("x".utf8).write(to: wrongExt)
+        let p = ReadWithAIWatchNarrationUserDefaultsCache.prefix
+        defaults.set(external.path, forKey: p + "ext")
+        defaults.set(wrongExt.path, forKey: p + "ext2")
+        defaults.set(dir.appendingPathComponent("missing.m4a").path, forKey: p + "missing")
+        #expect(cache.validCachedOutput(for: "ext") == nil)
+        #expect(cache.validCachedOutput(for: "ext2") == nil)
+        #expect(cache.validCachedOutput(for: "missing") == nil)
+        #expect(FileManager.default.fileExists(atPath: external.path))
+        #expect(defaults.string(forKey: p + "ext") == nil)
+        #expect(defaults.string(forKey: p + "ext2") == nil)
+        #expect(defaults.string(forKey: p + "missing") == nil)
+        cache.storeValidated(external, for: "again")
+        #expect(defaults.string(forKey: p + "again") == nil)
+    }
+
+    @Test @MainActor func validAacLCEntryIsReusedWithoutSpeechRendering() async throws {
+        let dir = tempDir()
+        let (cache, _) = isolatedCache(root: dir)
+        let text = try textFile(dir)
+        let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
+        let good = dir.appendingPathComponent("good.m4a"); try writeRealAAC(to: good)
+        cache.storeValidated(good, for: key)
+        let renderer = FakeRenderer(pcm: dir.appendingPathComponent("s.caf"))
+        let adapter = ReadWithAIWatchPreparationAdapter(chapterID: UUID(), chapterKey: "k", directory: dir)
+        let chapter = try await adapter.prepareNarration(textURL: text, preference: pref, renderer: renderer,
+            cache: cache, worker: WatchAudioPreparationWorker(dependencies: workerDeps()))
+        #expect(renderer.calls == 0)
+        #expect(chapter.url.lastPathComponent == "good.m4a")
+        #expect(FileManager.default.fileExists(atPath: good.path))
     }
 
     @Test @MainActor func cachedNarrationOutputAvoidsRepeatingSpeech() async throws {

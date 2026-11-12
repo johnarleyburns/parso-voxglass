@@ -93,22 +93,3 @@ final class ReadWithAIWatchNarrationRenderer: ReadWithAIWatchSpeechRendering {
         }
     }
 }
-
-/// UserDefaults-backed cache of finished narration output (survives relaunch).
-struct ReadWithAIWatchNarrationUserDefaultsCache: ReadWithAIWatchNarrationCaching {
-    private static let prefix = "readWithAI.watchNarration."
-    func cachedOutput(for key: String) -> URL? {
-        guard let path = UserDefaults.standard.string(forKey: Self.prefix + key),
-              (try? WatchAACAssetValidator.validate(URL(fileURLWithPath: path))) != nil else { return nil }
-        return URL(fileURLWithPath: path)
-    }
-    func remove(for key: String) {
-        if let path = UserDefaults.standard.string(forKey: Self.prefix + key) {
-            try? FileManager.default.removeItem(atPath: path)
-        }
-        UserDefaults.standard.removeObject(forKey: Self.prefix + key)
-    }
-    func store(_ output: URL, for key: String) {
-        UserDefaults.standard.set(output.path, forKey: Self.prefix + key)
-    }
-}
