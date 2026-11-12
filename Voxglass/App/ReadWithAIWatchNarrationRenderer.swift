@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import VoxglassCore
+import VoxglassWatchCore
 
 /// Narrow MainActor adapter: only `AVSpeechSynthesizer` rendering lives here.
 /// PCM hashing, AAC conversion, duration/size inspection and chapter assembly
