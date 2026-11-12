@@ -23,14 +23,16 @@ struct ChaptersView: View {
 
                     VoxglassGroupedSection(title: "All Chapters") {
                         let chapters = currentBook.chapters
-                        ForEach(chapters.indices, id: \.self) { index in
-                            let chapter = chapters[index]
-                            ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
-                                playback.selectAndPlay(currentBook, chapter: chapter)
-                                showingNowPlaying = true
-                            }
-                            if index < chapters.count - 1 {
-                                VoxglassListDivider()
+                        LazyVStack(spacing: 0) {
+                            ForEach(chapters.indices, id: \.self) { index in
+                                let chapter = chapters[index]
+                                ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
+                                    playback.selectAndPlay(currentBook, chapter: chapter)
+                                    showingNowPlaying = true
+                                }
+                                if index < chapters.count - 1 {
+                                    VoxglassListDivider()
+                                }
                             }
                         }
                     }
@@ -80,16 +82,18 @@ struct AuthorDetailView: View {
                                 systemImage: "person.text.rectangle"
                             )
                         } else {
-                            ForEach(books) { book in
-                                NavigationLink {
-                                    BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
-                                } label: {
-                                    CompactBookRowView(
-                                        book: book,
-                                        sourceTitle: libraryStore.source(for: book.book)?.title
-                                    )
+                            LazyVStack(alignment: .leading, spacing: 10) {
+                                ForEach(books) { book in
+                                    NavigationLink {
+                                        BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                                    } label: {
+                                        CompactBookRowView(
+                                            book: book,
+                                            sourceTitle: libraryStore.source(for: book.book)?.title
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -139,16 +143,18 @@ struct NarratorDetailView: View {
                                 systemImage: "mic"
                             )
                         } else {
-                            ForEach(books) { book in
-                                NavigationLink {
-                                    BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
-                                } label: {
-                                    CompactBookRowView(
-                                        book: book,
-                                        sourceTitle: libraryStore.source(for: book.book)?.title
-                                    )
+                            LazyVStack(alignment: .leading, spacing: 10) {
+                                ForEach(books) { book in
+                                    NavigationLink {
+                                        BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                                    } label: {
+                                        CompactBookRowView(
+                                            book: book,
+                                            sourceTitle: libraryStore.source(for: book.book)?.title
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
