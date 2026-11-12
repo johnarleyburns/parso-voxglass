@@ -12,6 +12,9 @@ public final class LibraryStore: ObservableObject {
     /// IA identifier -> owned (non-pending) book ID, rebuilt whenever the
     /// published `books`/`sources` snapshot changes so rows never hit storage.
     private var ownedBookIDByIdentifier: [String: UUID] = [:]
+    /// Owned (non-pending) books keyed by id, rebuilt alongside the identifier
+    /// indexes so `cachedOwnedBook` never scans `books`.
+    private var ownedBookByID: [UUID: BookWithChapters] = [:]
     /// Raw `book_recording_identities` LibriVox rows, reloaded with the snapshot.
     private var libriVoxIdentityRows: [(value: String, bookID: UUID)] = []
     private var ownedBookIDByLibriVoxRecordingID: [String: UUID] = [:]
@@ -418,7 +421,7 @@ public final class LibraryStore: ObservableObject {
     /// async resolver below is authoritative.
     public func cachedOwnedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
         guard let bookID = ownedBookIDByIdentifier[identifier] else { return nil }
-        return books.first { $0.book.id == bookID && !$0.book.isPending }
+        return ownedBookByID[bookID]
     }
 
     /// Row badge lookup: IA identifier first, then the exact LibriVox recording
@@ -428,7 +431,7 @@ public final class LibraryStore: ObservableObject {
         guard let raw = result.libriVoxRecordingID,
               let normalized = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(raw),
               let id = ownedBookIDByLibriVoxRecordingID[normalized] else { return nil }
-        return books.first { $0.book.id == id && !$0.book.isPending }
+        return ownedBookByID[id]
     }
 
     public func cachedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
@@ -437,6 +440,9 @@ public final class LibraryStore: ObservableObject {
 
     private func rebuildOwnedIdentifierIndex() {
         let sourcesByID = Dictionary(sources.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        ownedBookByID = Dictionary(
+            books.compactMap { $0.book.isPending ? nil : ($0.book.id, $0) },
+            uniquingKeysWith: { first, _ in first })
         var index: [String: UUID] = [:]
         var chapterDerived: [String: UUID] = [:]
         for entry in books where !entry.book.isPending {

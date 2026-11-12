@@ -31,6 +31,18 @@ import Foundation
         return store
     }
 
+    @MainActor
+    private func insertIABook(_ database: AppDatabase, identifier: String, title: String, pending: Bool = false) async throws {
+        let sourceID = UUID(), bookID = UUID()
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, 'internetArchive', 'S', ?, 0)",
+            [.string(sourceID.uuidString), .string("https://archive.org/details/\(identifier)")])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, source_id, created_at, updated_at, is_favorite, is_pending)
+        VALUES (?, ?, '[]', ?, 0, 0, 0, ?)
+        """, [.string(bookID.uuidString), .string(title), .string(sourceID.uuidString), .int(pending ? 1 : 0)])
+    }
+
     @Test func searchResponseDecodesNumericAndStringCallNumber() throws {
         let json = """
         {"response":{"numFound":2,"docs":[
@@ -63,6 +75,41 @@ import Foundation
     @Test func pendingAliasDoesNotBadge() async throws {
         let s = try await store(aliases: ["1735"], pending: true)
         #expect(s.cachedOwnedBook(for: result(callNumber: "1735")) == nil)
+    }
+
+    @MainActor
+    @Test func cachedOwnedBookReturnsCorrectBookAmongManyOwnedBooks() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "legacy-badge-\(UUID().uuidString)")
+        try await database.prepare()
+        for i in 0..<500 {
+            try await insertIABook(database, identifier: "target_book_\(i)", title: "Book \(i)")
+        }
+        let s = LibraryStore(repository: LibraryRepository(database: database))
+        await s.refresh()
+        #expect(s.cachedOwnedBook(forInternetArchiveIdentifier: "target_book_250")?.book.title == "Book 250")
+        #expect(s.cachedOwnedBook(forInternetArchiveIdentifier: "target_book_500") == nil)
+    }
+
+    @MainActor
+    @Test func cachedOwnedBookExcludesPendingBooksEvenWhenIndexed() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "legacy-badge-\(UUID().uuidString)")
+        try await database.prepare()
+        try await insertIABook(database, identifier: "pending_book", title: "Pending", pending: true)
+        let s = LibraryStore(repository: LibraryRepository(database: database))
+        await s.refresh()
+        #expect(s.cachedOwnedBook(forInternetArchiveIdentifier: "pending_book") == nil)
+    }
+
+    @MainActor
+    @Test func cachedOwnedBookIndexUpdatesAfterRefresh() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "legacy-badge-\(UUID().uuidString)")
+        try await database.prepare()
+        let s = LibraryStore(repository: LibraryRepository(database: database))
+        await s.refresh()
+        #expect(s.cachedOwnedBook(forInternetArchiveIdentifier: "new_book") == nil)
+        try await insertIABook(database, identifier: "new_book", title: "New")
+        await s.refresh()
+        #expect(s.cachedOwnedBook(forInternetArchiveIdentifier: "new_book")?.book.title == "New")
     }
 
     @Test func findAndDiscoverRowsUseResultBasedLookup() throws {
