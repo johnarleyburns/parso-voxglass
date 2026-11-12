@@ -415,7 +415,7 @@ struct BrowseView: View {
                             systemImage: "mic"
                         )
                     } else {
-                        VStack(spacing: 0) {
+                        LazyVStack(spacing: 0) {
                             ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
                                 Button {
                                     Task { await presentResult(result) }
@@ -757,7 +757,7 @@ struct BrowseView: View {
     private var gutenbergResultSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionTitle(title: "Project Gutenberg")
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 ForEach(gutenbergResults) { book in
                     Button { selectedGutenbergBook = book } label: {
                         HStack(spacing: 12) {
