@@ -51,6 +51,34 @@ step "Swift package logic tests"
 bash scripts/ci-logic-tests.sh
 endstep
 
+step "Select stable Xcode"
+# The repair agent's workflow (release-repair.yml) does not select Xcode
+# before calling this script, unlike pr-validation.yml and issue-to-pr.yml;
+# select it here so a real build is possible regardless of caller.
+XCODE=$(find /Applications -maxdepth 1 -type d -name 'Xcode_*.app' ! -iname '*beta*' ! -iname '*rc*' -print | sort -V | tail -1)
+test -n "$XCODE"
+sudo xcode-select -s "$XCODE"
+xcodebuild -version
+endstep
+
+step "iOS + watchOS build (Voxglass.xcodeproj)"
+# A missing-import or other cross-target compile error (the class of bug that
+# repeatedly let a bad release-repair candidate merge — see #299) is invisible
+# to `swift test` alone, since the Watch target is not part of the SPM
+# package. Build both app schemes for real, matching ios.yml's Compile job.
+xcodebuild build \
+  -project Voxglass.xcodeproj \
+  -scheme Voxglass \
+  -destination generic/platform=iOS \
+  CODE_SIGNING_ALLOWED=NO
+bash scripts/check_watch_app_icon.sh
+xcodebuild build \
+  -project Voxglass.xcodeproj \
+  -scheme VoxglassWatch \
+  -destination 'generic/platform=watchOS' \
+  CODE_SIGNING_ALLOWED=NO
+endstep
+
 step "Repository hygiene"
 git diff --check
 endstep
