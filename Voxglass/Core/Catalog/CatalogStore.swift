@@ -1,22 +1,22 @@
-import Combine
 import Foundation
 
 @MainActor
-public final class CatalogStore: ObservableObject {
-    @Published public private(set) var results: [InternetArchiveSearchResult] = []
-    @Published public private(set) var isSearching = false
-    @Published public private(set) var isLoadingMore = false
-    @Published public private(set) var isResolvingURL = false
-    @Published public private(set) var hasMore = false
-    @Published public var catalogError: String?
+@Observable
+public final class CatalogStore {
+    public private(set) var results: [InternetArchiveSearchResult] = []
+    public private(set) var isSearching = false
+    public private(set) var isLoadingMore = false
+    public private(set) var isResolvingURL = false
+    public private(set) var hasMore = false
+    public var catalogError: String?
 
     /// Batch-download state for curated collections.
-    @Published public var batchProgress: (completed: Int, total: Int)? = nil
-    @Published public var isBatchDownloading = false
+    public var batchProgress: (completed: Int, total: Int)? = nil
+    public var isBatchDownloading = false
 
     /// The user's search text, promoted to the store so it survives `SearchView`
     /// being recreated on tab changes (§3). `SearchView` binds its field to this.
-    @Published public var query: String = ""
+    public var query: String = ""
 
     /// Languages the user has selected (see §1). Kept in sync from
     /// `AppPreferencesStore`; injected centrally into every catalog query so

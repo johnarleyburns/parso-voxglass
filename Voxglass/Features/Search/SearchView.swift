@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct SearchView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
@@ -53,7 +53,7 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Palette.ink3)
 
-            TextField("", text: $catalogStore.query, prompt: Text("Search LibriVox audiobooks").foregroundStyle(Palette.ink3))
+            TextField("", text: Binding(get: { catalogStore.query }, set: { catalogStore.query = $0 }), prompt: Text("Search LibriVox audiobooks").foregroundStyle(Palette.ink3))
                 .foregroundStyle(Palette.ink)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)

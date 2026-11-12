@@ -6,7 +6,7 @@ import VoxglassWatchProtocol
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
@@ -84,7 +84,7 @@ struct LibraryView: View {
         .sheet(isPresented: $showingAddArchiveURL) {
             AddArchiveURLSheet(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
-                .environmentObject(catalogStore)
+                .environment(catalogStore)
                 .environment(playback)
         }
         .confirmationDialog(
@@ -695,7 +695,7 @@ struct LibraryView: View {
 
 private struct AddArchiveURLSheet: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Environment(\.dismiss) private var dismiss
     @Binding var showingNowPlaying: Bool

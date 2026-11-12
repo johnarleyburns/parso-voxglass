@@ -21,7 +21,7 @@ struct VoxglassApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(services.libraryStore)
-                .environmentObject(services.catalogStore)
+                .environment(services.catalogStore)
                 .environment(services.playbackCoordinator)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
