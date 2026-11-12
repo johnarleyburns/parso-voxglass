@@ -491,3 +491,37 @@ public enum WatchTransferStatusBannerResolver {
         }
     }
 }
+
+/// Truthful, listener-facing Watch transfer copy. Only a complete Watch acknowledgement may claim installation.
+public enum WatchTransferStatusCopy {
+    public static let preparing = "Preparing AAC-LC narration for Apple Watch…"
+    public static let waitingForWatch = "Sent to Apple Watch; waiting for Watch validation and installation."
+    public static let installed = "Installed on Apple Watch."
+
+    public static func sentStatus(title: String) -> String {
+        "\(title) sent to Apple Watch; waiting for Watch validation and installation."
+    }
+    public static func watchRejection(chapterOrdinal: Int, reason: String) -> String {
+        "Apple Watch rejected chapter \(chapterOrdinal): \(reason). The book was not installed."
+    }
+    public static func phoneValidationFailure(reason: String) -> String {
+        "Couldn’t prepare Apple Watch audio: generated narration is not a playable AAC-LC M4A. \(reason)"
+    }
+
+    /// Status text for a book; `.downloaded` counts only with a complete acknowledgement.
+    public static func resolve(state: WatchDownloadState?, acknowledgement: WatchManifestAcknowledgement?) -> String? {
+        switch state {
+        case .preparing?: return preparing
+        case .transferring?, .queued?, .installing?: return waitingForWatch
+        case .downloaded?: return acknowledgement?.complete == true ? installed : waitingForWatch
+        case .failed(let message)?: return message
+        default: return nil
+        }
+    }
+
+    /// Books that may be counted/listed as on the watch: complete acknowledgement and not failed.
+    public static func isInstalled(state: WatchDownloadState?, acknowledgement: WatchManifestAcknowledgement?) -> Bool {
+        if case .failed? = state { return false }
+        return acknowledgement?.complete == true
+    }
+}

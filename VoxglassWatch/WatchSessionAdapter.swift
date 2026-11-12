@@ -386,8 +386,16 @@ extension WatchSessionAdapter: WCSessionDelegate {
                 self.reconcileFiles()
             }
         } catch {
-            let message = error.localizedDescription
+            let reason = error.localizedDescription
             Task { @MainActor in
+                let book = self.snapshot?.books.first(where: { $0.id.rawValue == bookID })
+                let chapter = book?.chapters.first(where: { name.hasPrefix($0.id.rawValue) })
+                let message: String
+                if let chapter {
+                    message = "Apple Watch rejected chapter \(chapter.index + 1): \(reason). The book was not installed."
+                } else {
+                    message = "Apple Watch rejected \(name): \(reason). The book was not installed."
+                }
                 self.audioReceipt = "Installation failed: \(message)"; self.connectionError = message
                 var value = self.bookReports[WatchBookID(bookID)] ?? WatchManifestAcknowledgement(
                     bookID: WatchBookID(bookID), revision: revision, complete: false, installedBytes: 0)

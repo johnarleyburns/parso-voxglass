@@ -286,3 +286,45 @@ import Testing
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("b").path))
     }
 }
+
+@Suite struct WatchTransferTruthfulnessTests {
+    private func makeStore() -> PhoneWatchProjectionStore {
+        PhoneWatchProjectionStore(url: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).appendingPathComponent("p.json"), libraryID: "library")
+    }
+
+    @Test func submittingValidatedNarrationIsTransferringNotDownloaded() async throws {
+        let store = makeStore(); let id: WatchBookID = "book"
+        try await store.markSubmitted(id, at: Date(timeIntervalSince1970: 0))
+        #expect((await store.current()).desired[id] == .transferring)
+        #expect(!(await store.isTruthfullyDownloaded(id)))
+        #expect(WatchTransferStatusCopy.resolve(state: .transferring, acknowledgement: nil)
+            == "Sent to Apple Watch; waiting for Watch validation and installation.")
+    }
+
+    @Test func watchFormatRejectionMovesBookToFailedAndNeverDownloaded() async throws {
+        let store = makeStore(); let id: WatchBookID = "book"
+        try await store.markSubmitted(id, at: Date(timeIntervalSince1970: 0))
+        var rejection = WatchManifestAcknowledgement(bookID: id, revision: 1, complete: false, installedBytes: 0)
+        rejection.failureMessage = WatchTransferStatusCopy.watchRejection(
+            chapterOrdinal: 2, reason: "The file isn’t in the correct format.")
+        try await store.acknowledge(rejection)
+        let state = await store.current()
+        #expect(state.desired[id] == .failed(rejection.failureMessage!))
+        #expect(!(await store.isTruthfullyDownloaded(id)))
+        #expect(WatchTransferStatusCopy.resolve(state: state.desired[id], acknowledgement: rejection)
+            == "Apple Watch rejected chapter 2: The file isn’t in the correct format.. The book was not installed.")
+        #expect(!WatchTransferStatusCopy.isInstalled(state: state.desired[id], acknowledgement: rejection))
+    }
+
+    @Test func onlyCompleteAcknowledgementIsInstalled() {
+        let ok = WatchManifestAcknowledgement(bookID: "b", revision: 1, complete: true, installedBytes: 1)
+        #expect(WatchTransferStatusCopy.resolve(state: .downloaded, acknowledgement: ok) == "Installed on Apple Watch.")
+        #expect(WatchTransferStatusCopy.resolve(state: .downloaded, acknowledgement: nil) != "Installed on Apple Watch.")
+        #expect(WatchTransferStatusCopy.resolve(state: .preparing, acknowledgement: nil)
+            == "Preparing AAC-LC narration for Apple Watch…")
+        #expect(WatchTransferStatusCopy.isInstalled(state: .downloaded, acknowledgement: ok))
+        #expect(WatchTransferStatusCopy.phoneValidationFailure(reason: "bad")
+            == "Couldn’t prepare Apple Watch audio: generated narration is not a playable AAC-LC M4A. bad")
+    }
+}

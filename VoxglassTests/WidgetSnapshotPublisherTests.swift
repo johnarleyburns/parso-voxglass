@@ -84,9 +84,9 @@ private func make() -> (WidgetSnapshotPublisher, Recorder) {
         await rec.enableGate()
         let first = Task { await p.submit(snap(chapter: "A")) }
         await rec.waitUntilGateEntered()
-        let b = Task { await p.submit(snap(chapter: "B")) }
-        let c = Task { await p.submit(snap(chapter: "C")) }
-        await b.value; await c.value
+        // Sequential (not unordered Tasks) so "C" is deterministically the newest.
+        await p.submit(snap(chapter: "B"))
+        await p.submit(snap(chapter: "C"))
         await rec.passGate()
         await first.value
         #expect(await rec.events == ["write:A", "reload", "write:C", "reload"])

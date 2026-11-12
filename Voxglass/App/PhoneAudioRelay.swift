@@ -767,7 +767,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             }
             let reason: String
             if let invalid = error as? WatchAACAssetValidationError {
-                reason = "Couldn’t prepare Apple Watch audio: generated narration is not a playable AAC-LC M4A. \(invalid.localizedDescription)"
+                reason = WatchTransferStatusCopy.phoneValidationFailure(reason: invalid.localizedDescription)
             } else if error is CancellationError {
                 reason = "Watch audio preparation stopped. Keep Voxglass open and send the book again when ready. Prepared chapters are saved; no audio file was submitted."
             } else if (error as NSError).domain == AVFoundationErrorDomain,
@@ -801,7 +801,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         // enqueueing a duplicate copy of every audio file.
         await publishTypedWatchProjection()
         watchProgressCoalescer.cancel(bookID: book.book.id)
-        watchSyncStatus = "\(book.book.title) queued for Apple Watch."
+        watchSyncStatus = WatchTransferStatusCopy.sentStatus(title: book.book.title)
         watchTransferSupervisor(for: book.book.id, fileTransfers: fileTransfers)
         return .started
     }

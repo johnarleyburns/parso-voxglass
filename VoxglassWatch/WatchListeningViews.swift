@@ -226,6 +226,8 @@ struct WatchListeningSyncStatusView: View {
                         Text("\(count) of \(book.chapters.count) chapters installed").font(.caption2)
                         if case .failed(let message)? = services.session.snapshot?.downloadStates?[book.id] {
                             Text(message).font(.caption2)
+                        } else if let failure = services.session.bookReports[book.id]?.failureMessage {
+                            Text(failure).font(.caption2)
                         } else { Text("Audio submitted by iPhone; installation is unconfirmed.").font(.caption2) }
                     }
                 }
