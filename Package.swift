@@ -97,10 +97,8 @@ let package = Package(
             resources: [
                 .copy("Fixtures/ReplayGain"),
                 .copy("Fixtures/InternetArchive"),
-                .copy("Fixtures/LibriVox"),
                 .copy("Fixtures/EPUB"),
-                .copy("Fixtures/PDF"),
-                .copy("Fixtures/AuthoringV2")
+                .copy("Fixtures/PDF")
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         )
