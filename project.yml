@@ -56,8 +56,6 @@ targets:
           - Core
       - path: Voxglass/Resources/Artwork
         type: folder
-      - path: Voxglass/Resources/CarPlayCues
-        type: folder
       - path: VoxglassShared
     resources:
       - path: Voxglass/Resources/PrivacyInfo.xcprivacy
