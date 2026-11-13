@@ -807,13 +807,6 @@ public final class PlaybackCoordinator {
         }
     }
 
-    /// The effective saved point for a book (durable row merged with the
-    /// in-process snapshot), without touching the engine.
-    public func effectiveSavedPosition(forBookID bookID: UUID) async -> PlaybackPosition? {
-        let row = try? await positionStore.latestPosition(forBookID: bookID)
-        return Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.position(forBookID: bookID))
-    }
-
     /// The phone's furthest valid saved point for a book: every durable row,
     /// the in-process snapshot, and an optional live point, merged by book order.
     public func effectiveFurthestSavedPosition(
