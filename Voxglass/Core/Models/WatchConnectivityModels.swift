@@ -30,42 +30,6 @@ public struct WatchPhoneLibrarySnapshot: Codable, Equatable, Sendable {
     }
 }
 
-public struct WatchPhoneSearchRequest: Codable, Equatable, Sendable {
-    public var query: String
-    public var limit: Int
-
-    public init(query: String, limit: Int = 15) {
-        self.query = query
-        self.limit = limit
-    }
-}
-
-public struct WatchPhoneSearchResponse: Codable, Equatable, Sendable {
-    public var results: [InternetArchiveSearchResult]
-
-    public init(results: [InternetArchiveSearchResult]) {
-        self.results = results
-    }
-}
-
-public struct WatchPhonePlayBookRequest: Codable, Equatable, Sendable {
-    public var bookID: UUID
-    public var chapterID: UUID?
-
-    public init(bookID: UUID, chapterID: UUID? = nil) {
-        self.bookID = bookID
-        self.chapterID = chapterID
-    }
-}
-
-public struct WatchPhonePlayRemoteRequest: Codable, Equatable, Sendable {
-    public var identifier: String
-
-    public init(identifier: String) {
-        self.identifier = identifier
-    }
-}
-
 public enum WatchPhonePlaybackCommand: String, Codable, Equatable, Sendable {
     case togglePlayPause
     case pause

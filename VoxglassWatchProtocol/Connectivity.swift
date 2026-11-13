@@ -52,15 +52,6 @@ public final class WatchFakeDuplexTransport: @unchecked Sendable, WatchDuplexTra
     }
 }
 
-public actor WatchMessageLedger {
-    private let limit: Int
-    private var applied: [UUID] = []
-    public init(limit: Int = 256) { self.limit = max(1, limit) }
-    public func contains(_ id: UUID) -> Bool { applied.contains(id) }
-    public func record(_ id: UUID) { guard !applied.contains(id) else { return }; applied.append(id); if applied.count > limit { applied.removeFirst(applied.count-limit) } }
-    public func count() -> Int { applied.count }
-}
-
 public struct WatchConnectionReducer: Sendable, Equatable {
     public enum State: String, Codable, Sendable { case opening, connected, temporarilyUnavailable, unavailable }
     public private(set) var state: State = .opening
@@ -73,19 +64,4 @@ public struct WatchConnectionReducer: Sendable, Equatable {
         else { state = .temporarilyUnavailable; lastReachabilityChange=date }
     }
     public mutating func tick(at date: Date) { if state == .temporarilyUnavailable, let changed=lastReachabilityChange, date.timeIntervalSince(changed) >= debounce { state = .unavailable } }
-}
-
-public actor WatchProtocolRouter {
-    public let libraryID: WatchPairedLibraryID
-    public let ledger: WatchMessageLedger
-    private var latestRevision: Int64 = 0
-    public init(libraryID: WatchPairedLibraryID, ledger: WatchMessageLedger = WatchMessageLedger()) { self.libraryID=libraryID; self.ledger=ledger }
-    public func accept(_ data: Data) -> Result<WatchProtocolEnvelope, WatchProtocolFault> {
-        guard let envelope = try? WatchProtocolEnvelope.decode(data) else { return .failure(.init(.malformed)) }
-        guard envelope.pairedLibraryID == libraryID else { return .failure(.init(.wrongPair)) }
-        if envelope.projectionRevision < latestRevision { return .failure(.init(.staleRevision)) }
-        latestRevision = max(latestRevision, envelope.projectionRevision)
-        return .success(envelope)
-    }
-    public func markApplied(_ id: UUID) async -> Bool { if await ledger.contains(id) { return false }; await ledger.record(id); return true }
 }

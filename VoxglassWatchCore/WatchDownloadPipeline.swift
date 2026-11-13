@@ -190,16 +190,3 @@ public actor WatchFileInstaller {
 
     public func remove(bookID: WatchBookID) { try? fileManager.removeItem(at: durableRoot.appendingPathComponent(bookID.rawValue)); try? fileManager.removeItem(at: stagingRoot.appendingPathComponent(bookID.rawValue)) }
 }
-
-public enum WatchManifestReconciler {
-    public static func acknowledgement(book: WatchBookRecord, root: URL) -> WatchManifestAcknowledgement? {
-        guard let manifest = book.manifest else { return nil }
-        let valid = manifest.requiredChapterIDs.allSatisfy { id in
-            guard let asset = book.assets.first(where: { $0.chapterID == id }) else { return false }
-            let url = root.appendingPathComponent(asset.relativePath)
-            guard FileManager.default.fileExists(atPath: url.path), (try? WatchChecksum.sha256(of: url)) == asset.sha256 else { return false }
-            return true
-        }
-        return .init(bookID: manifest.bookID, revision: manifest.revision, complete: valid, installedBytes: valid ? book.assets.reduce(0) { $0 + $1.bytes } : 0)
-    }
-}
