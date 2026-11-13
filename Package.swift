@@ -34,13 +34,9 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
-            name: "VoxglassRing",
-            path: "VoxglassRing"
-        ),
-        .target(
             name: "VoxglassCore",
             dependencies: [
-                "VoxglassRing", "VoxglassWatchProtocol", "VoxglassWatchCore",
+                "VoxglassWatchProtocol", "VoxglassWatchCore",
                 .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
                 .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
             ],
