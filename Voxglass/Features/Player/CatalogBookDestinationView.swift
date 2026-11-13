@@ -7,7 +7,7 @@ struct CatalogBookDestinationView: View {
     let result: InternetArchiveSearchResult
     @Binding var showingNowPlaying: Bool
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(CatalogStore.self) private var catalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Environment(\.dismiss) private var dismiss
     @State private var importedBook: BookWithChapters?
