@@ -137,15 +137,6 @@ public enum WatchMessageKind: String, Codable, Sendable, CaseIterable {
     }
 }
 
-public struct WatchHello: Codable, Equatable, Sendable {
-    public var protocolVersion: Int; public var pairedLibraryID: WatchPairedLibraryID; public var capabilities: [WatchCapability]; public var lastAppliedRevision: Int64
-    public init(protocolVersion: Int = WatchProtocolVersion.current, pairedLibraryID: WatchPairedLibraryID = .unknown, capabilities: [WatchCapability] = WatchCapability.allCases, lastAppliedRevision: Int64 = 0) { self.protocolVersion=protocolVersion; self.pairedLibraryID=pairedLibraryID; self.capabilities=capabilities; self.lastAppliedRevision=lastAppliedRevision }
-}
-public struct WatchHelloReply: Codable, Equatable, Sendable {
-    public var protocolVersion: Int; public var pairedLibraryID: WatchPairedLibraryID; public var capabilities: [WatchCapability]; public var revision: Int64
-    public init(protocolVersion: Int = WatchProtocolVersion.current, pairedLibraryID: WatchPairedLibraryID, capabilities: [WatchCapability] = WatchCapability.allCases, revision: Int64 = 0) { self.protocolVersion=protocolVersion; self.pairedLibraryID=pairedLibraryID; self.capabilities=capabilities; self.revision=revision }
-}
-
 public struct WatchProtocolEnvelope: Codable, Equatable, Sendable {
     /// Binary catalog payloads use LZFSE; other messages remain tiny binary property lists.
     public var payloadCompression: String?
