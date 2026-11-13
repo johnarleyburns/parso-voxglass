@@ -6,6 +6,14 @@
 
 Voxglass is fully on Swift 6 language mode with complete strict-concurrency checking and is kept as warning-free as the selected toolchain permits. Do not introduce or permit any deviation, mixed Swift modes, warning suppression, or unexplained concurrency escape hatch. A commit runs `swift test` only; release verification includes the simulator smoke suite and CI checks.
 
+## Git workflow — always a PR, never a direct push to main
+
+**One task, one small branch, one PR, squash-automerge — direct push to `main` is blocked.** GitHub branch protection on `main` requires a pull request plus the `validate`, `Compile (iOS)`, `Logic Tests (swift test)`, and `Guarded Tests` status checks; a bare `git push origin main` is rejected by GitHub itself (`GH013`, "Changes must be made through a pull request"). There is no local-merge-then-push shortcut, no matter how small the change. The workflow, per task:
+1. Commit to a small, disposable, task-named branch off `main`.
+2. `git push -u origin <branch>`, then `gh pr create` into `main`.
+3. `gh pr merge <PR> --auto --squash --delete-branch` — do this without asking first. It only lands once the required checks pass, and the owner can always stop a PR by disabling automerge or saying so before it's opened.
+4. `--delete-branch` deletes the branch on merge (the repo's own `deleteBranchOnMerge` setting is `false`, so this flag — not the default — is what prevents agents from leaving abandoned branches behind).
+
 ## GitHub CLI only
 
 Always use the `gh` CLI directly for every GitHub interaction (issues, PRs, comments, reviews, checks, runs, labels). Do not try any other GitHub integration or tool first on the assumption it might work here — it doesn't, and attempting it before falling back to `gh` wastes turns and time for no benefit.
