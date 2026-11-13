@@ -234,32 +234,6 @@ public struct EPUBImporter: SourceImporting {
         return results
     }
 
-    private func matchesWithThree(of pattern: String, in text: String) -> [(String, String, String)] {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        var results: [(String, String, String)] = []
-        regex.enumerateMatches(in: text, range: range) { match, _, _ in
-            guard let match = match, match.numberOfRanges >= 4,
-                  let r1 = Range(match.range(at: 1), in: text),
-                  let r2 = Range(match.range(at: 2), in: text),
-                  let r3 = Range(match.range(at: 3), in: text) else { return }
-            results.append((String(text[r1]), String(text[r2]), String(text[r3])))
-        }
-        return results
-    }
-
-    private func matchesSingleCapture(of pattern: String, in text: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        var results: [String] = []
-        regex.enumerateMatches(in: text, range: range) { match, _, _ in
-            guard let match = match, match.numberOfRanges >= 2,
-                  let r1 = Range(match.range(at: 1), in: text) else { return }
-            results.append(String(text[r1]))
-        }
-        return results
-    }
-
     private func tags(named name: String, in text: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: #"<(?:[A-Za-z0-9_-]+:)?\#(name)\b[^>]*>"#, options: [.caseInsensitive]) else { return [] }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)

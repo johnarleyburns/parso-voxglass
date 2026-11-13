@@ -64,13 +64,6 @@ public struct ZipReader: Sendable {
         return try Self.extractFile(data: data, entry: entries[idx])
     }
 
-    public func read(filename: String) throws -> Data {
-        guard let entry = entry(named: filename) else {
-            throw ZipReaderError.dataCorrupt("file not found: \(filename)")
-        }
-        return try read(entry)
-    }
-
     // MARK: - Private parsing
 
     private static func readUInt16(_ data: Data, at offset: Int) -> UInt16 {
