@@ -188,14 +188,3 @@ public actor PhoneWatchProjectionStore {
     public func isTruthfullyDownloaded(_ bookID: WatchBookID) -> Bool { state.acknowledgements[bookID]?.complete == true }
     private func persist() throws { try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true); try JSONEncoder().encode(state).write(to: url, options: .atomic) }
 }
-
-public enum PhoneWatchDownloadPlanner {
-    public static func plan(for book: BookWithChapters, revision: Int64 = 0) -> WatchDownloadPlan {
-        let dto = PhoneWatchProjection.book(from: book, revision: revision)
-        let assets = dto.chapters.map { chapter in
-            let original = book.chapters.first { $0.id.uuidString == chapter.id.rawValue }
-            return WatchDownloadAsset(chapterID: chapter.id, sourceURL: original?.resolvedPlayableURL(), expectedBytes: chapter.expectedBytes, expectedSHA256: chapter.expectedSHA256, filename: chapter.durableFilename)
-        }
-        return WatchDownloadPlan(bookID: dto.id, revision: revision, assets: assets)
-    }
-}

@@ -76,10 +76,6 @@ public struct AudioFormatSelection: Sendable {
         return nil
     }
 
-    public static func isValidFormat(_ format: String?, filename: String) -> Bool {
-        codec(for: format, filename: filename) != nil
-    }
-
     public static func qualityRank(for file: InternetArchiveFile, codec: AudioCodec) -> Int {
         let baseCodecRank = codec.rawValue * 1000
 

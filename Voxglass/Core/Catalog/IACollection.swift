@@ -606,12 +606,6 @@ public enum CuratedQueries {
         "Alexander Pushkin", "Nikolai Gogol", "Henrik Ibsen", "Joseph Conrad", "Henry James"
     ]
 
-    private static let ancientGreeceCreators = [
-        "Homer", "Hesiod", "Aeschylus", "Sophocles", "Euripides", "Aristophanes",
-        "Herodotus", "Thucydides", "Plato", "Aristotle", "Sappho", "Plutarch",
-        "Xenophon", "Epictetus", "Plotinus"
-    ]
-
     private static let excludedCreators = [
         "William John Locke", "Homer Greene", "Homer Eon Flint"
     ]

@@ -5,7 +5,6 @@ public enum RecommendationConstants {
     public static let favoriteBoost: Double = 3.0
     public static let classMix: (exploit: Double, explore: Double, serendipity: Double) = (0.55, 0.35, 0.10)
     public static let wAffinity: Double = 0.55
-    public static let wNovelty: Double = 0.35
     public static let wPop: Double = 0.10
     public static let lambdaMMR: Double = 0.5
     public static let kTarget: Int = 24

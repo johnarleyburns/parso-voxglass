@@ -89,24 +89,6 @@ public actor TasteProfileStore {
         await upsertTerm(axis: "subject", term: trimmed, increment: increment)
     }
 
-    public func seedLanguage(_ language: String, increment: Double = 1.0) async {
-        let trimmed = language.lowercased().trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        await upsertTerm(axis: "language", term: trimmed, increment: increment)
-    }
-
-    public func seedNarrator(_ narrator: String, increment: Double = 1.0) async {
-        let trimmed = narrator.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty,
-              trimmed.lowercased() != "unknown",
-              trimmed.lowercased() != "various",
-              trimmed.lowercased() != "anonymous",
-              trimmed.lowercased() != "unknown reader" else {
-            return
-        }
-        await upsertTerm(axis: "narrator", term: trimmed, increment: increment)
-    }
-
     // MARK: - Live signal capture (thresholded, delta-based)
 
     @discardableResult
@@ -206,10 +188,6 @@ public actor TasteProfileStore {
             }
             try await database.executeBatch(statements)
         } catch {}
-    }
-
-    public func seedFromHistory() async {
-        await rebuildFromListeningHistory(version: Self.listeningHistoryRebuildVersion)
     }
 
     public func seedOnboardingPicks(from collectionIDs: Set<String>) async {

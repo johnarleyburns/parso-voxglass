@@ -212,32 +212,4 @@ public struct CarPlayState: Equatable, Sendable {
         self.searchTemplateSupported = searchTemplateSupported
         self.keyboardLimited = keyboardLimited
     }
-
-    /// A representative fixture: one in-progress book, mid-chapter. Used by the
-    /// single renderer smoke test.
-    public static func fixtureWithOneInProgressBook() -> CarPlayState {
-        let bookID = UUID()
-        let book = CarPlayBookSnapshot(
-            id: bookID,
-            title: "The Time Machine",
-            authorLine: "H. G. Wells",
-            authors: ["H. G. Wells"],
-            chapterCount: 12,
-            lastPlayedAt: Date(),
-            progress: CarPlayProgress(
-                chapterIndex: 4,
-                chapterCount: 12,
-                chapterTitle: "Ch 5",
-                position: 750,
-                chapterDuration: 1800,
-                bookRemaining: 8_040
-            )
-        )
-        return CarPlayState(
-            books: [book],
-            recentlyPlayed: [book],
-            hasCurrentSession: true,
-            currentBookID: bookID
-        )
-    }
 }
