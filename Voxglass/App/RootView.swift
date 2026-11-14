@@ -101,7 +101,16 @@ struct RootView: View {
 
     private var tabsWithPresentation: some View {
         tabShell
-            .modifier(MiniPlayerBottomAccessory(watchBanner: showsWatchTransferBanner ? phoneAudioRelay.watchTransferStatusBanner : nil, openWatch: openWatchList, dismissWatch: { watchTransferBannerDismissed = true }))
+            .modifier(MiniPlayerBottomAccessory())
+            // Independent of the system-sized accessory slot so its visibility can never
+            // change the accessory's height.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if showsWatchTransferBanner, let banner = phoneAudioRelay.watchTransferStatusBanner {
+                    WatchTransferPill(banner: banner, open: openWatchList, dismiss: { watchTransferBannerDismissed = true })
+                        .glassEffect(.regular, in: .capsule)
+                        .padding(.horizontal, 12)
+                }
+            }
             .onChange(of: phoneAudioRelay.watchTransferStatusBanner == nil) { _, isEmpty in
                 if isEmpty { watchTransferBannerDismissed = false }
             }
@@ -210,19 +219,11 @@ extension Notification.Name {
 
 private struct MiniPlayerBottomAccessory: ViewModifier {
     @Environment(PlaybackCoordinator.self) private var playback
-    let watchBanner: WatchTransferStatusBanner?
-    let openWatch: () -> Void
-    let dismissWatch: () -> Void
 
     @ViewBuilder
     func body(content: Content) -> some View {
         content.tabViewBottomAccessory {
-            VStack(spacing: 6) {
-                if let watchBanner {
-                    WatchTransferPill(banner: watchBanner, open: openWatch, dismiss: dismissWatch)
-                }
-                MiniPlayerAccessory().environment(playback)
-            }
+            MiniPlayerAccessory().environment(playback)
         }
     }
 }
