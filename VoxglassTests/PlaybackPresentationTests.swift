@@ -288,3 +288,20 @@ import ParsoAudioStreaming
         #expect(h.engine.calls.contains(.preloadNext(url: cachedURLs[1])))
     }
 }
+
+@Suite struct RootViewAccessoryStructureTests {
+    @Test func bottomAccessoryContainsOnlyMiniPlayer() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(contentsOf: root.appendingPathComponent("Voxglass/App/RootView.swift"), encoding: .utf8)
+        let start = try #require(source.range(of: ".tabViewBottomAccessory {"))
+        var depth = 1
+        var idx = start.upperBound
+        while idx < source.endIndex, depth > 0 {
+            if source[idx] == "{" { depth += 1 } else if source[idx] == "}" { depth -= 1 }
+            idx = source.index(after: idx)
+        }
+        let body = String(source[start.upperBound..<idx])
+        #expect(body.contains("MiniPlayerAccessory"))
+        #expect(!body.contains("WatchTransferPill"))
+    }
+}
