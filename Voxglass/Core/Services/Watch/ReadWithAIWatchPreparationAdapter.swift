@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import VoxglassWatchCore
 
@@ -68,6 +69,62 @@ public actor ReadWithAIWatchPreparationAdapter {
     static func cacheKey(textURL: URL, preference: ReadWithAIVoicePreference) throws -> String {
         let textHash = try WatchChecksum.sha256(of: textURL)
         let voiceKey = preference.identifier.isEmpty ? "automatic" : preference.identifier
-        return SHA256Hex.hex(Data("aaclc48-v1|\(textHash)|\(voiceKey)|44100|2|48000".utf8))
+        return SHA256Hex.hex(Data("aaclc48-v2|\(textHash)|\(voiceKey)|44100|2|48000".utf8))
+    }
+}
+
+/// Owns one render's file and completion. Speech buffers are borrowed storage:
+/// consume them synchronously inside the synthesizer callback, before returning.
+/// The lock serializes file writes, cancellation, and the single continuation
+/// resume; no AVFoundation handle escapes this protected state.
+public final class ReadWithAIWatchPCMWriter: @unchecked Sendable {
+    private let lock = NSLock()
+    private let url: URL
+    private var file: AVAudioFile?
+    private var continuation: CheckedContinuation<URL, Error>?
+    private var result: Result<URL, Error>?
+
+    public init(url: URL) { self.url = url }
+
+    public func start(_ continuation: CheckedContinuation<URL, Error>) {
+        lock.lock()
+        defer { lock.unlock() }
+        if let result { continuation.resume(with: result) }
+        else { self.continuation = continuation }
+    }
+
+    public func consume(_ buffer: AVAudioBuffer) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard result == nil else { return }
+        do {
+            guard let pcm = buffer as? AVAudioPCMBuffer else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+            if pcm.frameLength == 0 {
+                guard file != nil else { throw CocoaError(.fileWriteUnknown) }
+                finish(.success(url))
+            } else {
+                if file == nil {
+                    file = try AVAudioFile(forWriting: url, settings: pcm.format.settings)
+                }
+                try file?.write(from: pcm)
+            }
+        } catch { finish(.failure(error)) }
+    }
+
+    public func cancel() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard result == nil else { return }
+        finish(.failure(CancellationError()))
+    }
+
+    /// Called only while holding lock. Close the file before publishing its URL.
+    private func finish(_ result: Result<URL, Error>) {
+        file = nil
+        self.result = result
+        continuation?.resume(with: result)
+        continuation = nil
     }
 }

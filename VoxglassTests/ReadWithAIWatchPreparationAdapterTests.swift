@@ -80,6 +80,56 @@ private func textFile(_ dir: URL) throws -> URL {
 }
 
 @Suite struct ReadWithAIWatchPreparationAdapterTests {
+    @Test func speechBuffersAreWrittenBeforeProducerReusesStorage() async throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("speech.caf")
+        let writer = ReadWithAIWatchPCMWriter(url: url)
+        let format = AVAudioFormat(standardFormatWithSampleRate: 22_050, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 22_050)!
+        let result: URL = try await withCheckedThrowingContinuation { continuation in
+            writer.start(continuation)
+            // Model a producer that recycles the same storage after every callback.
+            for second in 0..<180 {
+                buffer.frameLength = 22_050
+                buffer.floatChannelData![0].update(repeating: Float(second) / 180, count: 22_050)
+                writer.consume(buffer)
+                buffer.frameLength = 0
+            }
+            writer.consume(buffer)
+            writer.consume(buffer) // A late terminal callback must not resume twice.
+        }
+        let converted = try await WatchAudioPreparationWorker.Dependencies.liveConvertPCM(
+            result, dir, try WatchChecksum.sha256(of: result),
+            WatchNarrationEstimate.watchAACLCBitRate, kAudioFormatMPEG4AAC)
+        let duration = try await AVURLAsset(url: converted).load(.duration).seconds
+        #expect(abs(duration - 180) < 0.2)
+        let audio = try AVAudioFile(forReading: result)
+        #expect(audio.length == 180 * 22_050)
+        #expect(Double(audio.length) / audio.processingFormat.sampleRate == 180)
+        let samples = AVAudioPCMBuffer(pcmFormat: audio.processingFormat, frameCapacity: 22_050)!
+        for second in 0..<180 {
+            try audio.read(into: samples, frameCount: 22_050)
+            #expect(abs(samples.floatChannelData![0][0] - Float(second) / 180) < 0.0001)
+        }
+    }
+
+    @Test func speechWriterCancellationBeforeStartRejectsLateBuffers() async throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("cancelled.caf")
+        let writer = ReadWithAIWatchPCMWriter(url: url)
+        writer.cancel()
+        await #expect(throws: CancellationError.self) {
+            let _: URL = try await withCheckedThrowingContinuation { writer.start($0) }
+        }
+        let format = AVAudioFormat(standardFormatWithSampleRate: 22_050, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 16)!
+        buffer.frameLength = 16
+        writer.consume(buffer)
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
+
     private let pref = ReadWithAIVoicePreference(identifier: "")
 
     @Test @MainActor func speechRendererIsInvokedOnMainActor() async throws {
@@ -211,7 +261,7 @@ private func textFile(_ dir: URL) throws -> URL {
         let legacyInside = dir.appendingPathComponent("legacy.m4a"); try writeRealAAC(to: legacyInside)
         let legacyOutside = outside.appendingPathComponent("keep.m4a"); try writeRealAAC(to: legacyOutside)
         let old = ReadWithAIWatchNarrationUserDefaultsCache.legacyPrefix
-        defaults.set(legacyInside.path, forKey: old + "a")
+        defaults.set(legacyInside.path, forKey: old + "aaclc48.v1.a")
         defaults.set(legacyOutside.path, forKey: old + "b")
         let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
         defaults.set(legacyInside.path, forKey: old + key)
@@ -223,7 +273,7 @@ private func textFile(_ dir: URL) throws -> URL {
         #expect(chapter.url != legacyInside)
         #expect(!FileManager.default.fileExists(atPath: legacyInside.path))
         #expect(FileManager.default.fileExists(atPath: legacyOutside.path))
-        #expect(defaults.string(forKey: old + "a") == nil && defaults.string(forKey: old + "b") == nil)
+        #expect(defaults.string(forKey: old + "aaclc48.v1.a") == nil && defaults.string(forKey: old + "b") == nil)
         #expect(defaults.string(forKey: old + key) == nil)
         #expect(defaults.string(forKey: ReadWithAIWatchNarrationUserDefaultsCache.prefix + key) != nil)
     }
@@ -231,12 +281,12 @@ private func textFile(_ dir: URL) throws -> URL {
     @Test func cacheKeyChangesWhenProfileChanges() throws {
         let dir = tempDir(); let text = try textFile(dir)
         let k1 = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)
-        let expected = SHA256Hex.hex(Data("aaclc48-v1|\(try WatchChecksum.sha256(of: text))|automatic|44100|2|48000".utf8))
+        let expected = SHA256Hex.hex(Data("aaclc48-v2|\(try WatchChecksum.sha256(of: text))|automatic|44100|2|48000".utf8))
         #expect(k1 == expected)
         let k2 = try ReadWithAIWatchPreparationAdapter.cacheKey(
             textURL: text, preference: ReadWithAIVoicePreference(identifier: "voice.x"))
         #expect(k1 != k2)
-        #expect(ReadWithAIWatchNarrationUserDefaultsCache.prefix == "readWithAI.watchNarration.aaclc48.v1.")
+        #expect(ReadWithAIWatchNarrationUserDefaultsCache.prefix == "readWithAI.watchNarration.aaclc48.v2.")
     }
 
     @Test @MainActor func corruptCachedM4AIsDeletedAndRegenerated() async throws {
