@@ -239,7 +239,16 @@ import os
             _ = cancel
         }
         #expect(search.range(of: "preflightTask?.cancel()\n                    preflightTask = nil\n                    catalogStore.query = \"\"") != nil)
-        #expect(discover.range(of: "preflightTask?.cancel()\n        preflightTask = nil\n        searchLifecycle.reset()\n        catalogStore.query = \"\"") != nil)
+        let clearStart = try #require(discover.range(of: "private func clearSearchAndRestoreBrowseState()"))
+        let clearEnd = try #require(discover.range(of: "private func presentResult", range: clearStart.upperBound..<discover.endIndex))
+        let clear = String(discover[clearStart.upperBound..<clearEnd.lowerBound])
+        let cancelAt = try #require(clear.range(of: "preflightTask?.cancel()"))
+        let queryAt = try #require(clear.range(of: "catalogStore.query = \"\""))
+        #expect(cancelAt.lowerBound < queryAt.lowerBound)
+        #expect(clear.contains("preflightTask = nil"))
+        #expect(clear.contains("searchLifecycle.reset()"))
+        #expect(clear.contains("cancelSearchRequests()"))
+        #expect(clear.contains("catalogStore.resetResultsForNavigation()"))
     }
 
     private func repositoryRoot() -> URL {

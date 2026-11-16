@@ -134,7 +134,13 @@ import Testing
         #expect(page.contains("\"Download to Apple Watch?\""))
         #expect(page.contains("submitWatchTransfer(book, allowCellular: true)"))
         #expect(page.contains("Couldn't Send to Apple Watch"))
-        #expect(page.components(separatedBy: "requestWatchDownload: { requestWatchDownload() }").count == 3)
+        // The root owns one callback into Book Details. The moved action
+        // controls forward from that sheet, without owning the transport.
+        #expect(page.components(separatedBy: "requestWatchDownload: { requestWatchDownload() }").count == 2)
+        let details = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
+        #expect(details.contains("BookPageActionRow("))
+        #expect(details.contains("requestWatchDownload()"))
+        #expect(!page.contains("BookPageActionRow("))
     }
 }
 
