@@ -56,6 +56,24 @@ struct GutenbergCatalogTests {
         #expect(components.queryItems?.first(where: { $0.name == "search" })?.value == "law")
     }
 
+    @Test func parserNeverBorrowsAnAuthorFromTheNextResult() {
+        let books = GutenbergCatalogClient.parseGutenbergSearchHTML("""
+        <li class="booklink"><a href="/ebooks/1"><span class="title">Anonymous</span></a></li>
+        <li class="booklink"><a href="/ebooks/2"><span class="title">Credited</span><span class="subtitle">by Jane Doe</span></a></li>
+        """)
+        #expect(books.map(\.id) == [1, 2])
+        #expect(books.first?.authors.isEmpty == true)
+        #expect(books.last?.authorLine == "Jane Doe")
+    }
+
+    @Test func parserAcceptsSingleQuotedAttributesAndAdditionalClasses() {
+        let books = GutenbergCatalogClient.parseGutenbergSearchHTML("""
+        <li class='booklink featured'><a href='/ebooks/8'><span class='title highlighted'>A Book</span><span class='subtitle'>by Jane</span></a></li>
+        """)
+        #expect(books.map(\.id) == [8])
+        #expect(books.first?.authorLine == "Jane")
+    }
+
     @Test func blankSearchAvoidsNetworkRequest() async throws {
         let books = try await client().search("   ")
         #expect(books.isEmpty)
@@ -98,8 +116,10 @@ struct GutenbergPrimarySearchTests {
             let code: Int
             if isPrimary {
                 code = status
-                body = status == 200 && (request.url?.query ?? "").contains("garbage")
-                    ? "<html>unrelated</html>"
+                body = (request.url?.query ?? "").contains("empty")
+                    ? "<html>No records found.</html>"
+                    : status == 200 && (request.url?.query ?? "").contains("garbage")
+                    ? "<html><div class=\"search-results\"><li class=\"booklink\">Changed markup</li></div></html>"
                     : #"<li class="booklink"><a href="/ebooks/7"><span class="title">Law</span><span class="subtitle">by Doe</span></a></li>"#
             } else {
                 code = 200
@@ -126,6 +146,13 @@ struct GutenbergPrimarySearchTests {
         Recorder.reset()
         let books = try await client().search("law")
         #expect(books.map(\.id) == [7])
+        #expect(Recorder.hosts == ["primary.test"])
+    }
+
+    @Test func explicitEmptyResultDoesNotCallFallback() async throws {
+        Recorder.reset()
+        let books = try await client().search("empty")
+        #expect(books.isEmpty)
         #expect(Recorder.hosts == ["primary.test"])
     }
 

@@ -265,6 +265,7 @@ struct InternetArchiveResultRow: View {
     var style: BookListRowStyle = .card
     var isLoading: Bool = false
     var isInMyBooks = false
+    var usesThreeSizeTypography = false
 
     static let ownedLabel = String(localized: "Already in My Books")
 
@@ -287,7 +288,8 @@ struct InternetArchiveResultRow: View {
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: voiceOverLabel
+            accessibilityLabel: voiceOverLabel,
+            usesThreeSizeTypography: usesThreeSizeTypography
         )
     }
 }

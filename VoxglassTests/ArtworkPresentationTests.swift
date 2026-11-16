@@ -7,7 +7,8 @@ import Testing
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
 
         #expect(discover.contains("ExploreCollectionCard"))
-        #expect(discover.contains(".frame(height: 196)"))
+        #expect(discover.contains(".frame(minHeight: 196)"))
+        #expect(!discover.contains(".frame(height: 196)"), "Collection text must be allowed to grow with Dynamic Type")
         #expect(discover.contains("CollectionFan("))
         #expect(!(discover.contains(".frame(width: 190, height: 190)")))
     }
@@ -33,16 +34,16 @@ import Testing
     @Test func sharedBookListRowHasBoundedContentAndLibraryReservesItsPopulatedHeight() throws {
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
-        // The row draws at a fixed height (not `minHeight`) so a row with the
-        // extra narrator / watch-status lines can't overrun the space the
-        // scroll-disabled list screens reserve for it.
+        // Keep a compact minimum while allowing populated narrator/watch
+        // lines to grow; the list must reserve a matching scaled budget.
         #expect(components.contains("static let rowContentHeight: CGFloat = 72"))
         #expect(components.contains(".frame(minHeight: 72)"))
 
         // The library list reserves enough space for its populated multi-line
         // rows; the old fixed baseline was too short for narrator/status text.
         let library = try source("Voxglass/Features/Library/LibraryView.swift")
-        #expect(library.contains("* BookListRow.libraryRowMinimumHeight"))
+        #expect(library.contains("@ScaledMetric(relativeTo: .footnote) private var libraryRowMinimumHeight = BookListRow.libraryRowMinimumHeight"))
+        #expect(library.contains("* libraryRowMinimumHeight"))
         #expect(!library.contains(") * 104"))
 
     }

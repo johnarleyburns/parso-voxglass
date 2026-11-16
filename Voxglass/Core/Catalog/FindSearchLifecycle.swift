@@ -55,3 +55,21 @@ public struct FindSearchLifecycle: Equatable, Sendable {
         isCurrent(draft: draft) || hasSelectedCollection || isSearching || hasResults
     }
 }
+
+/// Each Find source selects exactly one catalog. Collections never fall back
+/// to a broad search when no collection is selected.
+public enum FindSourceFilter: CaseIterable, Hashable, Sendable {
+    case librivox, collections, gutenberg
+
+    public enum SearchDestination: Equatable, Sendable {
+        case librivox, collection, gutenberg, none
+    }
+
+    public func searchDestination(hasSelectedCollection: Bool) -> SearchDestination {
+        switch self {
+        case .librivox: .librivox
+        case .collections: hasSelectedCollection ? .collection : .none
+        case .gutenberg: .gutenberg
+        }
+    }
+}

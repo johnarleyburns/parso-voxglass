@@ -3,6 +3,19 @@ import Foundation
 @testable import VoxglassCore
 
 @Suite struct FindSearchLifecycleTests {
+    @Test func sourcesHaveNoCombinedSearchOption() {
+        #expect(FindSourceFilter.allCases == [.librivox, .collections, .gutenberg])
+    }
+
+    @Test func eachSourceRoutesExclusivelyEvenWithAStaleCollectionSelection() {
+        for hasCollection in [false, true] {
+            #expect(FindSourceFilter.librivox.searchDestination(hasSelectedCollection: hasCollection) == .librivox)
+            #expect(FindSourceFilter.gutenberg.searchDestination(hasSelectedCollection: hasCollection) == .gutenberg)
+        }
+        #expect(FindSourceFilter.collections.searchDestination(hasSelectedCollection: false) == .none)
+        #expect(FindSourceFilter.collections.searchDestination(hasSelectedCollection: true) == .collection)
+    }
+
     private func surface(_ l: FindSearchLifecycle, _ draft: String, collection: Bool = false,
                          searching: Bool = false, results: Bool = false) -> Bool {
         l.showsResultsSurface(draft: draft, hasSelectedCollection: collection, isSearching: searching, hasResults: results)

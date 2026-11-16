@@ -8,6 +8,7 @@ struct BookPageActionRow: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
+    var isDetailList = false
     let book: BookWithChapters
     @Binding var showingEQ: Bool
     @Binding var showingBookmarks: Bool
@@ -61,9 +62,19 @@ struct BookPageActionRow: View {
     }
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            fullRow
-            compactRow
+        VStack(spacing: 12) {
+            if isDetailList {
+                LabeledContent("Playback speed") { speedButton }
+                LabeledContent("Sleep timer") { sleepTimerButton }
+                LabeledContent("Bookmark") { bookmarkButton }
+                LabeledContent("Apple Watch") { watchButton }
+                LabeledContent("AirPlay") { airplayButton }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    fullRow
+                    compactRow
+                }
+            }
         }
         .confirmationDialog(
             "Cache this book for offline use?",

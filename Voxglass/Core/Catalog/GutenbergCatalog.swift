@@ -114,32 +114,43 @@ public struct GutenbergCatalogClient: Sendable {
 
     private static func looksLikeEmptyResultPage(_ data: Data) -> Bool {
         let html = String(decoding: data, as: UTF8.self).lowercased()
-        return html.contains("search-results") || html.contains("no books found") || html.contains("no results")
-            || html.contains("booklink")
+        // A result-list wrapper alone does not prove a successful empty search.
+        // Changed result markup must trigger the fallback rather than hide books.
+        return !html.contains("booklink") && (
+            html.contains("no books found") || html.contains("no results")
+                || html.contains("no records found")
+        )
     }
 
     static func parseGutenbergSearchHTML(_ html: String) -> [GutenbergBook] {
-        let pattern = #"(?s)<li[^>]*class=\"[^\"]*booklink[^\"]*\"[^>]*>.*?<a[^>]*href=\"/ebooks/(\d+)\"[^>]*>.*?<span[^>]*class=\"title\"[^>]*>(.*?)</span>(?:.*?<span[^>]*class=\"subtitle\"[^>]*>(.*?)</span>)?"#
+        // Parse each list item independently. An optional subtitle in a single
+        // page-wide regex could consume the next book (and borrow its author).
+        let pattern = #"(?is)<li\b[^>]*class=["'][^"']*\bbooklink\b[^"']*["'][^>]*>(.*?)</li\s*>"#
         guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(html.startIndex..<html.endIndex, in: html)
         return expression.matches(in: html, range: range).compactMap { match in
-            guard let idRange = Range(match.range(at: 1), in: html),
-                  let id = Int(html[idRange]),
-                  let titleRange = Range(match.range(at: 2), in: html) else { return nil }
-            let title = cleanHTML(String(html[titleRange]))
+            guard let itemRange = Range(match.range(at: 1), in: html) else { return nil }
+            let item = String(html[itemRange])
+            guard let idValue = capture(#"href=["']/ebooks/(\d+)["']"#, in: item),
+                  let id = Int(idValue),
+                  let titleValue = capture(#"(?is)<span\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>(.*?)</span>"#, in: item) else { return nil }
+            let title = cleanHTML(titleValue)
             guard !title.isEmpty else { return nil }
-            let author: [GutenbergBook.Author] = {
-                guard match.range(at: 3).location != NSNotFound,
-                      let subtitleRange = Range(match.range(at: 3), in: html) else { return [] }
-                let value = cleanHTML(String(html[subtitleRange]))
-                    .replacingOccurrences(of: "by ", with: "", options: [.caseInsensitive])
-                return value.isEmpty ? [] : [GutenbergBook.Author(name: value)]
-            }()
+            let subtitle = capture(#"(?is)<span\b[^>]*class=["'][^"']*\bsubtitle\b[^"']*["'][^>]*>(.*?)</span>"#, in: item)
+            let author = subtitle.map(cleanHTML)?
+                .replacingOccurrences(of: #"^by\s+"#, with: "", options: [.regularExpression, .caseInsensitive]) ?? ""
             return GutenbergBook(
-                id: id, title: title, authors: author, subjects: [], languages: [],
+                id: id, title: title, authors: author.isEmpty ? [] : [.init(name: author)], subjects: [], languages: [],
                 formats: ["application/epub+zip": "https://www.gutenberg.org/ebooks/\(id).epub.images"]
             )
         }
+    }
+
+    private static func capture(_ pattern: String, in html: String) -> String? {
+        guard let expression = try? NSRegularExpression(pattern: pattern),
+              let match = expression.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+              let range = Range(match.range(at: 1), in: html) else { return nil }
+        return String(html[range])
     }
 
     private static func cleanHTML(_ value: String) -> String {

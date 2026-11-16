@@ -64,31 +64,24 @@ struct BookPageView: View {
             if let resolved {
                 NavigationStack {
                     VStack(spacing: 0) {
-                        ScrollViewReader { proxy in
+                        Group {
                             ScrollView(showsIndicators: false) {
                                 VStack(spacing: 0) {
                                     Spacer().frame(height: 16)
                                     coverSection(resolved)
                                     Spacer().frame(height: 22)
                                     metadataSection(resolved)
-                                    libraryAction(resolved)
-                                    chipRow(resolved)
+                                    if presentationContext != .nowPlayingSheet {
+                                        libraryAction(resolved)
+                                        chipRow(resolved)
+                                    }
                                     scrubber(resolved)
                                     transportControls(resolved)
-                                    actionRow(resolved)
-                                    Button("Chapters · About · Bookmarks") {
-                                        withAnimation(Motion.standard) {
-                                            proxy.scrollTo("nowplaying.details", anchor: .top)
-                                        }
+                                    if presentationContext != .nowPlayingSheet {
+                                        aboutSection(resolved)
+                                        chapterList(resolved)
+                                        discoveryLinks(resolved)
                                     }
-                                    .voxType(.meta)
-                                    .foregroundStyle(Palette.ink2)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .accessibilityIdentifier("nowplaying.detailsHint")
-                                    aboutSection(resolved)
-                                        .id("nowplaying.details")
-                                    chapterList(resolved)
-                                    discoveryLinks(resolved)
                                     Spacer(minLength: 24)
                                 }
                                 .padding(.horizontal, 24)
@@ -104,6 +97,29 @@ struct BookPageView: View {
                     }
                     .navigationTitle(resolved.book.title)
                     .navigationBarTitleDisplayMode(.inline)
+                    .navigationBarBackButtonHidden(presentationContext == .nowPlayingSheet)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            NavigationLink {
+                                ChaptersView(book: resolved, showingNowPlaying: $showingNowPlaying)
+                            } label: {
+                                Image(systemName: "list.bullet")
+                                    .frame(width: 44, height: 44)
+                                    .glassEffect(.regular.interactive(), in: .circle)
+                            }
+                            .accessibilityLabel("Chapters")
+                            .accessibilityIdentifier("nowplaying.chapters")
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button { showingOverflow = true } label: {
+                                Image(systemName: "line.3.horizontal")
+                                    .frame(width: 44, height: 44)
+                                    .glassEffect(.regular.interactive(), in: .circle)
+                            }
+                            .accessibilityLabel("Book details and playback options")
+                            .accessibilityIdentifier("nowplaying.more")
+                        }
+                    }
                     .overlay(alignment: .top) {
                         if showCompactHeader {
                             compactHeader(resolved)
@@ -135,6 +151,7 @@ struct BookPageView: View {
                 .foregroundStyle(.white)
             }
         }
+        .navigationBarBackButtonHidden(presentationContext == .nowPlayingSheet)
         .confirmationDialog(
             "Add to My Books?",
             isPresented: $showAddToLibraryConfirm,
@@ -168,6 +185,8 @@ struct BookPageView: View {
                 book: resolved ?? BookWithChapters(book: Book(title: "", authors: [], sourceID: UUID()), chapters: []),
                 showingNowPlaying: $showingNowPlaying,
                 showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
+                showCellularPrompt: $showCellularPrompt,
+                showAddToLibraryConfirm: $showAddToLibraryConfirm,
                 showRemoveConfirm: $showRemoveConfirm,
                 showReconnectAudio: $showingReconnect,
                 genre: genre,
@@ -450,24 +469,20 @@ struct BookPageView: View {
 
             authorLinks(resolved)
 
-            if let narratorLine = resolved.book.narratorLine {
+            if libraryStore.source(for: resolved.book)?.kind == .readWithAI {
+                Text("Read by AI ‘\(readWithAIVoiceName(for: resolved.book.id))’")
+                    .voxFont(.footnote)
+                    .foregroundStyle(Palette.brass)
+            } else if let narratorLine = resolved.book.narratorLine {
                 narratorsLink(resolved, narratorLine: narratorLine)
             }
 
-            if resolved.narrationKind == .solo {
+            if presentationContext != .nowPlayingSheet, resolved.narrationKind == .solo {
                 Text("Single narrator")
-                    .voxFont(.caption2, weight: .bold)
-                    .kerning(0.7)
+                    .voxFont(.footnote)
                     .foregroundStyle(Palette.brass)
-                    .padding(.top, 2)
             }
-
             chapterLine(resolved)
-            if let source = libraryStore.source(for: resolved.book) {
-                Text("· \(source.kind.displayName)")
-                    .voxType(.meta)
-                    .foregroundStyle(Palette.ink2)
-            }
         }
         .padding(.horizontal, 16)
         .accessibilityIdentifier("nowplaying.title")
@@ -537,7 +552,7 @@ struct BookPageView: View {
             Text("Resume · \(resumeChapter)")
                 .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
-        } else {
+        } else if presentationContext != .nowPlayingSheet {
             Text("\(resolved.chapters.count) chapters")
                 .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
@@ -778,48 +793,6 @@ struct BookPageView: View {
         .buttonStyle(.plain)
         .padding(.top, 16)
         .accessibilityIdentifier("nowplaying.details")
-    }
-
-    private func actionRow(_ resolved: BookWithChapters) -> some View {
-        VStack(spacing: 12) {
-            BookPageActionRow(
-                book: resolved,
-                showingEQ: $showingEQ,
-                showingBookmarks: $showingBookmarks,
-                showingOverflow: $showingOverflow,
-                showCellularPrompt: $showCellularPrompt,
-                showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
-                requestWatchDownload: { requestWatchDownload() }
-            )
-            .environment(playback)
-            .environmentObject(libraryStore)
-            .environmentObject(offlineManager)
-            .foregroundStyle(Color.white.opacity(0.6))
-
-            if libraryStore.source(for: resolved.book)?.kind == .readWithAI {
-                Text("Reading with AI Voice ‘\(readWithAIVoiceName(for: resolved.book.id))’")
-                    .voxFont(.caption, weight: .semibold)
-                    .foregroundStyle(Color.white.opacity(0.62))
-                    .frame(maxWidth: .infinity)
-
-                NavigationLink {
-                    ReadWithAIVoicePicker(bookID: resolved.book.id) { preference in
-                        playback.selectReadWithAIVoice(preference, for: resolved.book.id)
-                    }
-                } label: {
-                    Label("Select AI Voice", systemImage: "waveform.and.mic")
-                        .voxFont(.callout, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(Color.white.opacity(0.10), in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("nowplaying.readWithAIVoice")
-                .padding(.bottom, 10)
-            }
-        }
-        .padding(.top, 16)
     }
 
     private func readWithAIVoiceName(for bookID: UUID) -> String {

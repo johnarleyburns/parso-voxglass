@@ -18,18 +18,18 @@ struct BrowseView: View {
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
-    @State private var sourceFilter: FindSourceFilter = .all
+    @State private var sourceFilter: FindSourceFilter = .librivox
     @State private var gutenbergResults: [GutenbergBook] = []
     @State private var isSearchingGutenberg = false
     @State private var gutenbergSearchID = UUID()
     @State private var gutenbergTask: Task<Void, Never>?
     @State private var librivoxTask: Task<Void, Never>?
+    @State private var collectionLoadTask: Task<Void, Never>?
     @State private var selectedGutenbergBook: GutenbergBook?
     @State private var searchLifecycle = FindSearchLifecycle()
     @State private var preflightTask: Task<Void, Never>?
     @State private var selectedCatalogResult: CatalogResultRoute?
     @State private var showingHistory = false
-    @State private var discoverScope: DiscoverBrowseScope = .all
     @State private var showingCollectionInfo: IACollection?
     @State private var loadingCollectionID: String?
     @State private var lastCollectionLoadKey: String?
@@ -97,26 +97,12 @@ struct BrowseView: View {
             Task { await runSearch() }
         }
         .onChange(of: sourceFilter) { _, _ in
-            if sourceFilter == .collections {
-                cancelSearchRequests()
-                discoverScope = .collection
-                catalogStore.query = ""
-                handleDiscoverScopeChange(.collection)
-            } else {
-                if discoverScope == .collection { discoverScope = .all }
-                if sourceFilter == .librivox { invalidateGutenbergSearch() }
-                if sourceFilter == .gutenberg { librivoxTask?.cancel(); librivoxTask = nil }
-                guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
-                Task { await runSearch() }
-            }
+            handleSourceChange()
         }
         .onChange(of: catalogStore.query) { _, query in
             preflightTask?.cancel()
             preflightTask = nil
             if FindSearchLifecycle.normalized(query).isEmpty { searchLifecycle.reset() }
-        }
-        .onChange(of: discoverScope) { _, scope in
-            handleDiscoverScopeChange(scope)
         }
     }
 
@@ -154,46 +140,39 @@ struct BrowseView: View {
         }
     }
 
-    private func handleDiscoverScopeChange(_ scope: DiscoverBrowseScope) {
+    private func handleSourceChange() {
         let hasQuery = searchLifecycle.isCurrent(draft: catalogStore.query)
-        if scope == .all {
-            if let selectedCollection {
-                rememberedCollection = selectedCollection
-                self.selectedCollection = nil
-            }
-            if hasQuery {
-                Task { await runSearch() }
-            } else {
-                catalogStore.resetResultsForNavigation()
-            }
-            return
-        }
+        cancelSearchRequests()
+        preflightTask?.cancel()
+        preflightTask = nil
+        catalogStore.resetResultsForNavigation()
 
-        if let rememberedCollection, selectedCollection == nil {
-            let sort = CatalogSort.defaultSort(for: rememberedCollection)
-            selectedCollection = rememberedCollection
-            collectionSort = sort
+        if sourceFilter == .collections {
             catalogStore.query = ""
-            searchScope = .all
-            catalogStore.resetResultsForNavigation()
-            startCollectionLoad(rememberedCollection, sort: sort)
-            return
-        }
-
-        if hasQuery {
-            catalogStore.query = ""
-            searchScope = .all
-        }
-        if let selectedCollection {
-            startCollectionLoad(selectedCollection, sort: collectionSort)
+            searchLifecycle.reset()
+            if let rememberedCollection {
+                selectedCollection = rememberedCollection
+                collectionSort = CatalogSort.defaultSort(for: rememberedCollection)
+                startCollectionLoad(rememberedCollection, sort: collectionSort)
+            }
         } else {
-            catalogStore.resetResultsForNavigation()
+            if let selectedCollection { rememberedCollection = selectedCollection }
+            selectedCollection = nil
+            if hasQuery { Task { await runSearch() } }
         }
     }
 
     private var discoverHeaderActions: some View {
         HStack(spacing: 2) {
             Menu {
+                Picker("Search in", selection: $searchScope) {
+                    Text("All").tag(DiscoverSearchScope.all)
+                    Text("Title").tag(DiscoverSearchScope.title)
+                    Text("Author").tag(DiscoverSearchScope.author)
+                    Text("Narrator").tag(DiscoverSearchScope.narrator)
+                }
+                .pickerStyle(.inline)
+                Divider()
                 Toggle("Single narrator", isOn: $soloOnly)
                 if selectedCollection != nil {
                     Picker("Sort", selection: $collectionSort) {
@@ -203,13 +182,13 @@ struct BrowseView: View {
                     }
                     if selectedCollection?.isCurated == true, !catalogStore.activeCuratedManifest.isEmpty {
                         Text("Download all is available in collection details")
-                            .voxFont(.caption)
+                            .voxFont(LibraryScreenTypography.card)
                             .foregroundStyle(Palette.ink3)
                     }
                 }
             } label: {
                 Image(systemName: "line.3.horizontal.decrease.circle")
-                    .voxFont(.body, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -220,7 +199,7 @@ struct BrowseView: View {
                 showingHistory = true
             } label: {
                 Image(systemName: "clock.arrow.circlepath")
-                    .voxFont(.body, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -256,23 +235,18 @@ struct BrowseView: View {
                     .accessibilityLabel("Clear catalog search")
                 }
 
-                if catalogStore.isSearching {
+                if (sourceFilter == .gutenberg ? isSearchingGutenberg : catalogStore.isSearching) {
                     ProgressView()
                         .frame(width: 20, height: 20)
                 }
             }
-            .voxFont(.subheadline)
+            .voxFont(LibraryScreenTypography.controls)
             .padding(.horizontal, 14)
-            .frame(height: 46)
+            .frame(minHeight: 46)
             .raisedSurface()
 
-            BookScopeBar(title: "Search in", selection: $searchScope, options: [
-                (.all, "All"), (.title, "Title"), (.author, "Author"), (.narrator, "Narrator")
-            ])
-            .accessibilityIdentifier("discover.searchScope")
-
             BookScopeBar(title: "Find source", selection: $sourceFilter, options: [
-                (.all, "All"), (.librivox, "LibriVox"), (.collections, "LibriVox Collections"), (.gutenberg, "Gutenberg")
+                (.librivox, "LibriVox"), (.collections, "LibriVox Collections"), (.gutenberg, "Gutenberg Read by AI")
             ])
             .accessibilityIdentifier("discover.sourceFilter")
         }
@@ -282,14 +256,15 @@ struct BrowseView: View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "square.grid.2x2.fill")
-                    .voxFont(.caption, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.card, weight: .semibold)
                 Text(collection.title)
-                    .voxFont(.caption, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.card, weight: .semibold)
                 Spacer(minLength: 0)
                 Button {
                     withAnimation(.easeInOut(duration: 0.25)) {
+                        cancelSearchRequests()
                         selectedCollection = nil
-                        discoverScope = catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .collection : .all
+                        rememberedCollection = nil
                         if !searchLifecycle.isCurrent(draft: catalogStore.query) {
                             catalogStore.resetResultsForNavigation()
                         } else {
@@ -298,7 +273,7 @@ struct BrowseView: View {
                     }
                 } label: {
                     Image(systemName: "xmark")
-                        .voxFont(.caption2, weight: .bold)
+                        .voxFont(LibraryScreenTypography.card, weight: .bold)
                         .frame(width: 28, height: 28)
                 }
                 .accessibilityLabel("Clear selected collection")
@@ -306,7 +281,7 @@ struct BrowseView: View {
             }
             .foregroundStyle(Palette.brass)
             .padding(.horizontal, 10)
-            .frame(height: 34)
+            .frame(minHeight: 34)
             .raisedSurface()
             .accessibilityIdentifier("discover.selectedCollection")
 
@@ -315,10 +290,10 @@ struct BrowseView: View {
             } label: {
                 Label("About", systemImage: "info.circle")
                     .labelStyle(.titleAndIcon)
-                    .voxFont(.footnote, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 12)
-                    .frame(height: 34)
+                    .frame(minHeight: 34)
                     .raisedSurface()
             }
             .buttonStyle(.plain)
@@ -330,7 +305,7 @@ struct BrowseView: View {
 
     private var collectionShelves: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Featured Collections")
+            SectionTitle(title: "Featured Collections", usesThreeSizeTypography: true)
             VStack(spacing: 10) {
                 ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
                     ExploreCollectionCard(
@@ -350,7 +325,7 @@ struct BrowseView: View {
     }
 
     private var shouldShowFeaturedCollections: Bool {
-        discoverScope == .collection && selectedCollection == nil
+        sourceFilter == .collections && selectedCollection == nil
     }
 
     @ViewBuilder
@@ -359,11 +334,12 @@ struct BrowseView: View {
             EmptyStatePanel(
                 title: "Find a book",
                 message: "Search results will display here after you press Find.",
-                systemImage: "magnifyingglass"
+                systemImage: "magnifyingglass",
+                usesThreeSizeTypography: true
             )
         } else if hasActiveCatalogResultsSurface {
             VStack(alignment: .leading, spacing: 6) {
-                SectionTitle(title: LocalizedStringKey(resultsTitle))
+                SectionTitle(title: LocalizedStringKey(resultsTitle), usesThreeSizeTypography: true)
                 if selectedCollection != nil {
                     if selectedCollection?.isCurated == true {
                         curatedStatusBanner
@@ -371,12 +347,20 @@ struct BrowseView: View {
                     }
                 }
 
-                if catalogStore.results.isEmpty && gutenbergResults.isEmpty {
-                    if catalogStore.isSearching || isSearchingGutenberg {
+                if sourceFilter == .gutenberg {
+                    if !gutenbergResults.isEmpty {
+                        gutenbergResultSection
+                    } else if isSearchingGutenberg {
+                        gutenbergLoadingSection
+                    } else if searchLifecycle.isCurrent(draft: catalogStore.query) {
+                        EmptyStatePanel(title: "No Results Yet", message: "Try a different title, author, or narrator.", systemImage: "magnifyingglass", usesThreeSizeTypography: true)
+                    }
+                } else if catalogStore.results.isEmpty {
+                    if catalogStore.isSearching {
                         HStack(spacing: 12) {
                             ProgressView()
                             Text(searchProgressLabel)
-                                .voxFont(.subheadline)
+                                .voxFont(LibraryScreenTypography.controls)
                                 .foregroundStyle(Palette.ink2)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -388,19 +372,22 @@ struct BrowseView: View {
                             EmptyStatePanel(
                                 title: "Find a book",
                                 message: "Search results will display here after you press Find.",
-                                systemImage: "magnifyingglass"
+                                systemImage: "magnifyingglass",
+                                usesThreeSizeTypography: true
                             )
                         case .noBooks:
                             EmptyStatePanel(
                                 title: "No Books Yet",
                                 message: "Try another collection or search above.",
-                                systemImage: "square.stack"
+                                systemImage: "square.stack",
+                                usesThreeSizeTypography: true
                             )
                         case .noResults:
                             EmptyStatePanel(
                                 title: "No Results Yet",
                                 message: "Try a different title, author, or narrator.",
-                                systemImage: "square.stack"
+                                systemImage: "square.stack",
+                                usesThreeSizeTypography: true
                             )
                         }
                     }
@@ -412,7 +399,8 @@ struct BrowseView: View {
                         EmptyStatePanel(
                             title: "No Single-narrator Results",
                             message: "Try turning off the Single narrator filter to see more audiobooks.",
-                            systemImage: "mic"
+                            systemImage: "mic",
+                            usesThreeSizeTypography: true
                         )
                     } else {
                         LazyVStack(spacing: 0) {
@@ -424,7 +412,8 @@ struct BrowseView: View {
                                         result: result,
                                         style: .grouped,
                                         isLoading: false,
-                                        isInMyBooks: libraryStore.cachedOwnedBook(for: result) != nil
+                                        isInMyBooks: libraryStore.cachedOwnedBook(for: result) != nil,
+                                        usesThreeSizeTypography: true
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -446,11 +435,6 @@ struct BrowseView: View {
                         loadMoreButton
                     }
                 }
-                if sourceFilter != .librivox && !gutenbergResults.isEmpty {
-                    gutenbergResultSection
-                } else if sourceFilter != .librivox && isSearchingGutenberg {
-                    gutenbergLoadingSection
-                }
             }
         }
     }
@@ -459,8 +443,8 @@ struct BrowseView: View {
         searchLifecycle.showsResultsSurface(
             draft: catalogStore.query,
             hasSelectedCollection: selectedCollection != nil,
-            isSearching: catalogStore.isSearching || isSearchingGutenberg,
-            hasResults: !catalogStore.results.isEmpty || !gutenbergResults.isEmpty
+            isSearching: sourceFilter == .gutenberg ? isSearchingGutenberg : catalogStore.isSearching,
+            hasResults: sourceFilter == .gutenberg ? !gutenbergResults.isEmpty : !catalogStore.results.isEmpty
         )
     }
 
@@ -481,7 +465,7 @@ struct BrowseView: View {
 
     private var curatedStatusBanner: some View {
         Text(curatedStatusMessage)
-            .voxFont(.caption2, weight: .medium)
+            .voxFont(LibraryScreenTypography.card, weight: .medium)
             .foregroundStyle(Palette.brass)
             .padding(.bottom, 2)
             .accessibilityLabel(curatedStatusMessage)
@@ -509,13 +493,13 @@ struct BrowseView: View {
                     ProgressView(value: Double(progress.completed), total: Double(progress.total)) {
                         HStack {
                             Text("Downloading \(progress.completed) of \(progress.total)")
-                                .voxFont(.caption, weight: .medium)
+                                .voxFont(LibraryScreenTypography.card, weight: .medium)
                                 .foregroundStyle(Palette.ink2)
                             Spacer()
                             Button("Cancel") {
                                 catalogStore.cancelBatchDownload()
                             }
-                            .voxFont(.caption, weight: .semibold)
+                            .voxFont(LibraryScreenTypography.card, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                         }
                     }
@@ -532,9 +516,9 @@ struct BrowseView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "arrow.down.circle.fill")
-                                .voxFont(.subheadline)
+                                .voxFont(LibraryScreenTypography.controls)
                             Text("Download All (\(manifestCount) items)")
-                                .voxFont(.footnote, weight: .semibold)
+                                .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                         }
                         .foregroundStyle(Palette.brass)
                         .padding(.vertical, 6)
@@ -575,10 +559,10 @@ struct BrowseView: View {
                 } else {
                     Text("See More")
                     Image(systemName: "chevron.down")
-                        .voxFont(.caption2, weight: .bold)
+                        .voxFont(LibraryScreenTypography.card, weight: .bold)
                 }
             }
-            .voxFont(.subheadline, weight: .semibold)
+            .voxFont(LibraryScreenTypography.controls, weight: .semibold)
             .foregroundStyle(Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -625,15 +609,17 @@ struct BrowseView: View {
         }
         lastCollectionLoadKey = loadKey
         loadingCollectionID = collection.id
-        Task {
+        collectionLoadTask?.cancel()
+        collectionLoadTask = Task {
+            guard !Task.isCancelled else { return }
             await loadSelectedCollection(collection: collection, sort: sort)
-            guard selectedCollection?.id == collection.id else { return }
+            guard !Task.isCancelled, selectedCollection?.id == collection.id else { return }
             loadingCollectionID = nil
         }
     }
 
     private func loadSelectedCollection(collection: IACollection? = nil, sort: CatalogSort? = nil) async {
-        guard let collection = collection ?? selectedCollection else { return }
+        guard sourceFilter == .collections, let collection = collection ?? selectedCollection else { return }
         await catalogStore.searchAdvanced(
             collection.archiveQuery,
             sort: sort ?? collectionSort,
@@ -643,69 +629,61 @@ struct BrowseView: View {
 
     private func runSearch() async {
         let term = FindSearchLifecycle.normalized(catalogStore.query)
-        // Invalidate an in-flight Gutenberg request immediately, before the
-        // LibriVox request finishes, so a stale result can never replace the
-        // current Find submission.
-        let gutenbergSearchID = UUID()
-        self.gutenbergSearchID = gutenbergSearchID
-        guard !term.isEmpty || selectedCollection != nil else {
-            searchLifecycle.reset()
-            cancelSearchRequests()
-            catalogStore.resetResultsForNavigation()
-            return
-        }
+        // Cancel the previous source before dispatching exactly one request.
+        cancelSearchRequests()
         preflightTask?.cancel()
         preflightTask = nil
-        // Mark the submission before dispatching so "No Results Yet" is only
-        // ever attributed to a query the user explicitly submitted.
+        catalogStore.resetResultsForNavigation()
+        let destination = sourceFilter.searchDestination(hasSelectedCollection: selectedCollection != nil)
+        guard destination != .none, !term.isEmpty || destination == .collection else {
+            searchLifecycle.reset()
+            return
+        }
         searchLifecycle.submit(draft: term)
 
-        if let selectedCollection {
-            cancelSearchRequests()
+        switch destination {
+        case .collection:
+            guard let selectedCollection else { return }
             let collectionQuery = term.isEmpty
                 ? selectedCollection.archiveQuery
                 : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
-            await catalogStore.searchAdvanced(collectionQuery, sort: collectionSort, collectionID: selectedCollection.id)
-            return
-        }
-
-        discoverScope = .all
-        // Cancel in-flight network work from the previous submission, then start
-        // both sources immediately; each publishes as soon as it completes.
-        librivoxTask?.cancel()
-        librivoxTask = nil
-        gutenbergTask?.cancel()
-        gutenbergTask = nil
-        let scope = searchScope
-        let scoped = scopedQuery(term)
-        if sourceFilter == .gutenberg {
-            catalogStore.resetResultsForNavigation()
-        } else {
             let store = catalogStore
+            let sort = collectionSort
             librivoxTask = Task {
+                guard !Task.isCancelled else { return }
+                await store.searchAdvanced(collectionQuery, sort: sort, collectionID: selectedCollection.id)
+            }
+        case .librivox:
+            let store = catalogStore
+            let scope = searchScope
+            let scoped = scopedQuery(term)
+            librivoxTask = Task {
+                guard !Task.isCancelled else { return }
                 switch scope {
                 case .all: await store.searchLibriVox(term)
                 case .title, .author, .narrator: await store.searchAdvanced(scoped, sort: .popularity)
                 }
             }
+        case .gutenberg:
+            let searchID = gutenbergSearchID
+            gutenbergTask = Task { await searchGutenberg(term, searchID: searchID) }
+        case .none:
+            return
         }
-        if sourceFilter != .librivox, !term.isEmpty {
-            gutenbergTask = Task { await searchGutenberg(term, searchID: gutenbergSearchID) }
-        } else {
-            invalidateGutenbergSearch()
-        }
-        let librivox = librivoxTask
-        let gutenberg = gutenbergTask
+        // Only one of these tasks can be created by the exclusive switch.
+        let request = gutenbergTask ?? librivoxTask
         await withTaskCancellationHandler {
-            await librivox?.value
-            await gutenberg?.value
+            await request?.value
         } onCancel: {
-            librivox?.cancel()
-            gutenberg?.cancel()
+            request?.cancel()
         }
     }
 
     private func cancelSearchRequests() {
+        collectionLoadTask?.cancel()
+        collectionLoadTask = nil
+        loadingCollectionID = nil
+        lastCollectionLoadKey = nil
         librivoxTask?.cancel()
         librivoxTask = nil
         gutenbergTask?.cancel()
@@ -714,8 +692,7 @@ struct BrowseView: View {
     }
 
     private func searchGutenberg(_ term: String, searchID: UUID) async {
-        guard sourceFilter != .librivox, !term.isEmpty else {
-            invalidateGutenbergSearch()
+        guard sourceFilter == .gutenberg, gutenbergSearchID == searchID, !term.isEmpty, !Task.isCancelled else {
             return
         }
         gutenbergSearchID = searchID
@@ -749,14 +726,13 @@ struct BrowseView: View {
         switch sourceFilter {
         case .gutenberg: "Searching Project Gutenberg"
         case .librivox: "Searching LibriVox"
-        case .all: catalogStore.isSearching ? "Searching LibriVox" : "Searching Project Gutenberg"
         case .collections: "Loading collection"
         }
     }
 
     private var gutenbergResultSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionTitle(title: "Project Gutenberg")
+            SectionTitle(title: "Project Gutenberg", usesThreeSizeTypography: true)
             LazyVStack(spacing: 0) {
                 ForEach(gutenbergResults) { book in
                     Button { selectedGutenbergBook = book } label: {
@@ -769,9 +745,9 @@ struct BrowseView: View {
                                 shape: .portrait
                             )
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(book.title).voxFont(.body, weight: .semibold).foregroundStyle(Palette.ink)
-                                Text(book.authorLine).voxFont(.caption).foregroundStyle(Palette.ink2)
-                                Text("READ WITH AI · PROJECT GUTENBERG").voxFont(.caption2, weight: .bold).foregroundStyle(Palette.brass)
+                                Text(book.title).voxFont(LibraryScreenTypography.card, weight: .semibold).foregroundStyle(Palette.ink)
+                                Text(book.authorLine).voxFont(LibraryScreenTypography.card).foregroundStyle(Palette.ink2)
+                                Text("READ WITH AI · PROJECT GUTENBERG").voxFont(LibraryScreenTypography.card, weight: .bold).foregroundStyle(Palette.brass)
                             }
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right").foregroundStyle(Palette.ink3)
@@ -786,11 +762,11 @@ struct BrowseView: View {
 
     private var gutenbergLoadingSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionTitle(title: "Project Gutenberg")
+            SectionTitle(title: "Project Gutenberg", usesThreeSizeTypography: true)
             HStack(spacing: 12) {
                 ProgressView()
                 Text("Searching Project Gutenberg")
-                    .voxFont(.subheadline)
+                    .voxFont(LibraryScreenTypography.controls)
                     .foregroundStyle(Palette.ink2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -801,7 +777,7 @@ struct BrowseView: View {
     }
 
     private func startOwnershipPreflight(for displayed: [InternetArchiveSearchResult]) {
-        guard !displayed.isEmpty, catalogStore.catalogError == nil else { return }
+        guard sourceFilter != .gutenberg, !displayed.isEmpty, catalogStore.catalogError == nil else { return }
         preflightTask?.cancel()
         let results = displayed
         let catalogStore = catalogStore
@@ -831,14 +807,12 @@ struct BrowseView: View {
         preflightTask?.cancel()
         preflightTask = nil
         searchLifecycle.reset()
+        cancelSearchRequests()
+        catalogStore.resetResultsForNavigation()
         catalogStore.query = ""
         searchScope = .all
-        if selectedCollection == nil {
-            discoverScope = .all
-            catalogStore.resetResultsForNavigation()
-        } else {
-            discoverScope = .collection
-            Task { await loadSelectedCollection() }
+        if sourceFilter == .collections, let selectedCollection {
+            startCollectionLoad(selectedCollection, sort: collectionSort)
         }
     }
 
@@ -881,17 +855,6 @@ private enum DiscoverSearchScope: Hashable {
     case narrator
 }
 
-private enum FindSourceFilter: Hashable {
-    case all, librivox, collections, gutenberg
-}
-
-private enum DiscoverBrowseScope: String, CaseIterable, Identifiable {
-    case all
-    case collection
-
-    var id: String { rawValue }
-}
-
 private struct ExploreCollectionCard: View {
     var collection: IACollection
     var previews: [CollectionBookPreview]
@@ -909,11 +872,11 @@ private struct ExploreCollectionCard: View {
                     Spacer()
                 }
                 HStack(alignment: .firstTextBaseline) {
-                    Text(collection.title).voxType(.collectionTitle).foregroundStyle(Palette.ink)
+                    Text(collection.title).voxFont(LibraryScreenTypography.card, weight: .semibold).foregroundStyle(Palette.ink)
                     Spacer(minLength: 4)
                 }
-                Text(collection.description).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(2)
-                if let caption = approximateCountCaption { Text(caption).voxType(.eyebrow).foregroundStyle(Palette.ink2) }
+                Text(collection.description).voxFont(LibraryScreenTypography.card).foregroundStyle(Palette.ink3).lineLimit(2)
+                if let caption = approximateCountCaption { Text(caption).voxFont(LibraryScreenTypography.card, weight: .semibold).foregroundStyle(Palette.ink2) }
             }
             .padding(14)
             // The visual surface is the control. Keep the complete card in
@@ -928,7 +891,7 @@ private struct ExploreCollectionCard: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("discover.collection.\(collection.id)")
         .frame(maxWidth: .infinity)
-        .frame(height: 196)
+        .frame(minHeight: 196)
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .raisedSurface()
         .overlay(alignment: .topTrailing) {
@@ -972,9 +935,9 @@ private struct ExploreCollectionCard: View {
     private var curatedBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "rosette")
-                .voxFont(.caption2, weight: .bold)
+                .voxFont(LibraryScreenTypography.card, weight: .bold)
             Text("CURATED")
-                .voxFont(.caption2, weight: .bold)
+                .voxFont(LibraryScreenTypography.card, weight: .bold)
         }
         .foregroundStyle(.black)
         .padding(.horizontal, 6)

@@ -63,12 +63,14 @@ struct RootView: View {
                   let title = libraryStore.book(withID: bookID)?.book.title else { return }
             AccessibilityNotification.Announcement("\(title) downloaded").post()
         }
-        .onChange(of: phoneAudioRelay.connectionToast) { _, value in
-            guard value != nil else { return }
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                phoneAudioRelay.connectionToast = nil
-            }
+        .task(id: phoneAudioRelay.connectionToast) {
+            // Also schedule expiry when WCSession connected before this view
+            // appeared. SwiftUI cancels this timer on replacement/disappearance.
+            guard let toast = phoneAudioRelay.connectionToast else { return }
+            do { try await Task.sleep(for: .seconds(3)) }
+            catch { return }
+            guard !Task.isCancelled, phoneAudioRelay.connectionToast == toast else { return }
+            phoneAudioRelay.connectionToast = nil
         }
     }
 

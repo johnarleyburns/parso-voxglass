@@ -69,3 +69,11 @@ enum Motion {
     static let standard = Animation.spring(response: 0.35, dampingFraction: 0.85)
     static let pauseScale: CGFloat = 0.88
 }
+
+/// Shared Dynamic Type hierarchy for Listen, Find, and My Books.
+/// Page titles use the navigation bar's semantic large-title style.
+enum LibraryScreenTypography {
+    static let page: Font.TextStyle = .largeTitle
+    static let controls: Font.TextStyle = .subheadline
+    static let card: Font.TextStyle = .footnote
+}

@@ -146,7 +146,7 @@ struct ListenView: View {
             return nil
         }()
         return VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(title: "Now Playing")
+            SectionTitle(title: "Now Playing", usesThreeSizeTypography: true)
             HStack(spacing: 10) {
                 Button {
                     showingNowPlaying = true
@@ -161,12 +161,12 @@ struct ListenView: View {
                         )
                         VStack(alignment: .leading, spacing: 5) {
                             Text(title)
-                                .voxType(.bookTitle)
+                                .voxFont(LibraryScreenTypography.card, weight: .medium)
                                 .foregroundStyle(Palette.ink)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                             Text(failureMessage ?? session.book.displayAuthorLine ?? String(localized: "Imported"))
-                                .voxType(.meta)
+                                .voxFont(LibraryScreenTypography.card)
                                 .foregroundStyle(Palette.ink2)
                                 .lineLimit(1)
                             HStack(spacing: 8) {
@@ -175,7 +175,7 @@ struct ListenView: View {
                                         .accessibilityHidden(true)
                                 }
                                 Text(status)
-                                    .voxType(.body)
+                                    .voxFont(LibraryScreenTypography.card)
                                     .lineLimit(1)
                             }
                             .foregroundStyle(Palette.onBrass)
@@ -199,7 +199,7 @@ struct ListenView: View {
                         playback.togglePlayPause()
                     } label: {
                         Image(systemName: "pause.fill")
-                            .voxFont(.title3, weight: .semibold)
+                            .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
@@ -240,11 +240,12 @@ struct ListenView: View {
         heroHandoff.didTapResume()
         miniPlayerRouter.requestNowPlayingAfterSelection(bookID: book.book.id)
         playback.selectAndPlay(book)
+        miniPlayerRouter.presentWhenSessionIsReady(bookID: playback.currentSession?.book.id)
     }
 
     private func continueCard(book: BookWithChapters, resumeLabel: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(title: "Continue Listening")
+            SectionTitle(title: "Continue Listening", usesThreeSizeTypography: true)
             Button {
                 resumeFromListen(book)
             } label: {
@@ -259,27 +260,19 @@ struct ListenView: View {
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text(book.book.title)
-                            .voxType(.bookTitle)
+                            .voxFont(LibraryScreenTypography.card, weight: .medium)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                         Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
-                            .voxType(.meta)
+                            .voxFont(LibraryScreenTypography.card)
                             .foregroundStyle(Palette.ink2)
                             .lineLimit(1)
-                        Text(resumeLabel)
-                            .voxType(.body)
-                            .lineLimit(1)
-                            .foregroundStyle(Palette.onBrass)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Palette.brass, in: Capsule())
-                            .accessibilityIdentifier("listen.resume")
                     }
 
                     Spacer(minLength: 0)
-                    Image(systemName: "play.circle.fill")
-                        .voxFont(.title, weight: .semibold)
+                    Image(systemName: "chevron.right")
+                        .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                         .foregroundStyle(Palette.brass)
                         .frame(width: 44, height: 44)
                 }
@@ -290,7 +283,7 @@ struct ListenView: View {
             .tactileTap()
             .accessibilityIdentifier("listen.continueListening")
             .accessibilityLabel("\(resumeLabel) \(book.book.title)")
-            .accessibilityHint("Starts playback in the mini player")
+            .accessibilityHint("Resumes playback and opens Now Playing")
         }
     }
 
@@ -303,8 +296,8 @@ struct ListenView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("This week").voxType(.section)
-                    Text("\(durationString(statsLast7DaysTotal)) · Longest day: \(statsDailyBars.last?.label ?? "—")").voxType(.meta).foregroundStyle(Palette.ink2)
+                    Text("This week").voxFont(LibraryScreenTypography.card, weight: .semibold)
+                    Text("\(durationString(statsLast7DaysTotal)) · Longest day: \(statsDailyBars.last?.label ?? "—")").voxFont(LibraryScreenTypography.card).foregroundStyle(Palette.ink2)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").foregroundStyle(Palette.ink3)
@@ -325,9 +318,9 @@ struct ListenView: View {
     private var supporterBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "heart.fill")
-                .voxFont(.caption2, weight: .bold)
+                .voxFont(LibraryScreenTypography.card, weight: .bold)
             Text("Supporter")
-                .voxFont(.caption2, weight: .semibold)
+                .voxFont(LibraryScreenTypography.card, weight: .semibold)
         }
         .foregroundStyle(Palette.brass)
         .padding(.horizontal, 10)
@@ -340,7 +333,7 @@ struct ListenView: View {
             showSettings = true
         } label: {
             Image(systemName: "gearshape.fill")
-                .voxFont(.title3, weight: .semibold)
+                .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
                 .frame(width: 40, height: 40)
         }
@@ -358,7 +351,7 @@ struct ListenView: View {
         let books = jumpBackInBooks
         if !books.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(title: "Jump Back In")
+                SectionTitle(title: "Jump Back In", usesThreeSizeTypography: true)
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
                         ForEach(books) { book in
@@ -385,7 +378,7 @@ struct ListenView: View {
     private var listeningStatsSummary: some View {
         if statsTotalTime > 0 {
             VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(title: "Listening Stats", actionTitle: "Show more…", action: { showStats = true })
+                SectionTitle(title: "Listening Stats", actionTitle: "Show more…", action: { showStats = true }, usesThreeSizeTypography: true)
                 HStack(spacing: 12) {
                     statTile(value: durationString(statsTotalTime), label: "Total time")
                     statTile(value: durationString(statsLast7DaysTotal), label: "Last 7 days")
@@ -398,10 +391,10 @@ struct ListenView: View {
     private func statTile(value: String, label: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
-                .voxFont(.title2, weight: .heavy)
+                .voxFont(LibraryScreenTypography.card, weight: .heavy)
                 .foregroundStyle(Palette.ink)
             Text(label)
-                .voxFont(.caption)
+                .voxFont(LibraryScreenTypography.card)
                 .foregroundStyle(Palette.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -420,7 +413,7 @@ struct ListenView: View {
                             startPoint: .top, endPoint: .bottom))
                         .frame(height: max(3, CGFloat(bar.seconds / maxSeconds) * 44))
                     Text(bar.label)
-                        .voxFont(.caption2, weight: .semibold)
+                        .voxFont(LibraryScreenTypography.card, weight: .semibold)
                         .foregroundStyle(Palette.ink3)
                 }
                 .frame(maxWidth: .infinity)
@@ -502,13 +495,14 @@ struct ListenView: View {
     private var recommended: some View {
         let results = visibleRecommendations
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Recommended for You")
+            SectionTitle(title: "Recommended for You", usesThreeSizeTypography: true)
 
             if results.isEmpty {
                 EmptyStatePanel(
                     title: "Finding LibriVox Picks",
                     message: "Popular public-domain audiobooks will appear here.",
-                    systemImage: "sparkles"
+                    systemImage: "sparkles",
+                    usesThreeSizeTypography: true
                 )
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -517,7 +511,7 @@ struct ListenView: View {
                             Button {
                                 Task { await presentResult(result) }
                             } label: {
-                                HorizontalCatalogCard(result: result)
+                                HorizontalCatalogCard(result: result, usesThreeSizeTypography: true)
                             }
                             .buttonStyle(.plain)
                             .tactileTap()
@@ -642,7 +636,8 @@ struct ListenBookCard: View {
         HorizontalBookCard(
             title: book.book.title,
             author: book.book.displayAuthorLine,
-            coverURL: book.book.coverURL
+            coverURL: book.book.coverURL,
+            usesThreeSizeTypography: true
         )
     }
 }

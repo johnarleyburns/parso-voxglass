@@ -103,7 +103,7 @@ public final class CatalogStore {
         let generation = searchGeneration
 
         isLoadingMore = true
-        defer { isLoadingMore = false }
+        defer { if generation == searchGeneration { isLoadingMore = false } }
 
         let nextPage = currentPage + 1
         do {
@@ -121,13 +121,14 @@ public final class CatalogStore {
             results.append(contentsOf: appended)
             updateHasMore()
         } catch {
+            guard generation == searchGeneration, !Task.isCancelled else { return }
             catalogError = error.localizedDescription
         }
     }
 
     private func runCurationSearch(generation: Int) async {
         isSearching = true
-        defer { isSearching = false }
+        defer { if generation == searchGeneration { isSearching = false } }
 
         activeSort = .curation
         currentPage = 1
@@ -152,16 +153,17 @@ public final class CatalogStore {
             results = filtered
             updateHasMore()
         } catch {
+            guard generation == searchGeneration, !Task.isCancelled else { return }
             catalogError = error.localizedDescription
         }
     }
 
     private func loadMoreCuration() async {
+        let generation = searchGeneration
         isLoadingMore = true
-        defer { isLoadingMore = false }
+        defer { if generation == searchGeneration { isLoadingMore = false } }
 
         let nextPage = currentPage + 1
-        let generation = searchGeneration
         let slice = CuratedPager.slice(manifest: curatedManifest, page: nextPage, size: pageSize)
         guard !slice.isEmpty else {
             updateHasMore()
@@ -178,6 +180,7 @@ public final class CatalogStore {
             results.append(contentsOf: appended)
             updateHasMore()
         } catch {
+            guard generation == searchGeneration, !Task.isCancelled else { return }
             catalogError = error.localizedDescription
         }
     }
@@ -316,6 +319,11 @@ public final class CatalogStore {
     /// Discover uses this when the user removes a collection scope or clears
     /// the search field, so stale results never remain attached to a new state.
     public func resetResultsForNavigation() {
+        // A previous source can finish after Find moves to another catalog.
+        // Invalidate both its success and failure publications.
+        searchGeneration += 1
+        isSearching = false
+        isLoadingMore = false
         results = []
         resetPaging()
         ownershipPreflightAttemptedIDs.removeAll()
@@ -370,7 +378,7 @@ public final class CatalogStore {
 
     private func runSearch(query: String, sort: CatalogSort, generation: Int) async {
         isSearching = true
-        defer { isSearching = false }
+        defer { if generation == searchGeneration { isSearching = false } }
 
         activeQuery = query
         activeSort = sort

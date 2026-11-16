@@ -49,7 +49,7 @@ final class VoxglassUITests: XCTestCase {
         // Every tab is reachable and renders a stable anchor without crashing.
         let tabs: [(button: String, anchor: String)] = [
             ("My Books", "My Books"),
-            ("Find", "Featured Collections"),
+            ("Find", "Find"),
             ("Listen", "Recommended for You")
         ]
         for tabSpec in tabs {
@@ -201,7 +201,7 @@ final class VoxglassUITests: XCTestCase {
     private func assertHistoryOpensFromExploreWithoutCrashing(app: XCUIApplication) {
         tab("Find", in: app).tap()
         XCTAssertTrue(
-            app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
+            app.textFields["discover.catalogSearch"].waitForExistence(timeout: 10),
             "Find did not render before opening History.\n\(app.debugDescription)"
         )
 
@@ -234,6 +234,7 @@ final class VoxglassUITests: XCTestCase {
     /// English only, so the German/Spanish titles must not appear.
     private func assertFeaturedCollectionsRespectSelectedLanguage(app: XCUIApplication) {
         tab("Find", in: app).tap()
+        app.buttons["LibriVox Collections"].tap()
         XCTAssertTrue(
             app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
             "Find did not render.\n\(app.debugDescription)"
@@ -417,6 +418,61 @@ final class VoxglassUITests: XCTestCase {
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: nowPlaying)
         wait(for: [gone], timeout: 5)
         XCTAssertTrue(app.otherElements["chrome.miniPlayer"].waitForExistence(timeout: 5))
+    }
+
+    func testContinueListeningOpensSimplifiedDismissiblePlayer() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-VoxglassInitialTab", "listen", "-uiTestDisableCloudKit"]
+        app.launch()
+        let resume = app.buttons["listen.continueListening"]
+        guard resume.waitForExistence(timeout: 10) else {
+            throw XCTSkip("Requires a saved, paused book in Continue Listening.")
+        }
+        XCTAssertFalse(resume.staticTexts["Resume"].exists)
+        resume.tap()
+        let details = app.buttons["nowplaying.more"]
+        XCTAssertTrue(details.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["nowplaying.chapters"].exists)
+        XCTAssertFalse(app.buttons["nowplaying.speed"].exists)
+        XCTAssertFalse(app.buttons["nowplaying.readWithAIVoice"].exists)
+        XCTAssertFalse(app.staticTexts["In My Books"].exists)
+
+        details.tap()
+        XCTAssertTrue(app.buttons["nowplaying.speed"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["nowplaying.sleepTimer"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        // Swipe from the sheet header so the content scroll view cannot consume it.
+        let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+        top.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))
+        XCTAssertTrue(app.buttons["listen.nowPlaying.open"].waitForExistence(timeout: 5))
+    }
+
+    func testFindHasThreeExclusiveSourcePills() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-VoxglassInitialTab", "listen", "-uiTestDisableCloudKit"]
+        app.launch()
+        tab("Find", in: app).tap()
+        XCTAssertFalse(app.otherElements["discover.searchScope"].exists)
+        app.buttons["discover.filterButton"].tap()
+        for option in ["All", "Title", "Author", "Narrator", "Single narrator"] {
+            XCTAssertTrue(app.buttons[option].waitForExistence(timeout: 5), "Missing filter option: \(option)")
+        }
+        app.buttons["All"].tap()
+        let sources = app.descendants(matching: .any).matching(identifier: "discover.sourceFilter").firstMatch
+        XCTAssertTrue(sources.waitForExistence(timeout: 10))
+        XCTAssertEqual(sources.buttons.count, 3)
+        XCTAssertFalse(sources.buttons["All"].exists)
+        XCTAssertTrue(sources.buttons["LibriVox"].exists)
+        XCTAssertTrue(sources.buttons["LibriVox Collections"].exists)
+        XCTAssertTrue(sources.buttons["Gutenberg Read by AI"].exists)
+        sources.buttons["LibriVox Collections"].tap()
+        XCTAssertTrue(app.staticTexts["Featured Collections"].waitForExistence(timeout: 5))
+        let gutenberg = sources.buttons["Gutenberg Read by AI"]
+        if !gutenberg.isHittable { sources.swipeLeft() }
+        gutenberg.tap()
+        XCTAssertFalse(app.staticTexts["Featured Collections"].exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'discover.result.'")).firstMatch.exists)
     }
 
     private func tab(_ label: String, in app: XCUIApplication) -> XCUIElement {

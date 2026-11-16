@@ -3,6 +3,57 @@ import Foundation
 @testable import VoxglassCore
 
 @Suite struct InternetArchiveCatalogTests {
+    /// A server that completes after navigation, even when its caller cancels.
+    private actor DeferredSearchClient: InternetArchiveCatalogClient {
+        private var pending: CheckedContinuation<InternetArchivePage, any Error>?
+        private var started: CheckedContinuation<Void, Never>?
+        func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] { [] }
+        func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult] { [] }
+        func metadata(for identifier: String) async throws -> InternetArchiveMetadata { throw URLError(.badURL) }
+        func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage {
+            try await withCheckedThrowingContinuation { continuation in
+                pending = continuation
+                started?.resume()
+                started = nil
+            }
+        }
+        func waitForSearch() async {
+            if pending != nil { return }
+            await withCheckedContinuation { started = $0 }
+        }
+        func complete(_ result: Result<InternetArchivePage, any Error>) {
+            pending?.resume(with: result)
+            pending = nil
+        }
+    }
+
+    @MainActor @Test func sourceNavigationRejectsLateCatalogResultsAndErrors() async {
+        let result = InternetArchiveSearchResult(identifier: "old-source", title: "Old source", creators: [],
+            description: nil, collections: ["librivoxaudio"], downloads: nil, date: nil)
+        let outcomes: [Result<InternetArchivePage, any Error>] = [
+            .success(InternetArchivePage(results: [result], numFound: 1, page: 1)),
+            .failure(URLError(.timedOut))
+        ]
+        for outcome in outcomes {
+            let client = DeferredSearchClient()
+            let catalog = CatalogStore(client: client)
+            catalog.query = "kept query"
+            let request = Task { await catalog.searchAdvanced("old query", sort: .popularity) }
+            await client.waitForSearch()
+            #expect(catalog.isSearching)
+            // Moving to Gutenberg must invalidate LibriVox work, even if its
+            // transport returns after the navigation reset.
+            catalog.resetResultsForNavigation()
+            #expect(!catalog.isSearching)
+            #expect(catalog.query == "kept query")
+            await client.complete(outcome)
+            await request.value
+            #expect(catalog.results.isEmpty)
+            #expect(catalog.catalogError == nil)
+            #expect(!catalog.hasMore)
+        }
+    }
+
     private let decoder = JSONDecoder()
 
     @Test func advancedSearchFixtureDecodesLibriVoxResults() throws {
