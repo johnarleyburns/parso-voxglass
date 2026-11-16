@@ -18,8 +18,9 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
     @State private var isEditing = false
+    @ScaledMetric(relativeTo: .footnote) private var libraryRowMinimumHeight = BookListRow.libraryRowMinimumHeight
     @State private var showingAddArchiveURL = false
-    @State private var bookOrder: [UUID] = []
+    @State private var lastPlayedAt: [UUID: Date] = [:]
     @State private var selectedBookID: UUID?
     // My Books is the user's complete shelf by default. Solo narration and
     // Created by me are local refinements, so a discovery preference cannot
@@ -35,11 +36,7 @@ struct LibraryView: View {
             headerTrailingContent: AnyView(libraryHeaderActions)
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                HStack(spacing: 10) {
-                    Button("All Books") { onMyWatchOnly = false }
-                    Button("On My Watch") { onMyWatchOnly = true }
-                }
-                .buttonStyle(.bordered).tint(Palette.brass)
+                shelfPicker
                 if onMyWatchOnly { watchMirror } else { bookList }
             }
             .onReceive(NotificationCenter.default.publisher(for: .showMyWatchBooks)) { _ in onMyWatchOnly = true }
@@ -147,22 +144,35 @@ struct LibraryView: View {
             Text(phoneAudioRelay.watchTransferError ?? "")
         }
         .task {
+            if libraryStore.progressFilter == .all { libraryStore.progressFilter = .inProgress }
             libraryStore.sort = .recent
             await libraryStore.refresh()
-            bookOrder = libraryStore.books.map { $0.book.id }
         }
-        .onChange(of: libraryStore.books) { _, books in
-            let ids = books.map { $0.book.id }
-            bookOrder = bookOrder.filter(ids.contains) + ids.filter { !bookOrder.contains($0) }
+        .task(id: libraryStore.recentlyPlayed.map(\.id)) {
+            let history = await libraryStore.fetchListeningHistory()
+            lastPlayedAt = Dictionary(uniqueKeysWithValues: history.map { ($0.book.id, $0.lastPlayedAt) })
+        }
+        .onChange(of: showingNowPlaying) { _, presented in
+            guard !presented else { return }
+            Task { await libraryStore.refresh() }
+        }
+    }
+
+    private var orderedWatchBooks: [WatchBookDTO] {
+        phoneAudioRelay.watchCatalogBooks.sorted { lhs, rhs in
+            let left = UUID(uuidString: lhs.id.rawValue).flatMap { lastPlayedAt[$0] } ?? .distantPast
+            let right = UUID(uuidString: rhs.id.rawValue).flatMap { lastPlayedAt[$0] } ?? .distantPast
+            if left != right { return left > right }
+            return lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
         }
     }
 
     @ViewBuilder
     private var watchMirror: some View {
         if phoneAudioRelay.watchCatalogBooks.isEmpty {
-            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch")
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch", usesThreeSizeTypography: true)
         } else {
-            ForEach(phoneAudioRelay.watchCatalogBooks, id: \.id) { book in
+            ForEach(orderedWatchBooks, id: \.id) { book in
                 let id = UUID(uuidString: book.id.rawValue)
                 let storage = id.flatMap { phoneAudioRelay.watchStorageInfo(for: $0) }
                 let desired = phoneAudioRelay.watchDesiredStates[book.id]
@@ -170,8 +180,8 @@ struct LibraryView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(book.title).font(.headline)
-                            if let author = book.author { Text(author).font(.caption).foregroundStyle(.secondary) }
+                            Text(book.title).voxFont(LibraryScreenTypography.card, weight: .medium)
+                            if let author = book.author { Text(author).voxFont(LibraryScreenTypography.card).foregroundStyle(.secondary) }
                         }
                         Spacer()
                         if resolved == .available {
@@ -180,9 +190,9 @@ struct LibraryView: View {
                         }
                     }
                     if desired == .removing {
-                        Text("Removal sent to Apple Watch.").font(.caption)
+                        Text("Removal sent to Apple Watch.").voxFont(LibraryScreenTypography.card)
                     } else if case .failed(let reason)? = desired {
-                        Text(reason).font(.caption)
+                        Text(reason).voxFont(LibraryScreenTypography.card)
                         Button("Try Again") {
                             if let original = libraryStore.books.first(where: { $0.book.id == id }) {
                                 initialWatchTransferBook = original
@@ -190,14 +200,14 @@ struct LibraryView: View {
                         }.buttonStyle(.borderless).disabled(phoneAudioRelay.isTransferringToWatch)
                     } else if case .transferring(let fraction) = resolved {
                         ProgressView(value: fraction)
-                        Text("Transferring audio to Apple Watch").font(.caption)
+                        Text("Transferring audio to Apple Watch").voxFont(LibraryScreenTypography.card)
                     } else if resolved != .available {
-                        Text(desired == .preparing ? String(localized: "Preparing watch AAC on iPhone…") : String(localized: "Submitted to Apple's transfer service; not yet installed.")).font(.caption)
+                        Text(desired == .preparing ? String(localized: "Preparing watch AAC on iPhone…") : String(localized: "Submitted to Apple's transfer service; not yet installed.")).voxFont(LibraryScreenTypography.card)
                         ProgressView()
                     }
                     Button("Remove from Apple Watch", role: .destructive) { pendingWatchRemoval = book }
                         .buttonStyle(.borderless).disabled(desired == .removing)
-                }.padding(14).raisedSurface()
+                }.voxFont(LibraryScreenTypography.card).padding(14).raisedSurface()
             }
         }
     }
@@ -209,10 +219,10 @@ struct LibraryView: View {
                 EmptyStatePanel(
                     title: "No Audiobooks Yet",
                     message: "Search the catalog in Discover or add an audiobook to build your shelf. Everything you play is cached here automatically.",
-                    systemImage: "books.vertical"
+                    systemImage: "books.vertical",
+                    usesThreeSizeTypography: true
                 )
             } else {
-                filterBar
                 if showSearch {
                     searchBar
                 }
@@ -284,11 +294,6 @@ struct LibraryView: View {
                             guard let index = offsets.first, books.indices.contains(index) else { return }
                             pendingDeletion = books[index]
                         }
-                        .onMove { source, destination in
-                            var ids = books.map { $0.book.id }
-                            ids.move(fromOffsets: source, toOffset: destination)
-                            bookOrder = ids + bookOrder.filter { !ids.contains($0) }
-                        }
                     }
                     .listStyle(.plain)
                     .scrollDisabled(true)
@@ -298,7 +303,7 @@ struct LibraryView: View {
                     // present. An exact row-count frame clipped the final
                     // book and sometimes clipped the metadata of earlier
                     // rows as well.
-                    .frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.libraryRowMinimumHeight)
+                    .frame(minHeight: CGFloat(max(1, books.count)) * libraryRowMinimumHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
@@ -308,47 +313,53 @@ struct LibraryView: View {
     @ViewBuilder
     private var filteredEmptyState: some View {
         if onMyWatchOnly {
-            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch")
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch", usesThreeSizeTypography: true)
         } else if libraryStore.downloadedOnly {
             EmptyStatePanel(
                 title: "No Downloads Yet",
                 message: "Books you cache for offline listening will appear here.",
-                systemImage: "arrow.down.circle"
+                systemImage: "arrow.down.circle",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.downloadedEmptyState")
         } else if libraryStore.favoriteOnly {
             EmptyStatePanel(
                 title: "No Favorite Books",
                 message: "Favorite a book to keep it in this view.",
-                systemImage: "heart"
+                systemImage: "heart",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.favoritesEmptyState")
         } else if soloOnly {
             EmptyStatePanel(
                 title: "No Single-narrator Books",
                 message: "Turn off Single narrator to see the rest of this view.",
-                systemImage: "mic"
+                systemImage: "mic",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.soloEmptyState")
         } else if myNarrationOnly {
             EmptyStatePanel(
                 title: "No Narrations by Me",
                 message: "Narrations you create on this device will appear here.",
-                systemImage: "person.wave.2"
+                systemImage: "person.wave.2",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.myNarrationEmptyState")
         } else if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             EmptyStatePanel(
                 title: "No Matching Books",
                 message: "Try a different title, author, or narrator.",
-                systemImage: "magnifyingglass"
+                systemImage: "magnifyingglass",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.filteredEmptyState")
         } else {
             EmptyStatePanel(
                 title: "No Books in This View",
                 message: "Try another filter to see more of your saved books.",
-                systemImage: "books.vertical"
+                systemImage: "books.vertical",
+                usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.filteredEmptyState")
         }
@@ -364,7 +375,8 @@ struct LibraryView: View {
             style: .grouped,
             watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
             isMyNarration: isMyNarration(book),
-            progress: progressFraction(for: book)
+            progress: progressFraction(for: book),
+            usesThreeSizeTypography: true
         )
         .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
         .accessibilityActions {
@@ -389,10 +401,39 @@ struct LibraryView: View {
         }
     }
 
-    private var filterBar: some View {
-        BookScopeBar(title: "Filter", selection: $libraryStore.progressFilter, options: [
-            (.inProgress, "In Progress"), (.finished, "Finished"), (.all, "All")
-        ])
+    private var shelfPicker: some View {
+        ViewThatFits(in: .horizontal) {
+            shelfOptions
+            ScrollView(.horizontal, showsIndicators: false) { shelfOptions }
+        }
+    }
+
+    private var shelfOptions: some View {
+        HStack(spacing: 8) {
+            shelfOption("In Progress", selected: !onMyWatchOnly && libraryStore.progressFilter == .inProgress) {
+                onMyWatchOnly = false
+                libraryStore.progressFilter = .inProgress
+            }
+            shelfOption("Finished", selected: !onMyWatchOnly && libraryStore.progressFilter == .finished) {
+                onMyWatchOnly = false
+                libraryStore.progressFilter = .finished
+            }
+            shelfOption("On My Watch", selected: onMyWatchOnly) { onMyWatchOnly = true }
+        }
+    }
+
+    private func shelfOption(_ title: LocalizedStringKey, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .voxFont(LibraryScreenTypography.controls)
+                .fixedSize()
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+                .foregroundStyle(selected ? Palette.brass : Palette.ink)
+                .glassEffect(.regular.tint(selected ? Palette.brass.opacity(0.2) : .clear).interactive(), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var libraryHeaderActions: some View {
@@ -407,7 +448,7 @@ struct LibraryView: View {
                 }
             } label: {
                 Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                    .voxFont(.body, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -419,7 +460,7 @@ struct LibraryView: View {
                 showingAddArchiveURL = true
             } label: {
                 Text("+")
-                    .voxFont(.title2, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -436,33 +477,18 @@ struct LibraryView: View {
                     Toggle("Single narrator", isOn: $soloOnly)
                     Toggle("Created by me", isOn: $myNarrationOnly)
                 }
-                Section("Sort") {
-                    Button { libraryStore.sort = .recent } label: { sortLabel("Recently updated", active: libraryStore.sort == .recent) }
-                    Button { libraryStore.sort = .title } label: { sortLabel("Title", active: libraryStore.sort == .title) }
-                    Button { libraryStore.sort = .author } label: { sortLabel("Author", active: libraryStore.sort == .author) }
-                    Button { libraryStore.sort = .progress } label: { sortLabel("Progress", active: libraryStore.sort == .progress) }
-                }
                 Divider()
-                Button(isEditing ? "Done editing" : "Edit order") { // l10n-exempt: state-dependent accessibility or status copy
+                Button(isEditing ? "Done editing" : "Edit books") { // l10n-exempt: state-dependent accessibility or status copy
                     withAnimation { isEditing.toggle() }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .voxFont(.body, weight: .semibold)
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
             .accessibilityLabel("More My Books options")
             .accessibilityIdentifier("library.moreMenu")
-        }
-    }
-
-    @ViewBuilder
-    private func sortLabel(_ title: LocalizedStringKey, active: Bool) -> some View {
-        if active {
-            Label(title, systemImage: "checkmark")
-        } else {
-            Text(title)
         }
     }
 
@@ -490,9 +516,9 @@ struct LibraryView: View {
                     .accessibilityLabel("Clear search")
                 }
             }
-            .voxFont(.subheadline)
+            .voxFont(LibraryScreenTypography.controls)
             .padding(.horizontal, 14)
-            .frame(height: 40)
+            .frame(minHeight: 40)
             .contentShape(Rectangle())
             .raisedSurface()
 
@@ -502,6 +528,7 @@ struct LibraryView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .voxFont(LibraryScreenTypography.controls)
             .tint(Palette.brass)
         }
     }
@@ -577,9 +604,12 @@ struct LibraryView: View {
 
     private var orderedFilteredBooks: [BookWithChapters] {
         let books = filteredBooks
-        let ranks = Dictionary(uniqueKeysWithValues: bookOrder.enumerated().map { ($1, $0) })
         return books.sorted { lhs, rhs in
-            (ranks[lhs.book.id] ?? Int.max) < (ranks[rhs.book.id] ?? Int.max)
+            let left = lastPlayedAt[lhs.book.id] ?? .distantPast
+            let right = lastPlayedAt[rhs.book.id] ?? .distantPast
+            if left != right { return left > right }
+            if lhs.book.updatedAt != rhs.book.updatedAt { return lhs.book.updatedAt > rhs.book.updatedAt }
+            return lhs.book.id.uuidString < rhs.book.id.uuidString
         }
     }
 

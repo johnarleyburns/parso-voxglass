@@ -8,6 +8,8 @@ struct BookPageOverflowSheet: View {
     let book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @Binding var showRemoveOfflineConfirm: Bool
+    @Binding var showCellularPrompt: Bool
+    @Binding var showAddToLibraryConfirm: Bool
     @State private var showingPlaylistPicker = false
     @State private var showingBookmarks = false
     @State private var showingEQ = false
@@ -33,6 +35,7 @@ struct BookPageOverflowSheet: View {
                         .padding(.top, 6)
 
                     List {
+                        detailsSection
                         thisBookSection
                         audioSection
                         discoverSection
@@ -41,7 +44,7 @@ struct BookPageOverflowSheet: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("More")
+            .navigationTitle("Book Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -70,6 +73,33 @@ struct BookPageOverflowSheet: View {
                     .environment(playback)
             }
             .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var detailsSection: some View {
+        Section("Details") {
+            Text(book.book.title).voxType(.bookTitle)
+            if book.book.isPending {
+                Button("Add to My Books") {
+                    showAddToLibraryConfirm = true
+                    dismiss()
+                }
+            } else {
+                Label("In My Books", systemImage: "checkmark.circle.fill")
+            }
+            Text("\(book.chapters.count) chapters")
+            if book.narrationKind == .solo {
+                Text("Single narrator")
+            }
+            if offlineState == .cached || libraryStore.source(for: book.book)?.kind == .localFiles {
+                Label("Available offline", systemImage: "checkmark.circle")
+            }
+            if let source = libraryStore.source(for: book.book),
+               source.kind == .librivox || source.kind == .readWithAI {
+                Text("Public domain")
+            }
+            if let genre { Text(genre.title) }
+            if let summary = book.book.summary, !summary.isEmpty { Text(summary) }
         }
     }
 
@@ -103,6 +133,30 @@ struct BookPageOverflowSheet: View {
 
     private var audioSection: some View {
         Section("Audio") {
+            BookPageActionRow(
+                isDetailList: true,
+                book: book,
+                showingEQ: $showingEQ,
+                showingBookmarks: $showingBookmarks,
+                showingOverflow: .constant(false),
+                showCellularPrompt: $showCellularPrompt,
+                showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
+                requestWatchDownload: {
+                    dismiss()
+                    requestWatchDownload()
+                }
+            )
+            if libraryStore.source(for: book.book)?.kind == .readWithAI {
+                NavigationLink {
+                    ReadWithAIVoicePicker(bookID: book.book.id) { preference in
+                        playback.selectReadWithAIVoice(preference, for: book.book.id)
+                    }
+                } label: {
+                    Label("Select AI Voice", systemImage: "waveform.and.mic")
+                }
+                .accessibilityIdentifier("nowplaying.readWithAIVoice")
+            }
+
             Button {
                 showingEQ = true
             } label: {
@@ -206,14 +260,6 @@ struct BookPageOverflowSheet: View {
                 }
                 .accessibilityIdentifier("nowplaying.download")
             }
-
-            Button {
-                dismiss()
-                requestWatchDownload()
-            } label: {
-                overflowRow(icon: "applewatch", title: "Send to Apple Watch")
-            }
-            .accessibilityIdentifier("nowplaying.watchDownload")
 
             Button(role: .destructive) {
                 showRemoveConfirm = true

@@ -96,11 +96,13 @@ struct VisualSummaryRow: View {
 
 struct HorizontalCatalogCard: View {
     var result: InternetArchiveSearchResult
+    var usesThreeSizeTypography = false
     var body: some View {
         HorizontalBookCard(
             title: result.title,
             author: result.displayAuthorLine,
-            coverURL: result.coverURL
+            coverURL: result.coverURL,
+            usesThreeSizeTypography: usesThreeSizeTypography
         )
     }
 }
@@ -111,32 +113,37 @@ struct HorizontalBookCard: View {
     var title: String
     var author: String?
     var coverURL: URL?
+    var usesThreeSizeTypography = false
+    @ScaledMetric(relativeTo: .footnote) private var uniformTitleHeight: CGFloat = 54
+    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 63
+    @ScaledMetric(relativeTo: .footnote) private var authorHeight: CGFloat = 32
+
+    private var resolvedTitleHeight: CGFloat { usesThreeSizeTypography ? uniformTitleHeight : titleHeight }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             CoverPlate(title: title, author: author, coverURL: coverURL, size: 132)
             Text(title)
-                .voxType(.bookTitle)
+                .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .headline, weight: .medium)
+                .fontDesign(usesThreeSizeTypography ? .default : .serif)
                 .foregroundStyle(Palette.ink)
-                .lineLimit(2)
-                .minimumScaleFactor(0.82)
-                .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42, alignment: .topLeading)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, minHeight: resolvedTitleHeight, maxHeight: resolvedTitleHeight, alignment: .topLeading)
                 .padding(.top, 7)
             if let author, !author.isEmpty {
                 Text(author)
-                    .voxType(.meta)
+                    .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .footnote)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 32, maxHeight: 32, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, minHeight: authorHeight, maxHeight: authorHeight, alignment: .topLeading)
                     .padding(.top, 1)
             } else {
                 Color.clear
-                    .frame(height: 33)
+                    .frame(height: authorHeight + 1)
                     .accessibilityHidden(true)
             }
         }
-        .frame(width: 132, height: 216, alignment: .topLeading)
+        .frame(width: 132, height: 142 + resolvedTitleHeight + authorHeight, alignment: .topLeading)
     }
 }
 
@@ -162,8 +169,15 @@ extension Book {
 }
 
 struct ImportedTag: View {
+    var usesThreeSizeTypography = false
+
     var body: some View {
-        Text("IMPORTED").voxType(.eyebrow).foregroundStyle(Palette.ink2).padding(.horizontal, 5).padding(.vertical, 3)
+        Text("IMPORTED")
+            .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .caption2, weight: usesThreeSizeTypography ? .regular : .bold)
+            .tracking(usesThreeSizeTypography ? 0 : 0.6)
+            .foregroundStyle(Palette.ink2)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 3)
             .overlay { RoundedRectangle(cornerRadius: 4).stroke(Color.white.opacity(0.14)) }
     }
 }

@@ -9,24 +9,26 @@ struct SectionTitle: View {
     var actionIdentifier: String?
     var titleIdentifier: String?
 
+    var usesThreeSizeTypography = false
+
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .voxFont(.body, weight: .bold)
+                    .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.controls : .body, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier(titleIdentifier ?? "")
                     .accessibilityAddTraits(.isHeader)
                 if let subtitle {
                     Text(subtitle)
-                        .voxFont(.footnote)
+                        .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .footnote)
                         .foregroundStyle(Palette.ink3)
                 }
             }
             Spacer()
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .voxFont(.footnote)
+                    .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.controls : .footnote)
                     .foregroundStyle(Palette.brass)
                     .accessibilityIdentifier(actionIdentifier ?? "")
             }
@@ -93,7 +95,7 @@ struct BookScopeBar<Selection: Hashable>: View {
                     selection = option.value
                 } label: {
                     Text(option.title)
-                        .voxType(.body)
+                        .voxFont(LibraryScreenTypography.controls)
                         .fixedSize()
                         .padding(.horizontal, 16)
                         .frame(minHeight: 44)
@@ -224,6 +226,7 @@ struct BookListRow: View {
     var style: BookListRowStyle = .card
     var accessibilityLabel: String?
     var isImported: Bool = false
+    var usesThreeSizeTypography = false
 
     var body: some View {
         styledRow
@@ -265,33 +268,33 @@ struct BookListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .voxFont(.subheadline, weight: .medium)
+                    .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.86)
+                    .minimumScaleFactor(usesThreeSizeTypography ? 1 : 0.86)
                 if isImported {
-                    ImportedTag()
+                    ImportedTag(usesThreeSizeTypography: usesThreeSizeTypography)
                 } else if !subtitle.isEmpty {
                     Text(subtitle)
-                        .voxType(.meta)
+                        .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .footnote)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
                 if let tertiary, !tertiary.isEmpty {
                     Text(tertiary)
-                        .voxFont(.caption)
+                        .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .caption)
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
-                        .voxFont(.caption2)
+                        .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .caption2)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
                 if let watchStatus, !watchStatus.isEmpty {
                     Label(watchStatus, systemImage: "applewatch")
-                        .voxFont(.caption2)
+                        .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .caption2)
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
@@ -395,7 +398,7 @@ struct BookListRow: View {
                     .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: "arrow.down")
-                    .voxFont(.caption2)
+                    .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .caption2)
                     .foregroundStyle(Palette.brass)
             }
             .frame(width: 20, height: 20)
@@ -528,6 +531,8 @@ struct CompactBookRowView: View {
     var isMyNarration: Bool = false
     var progress: Double? = nil
 
+    var usesThreeSizeTypography = false
+
     var body: some View {
         BookListRow(
             title: book.book.title,
@@ -540,7 +545,8 @@ struct CompactBookRowView: View {
             accessory: accessory,
             style: style,
             accessibilityLabel: accessibilityText,
-            isImported: book.book.displayAuthorLine == nil
+            isImported: book.book.displayAuthorLine == nil,
+            usesThreeSizeTypography: usesThreeSizeTypography
         )
     }
 
@@ -568,16 +574,18 @@ struct EmptyStatePanel: View {
     var message: LocalizedStringKey
     var systemImage: String
 
+    var usesThreeSizeTypography = false
+
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.title2)
                 .foregroundStyle(Palette.brass)
             Text(title)
-                .voxFont(.callout, weight: .semibold)
+                .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.controls : .callout, weight: .semibold)
                 .foregroundStyle(Palette.ink)
             Text(message)
-                .voxFont(.subheadline)
+                .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .subheadline)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
         }
