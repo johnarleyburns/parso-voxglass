@@ -108,9 +108,29 @@ public final class ReadWithAIWatchPCMWriter: @unchecked Sendable {
                 if file == nil {
                     file = try AVAudioFile(forWriting: url, settings: pcm.format.settings)
                 }
-                try file?.write(from: pcm)
+                guard let owned = Self.copyOwned(pcm) else { throw CocoaError(.fileWriteUnknown) }
+                try file?.write(from: owned)
             }
         } catch { finish(.failure(error)) }
+    }
+
+    /// `write(from:)` is not documented to finish copying every frame out of
+    /// `pcm` before returning, and `pcm` is storage the caller (the speech
+    /// synthesizer, or this PR's own regression test) reuses for the very
+    /// next callback. Deep-copy into buffer-owned memory first so there is
+    /// never a window where the write races the next mutation of `pcm`.
+    private static func copyOwned(_ pcm: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let owned = AVAudioPCMBuffer(pcmFormat: pcm.format, frameCapacity: pcm.frameLength) else {
+            return nil
+        }
+        owned.frameLength = pcm.frameLength
+        let src = UnsafeMutableAudioBufferListPointer(pcm.mutableAudioBufferList)
+        let dst = UnsafeMutableAudioBufferListPointer(owned.mutableAudioBufferList)
+        for i in 0..<src.count {
+            guard let srcData = src[i].mData, let dstData = dst[i].mData else { continue }
+            dstData.copyMemory(from: srcData, byteCount: Int(src[i].mDataByteSize))
+        }
+        return owned
     }
 
     public func cancel() {

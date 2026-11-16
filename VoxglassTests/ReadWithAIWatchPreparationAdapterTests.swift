@@ -107,10 +107,15 @@ private func textFile(_ dir: URL) throws -> URL {
         let audio = try AVAudioFile(forReading: result)
         #expect(audio.length == 180 * 22_050)
         #expect(Double(audio.length) / audio.processingFormat.sampleRate == 180)
-        let samples = AVAudioPCMBuffer(pcmFormat: audio.processingFormat, frameCapacity: 22_050)!
+        // Read the whole file in one call and index directly, rather than
+        // looping 180 separate reads into a buffer — repeated sequential
+        // reads were drifting from their nominal frame position over the
+        // course of the loop, unrelated to any buffer reuse. One read has
+        // no cumulative position to drift.
+        let full = AVAudioPCMBuffer(pcmFormat: audio.processingFormat, frameCapacity: AVAudioFrameCount(audio.length))!
+        try audio.read(into: full, frameCount: AVAudioFrameCount(audio.length))
         for second in 0..<180 {
-            try audio.read(into: samples, frameCount: 22_050)
-            #expect(abs(samples.floatChannelData![0][0] - Float(second) / 180) < 0.0001)
+            #expect(abs(full.floatChannelData![0][second * 22_050] - Float(second) / 180) < 0.0001)
         }
     }
 
