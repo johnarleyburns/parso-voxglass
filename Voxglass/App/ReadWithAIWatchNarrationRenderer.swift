@@ -9,9 +9,6 @@ import VoxglassWatchCore
 @MainActor
 final class ReadWithAIWatchNarrationRenderer: ReadWithAIWatchSpeechRendering {
     private let synthesizer = AVSpeechSynthesizer()
-    private var pcmFile: AVAudioFile?
-    private var pcmURL: URL?
-    private var continuation: CheckedContinuation<URL, Error>?
     private let directory: URL
 
     init(directory: URL) { self.directory = directory }
@@ -36,60 +33,28 @@ final class ReadWithAIWatchNarrationRenderer: ReadWithAIWatchSpeechRendering {
 
     private func writePCM(text: String, voice preference: ReadWithAIVoicePreference, to url: URL) async throws {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
-        pcmFile = nil
-        pcmURL = url
+        let writer = ReadWithAIWatchPCMWriter(url: url)
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.voice = ReadWithAISpeechAudioEngine.resolvedVoice(for: preference)
 
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
-                self.continuation = continuation
-                synthesizer.write(utterance) { [weak self] buffer in
-                    Task { @MainActor in self?.consume(buffer) }
-                }
-            }
-        } onCancel: {
-            Task { @MainActor [weak self] in
-                self?.synthesizer.stopSpeaking(at: .immediate)
-                self?.finish(.failure(CancellationError()))
-            }
-        }
-    }
-
-    private func consume(_ buffer: AVAudioBuffer) {
-        guard let continuation else { return }
-        guard let pcm = buffer as? AVAudioPCMBuffer else {
-            finish(.failure(CocoaError(.fileWriteUnknown)))
-            return
-        }
-        if pcm.frameLength == 0 {
-            guard let pcmURL else {
-                finish(.failure(CocoaError(.fileWriteUnknown)))
-                return
-            }
-            finish(.success(pcmURL))
-            return
-        }
         do {
-            if pcmFile == nil {
-                guard let pcmURL else { throw CocoaError(.fileWriteUnknown) }
-                pcmFile = try AVAudioFile(forWriting: pcmURL, settings: pcm.format.settings)
+            _ = try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+                    writer.start(continuation)
+                    guard !Task.isCancelled else { writer.cancel(); return }
+                    synthesizer.write(utterance) { buffer in
+                        writer.consume(buffer)
+                    }
+                }
+            } onCancel: {
+                writer.cancel()
             }
-            try pcmFile?.write(from: pcm)
         } catch {
-            finish(.failure(error))
-        }
-    }
-
-    private func finish(_ result: Result<URL, Error>) {
-        let continuation = continuation
-        self.continuation = nil
-        pcmFile = nil
-        pcmURL = nil
-        switch result {
-        case .success(let url): continuation?.resume(returning: url)
-        case .failure(let error): continuation?.resume(throwing: error)
+            // Stop this render before returning; a delayed cancellation task
+            // could otherwise stop the next chapter's utterance.
+            synthesizer.stopSpeaking(at: .immediate)
+            throw error
         }
     }
 }

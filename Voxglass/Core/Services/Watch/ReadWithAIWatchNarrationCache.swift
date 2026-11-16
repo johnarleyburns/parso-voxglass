@@ -6,7 +6,8 @@ import VoxglassWatchCore
 /// ever stored, returned, or deleted.
 public struct ReadWithAIWatchNarrationUserDefaultsCache: ReadWithAIWatchNarrationCaching {
     public static let legacyPrefix = "readWithAI.watchNarration."
-    public static let prefix = "readWithAI.watchNarration.aaclc48.v1."
+    // v2 invalidates valid-looking AAC files rendered from deferred, reused buffers.
+    public static let prefix = "readWithAI.watchNarration.aaclc48.v2."
 
     /// nil selects `UserDefaults.standard`. Stored as a name because `UserDefaults` is not `Sendable`.
     private let suiteName: String?
