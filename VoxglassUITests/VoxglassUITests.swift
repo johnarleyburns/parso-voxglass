@@ -469,6 +469,9 @@ final class VoxglassUITests: XCTestCase {
         let details = app.buttons["nowplaying.more"]
         XCTAssertTrue(details.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["nowplaying.info"].exists)
+        XCTAssertTrue(app.buttons["nowplaying.chapters"].exists)
+        XCTAssertGreaterThan(app.buttons["nowplaying.chapters"].frame.minX,
+                             app.buttons["nowplaying.info"].frame.minX)
         XCTAssertFalse(app.buttons["nowplaying.speed"].exists)
         XCTAssertFalse(app.buttons["nowplaying.readWithAIVoice"].exists)
         XCTAssertFalse(app.staticTexts["In My Books"].exists)
@@ -479,10 +482,13 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertFalse(app.buttons["nowplaying.speed"].exists)
         XCTAssertFalse(app.buttons["nowplaying.sleepTimer"].exists)
         XCTAssertFalse(app.buttons["nowplaying.eq"].exists)
-        app.swipeUp()
-        let chapters = app.staticTexts["nowplaying.detailChapters"]
-        for _ in 0..<5 where !chapters.exists { app.swipeUp() }
-        XCTAssertTrue(chapters.exists)
+        XCTAssertFalse(app.staticTexts["nowplaying.detailChapters"].exists)
+        XCTAssertFalse(app.buttons["Add to Playlist…"].exists)
+        app.buttons["Done"].tap()
+
+        app.buttons["nowplaying.chapters"].tap()
+        XCTAssertTrue(app.navigationBars["Chapters"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["All Chapters"].exists)
         app.buttons["Done"].tap()
 
         details.tap()
@@ -491,6 +497,10 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["nowplaying.sleepTimer"].exists)
         XCTAssertFalse(app.staticTexts["In My Books"].exists)
         XCTAssertFalse(app.staticTexts["Details"].exists)
+        let playlist = app.buttons["Add to Playlist…"]
+        for _ in 0..<5 where !playlist.isHittable { app.swipeUp() }
+        XCTAssertTrue(playlist.isHittable)
+        XCTAssertTrue(app.buttons["Share"].exists)
         app.buttons["Done"].tap()
         XCTAssertTrue(details.waitForExistence(timeout: 5))
         // Swipe from the sheet header so the content scroll view cannot consume it.
