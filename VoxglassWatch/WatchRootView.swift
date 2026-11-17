@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassWatchProtocol
 
 /// Watch redesign §4 — one navigation stack: Home → Player / Book page → Chapters / Speed / Sleep,
-/// plus Downloads and About from Home's footer.
+/// plus Sync and About from Home's footer.
 struct WatchRootView: View {
     @EnvironmentObject private var services: WatchAppServices
     @State private var path: [WatchRoute] = []
@@ -26,8 +26,6 @@ struct WatchRootView: View {
                         WatchSpeedView()
                     case .sleep:
                         WatchSleepView()
-                    case .downloads:
-                        WatchDownloadsView()
                     case .bookInfo(let id):
                         if let book = services.books.first(where: { $0.id == id }) ?? services.playbackBook {
                             WatchBookInfoView(book: book)
@@ -36,8 +34,6 @@ struct WatchRootView: View {
                         WatchPlayerMenuView(path: $path)
                     case .about:
                         WatchAboutView()
-                    case .syncStatus:
-                        WatchListeningSyncStatusView()
                     }
                 }
         }
@@ -57,11 +53,9 @@ enum WatchRoute: Hashable {
     case chapters(WatchBookID)
     case speed
     case sleep
-    case downloads
     case about
     case bookInfo(WatchBookID)
     case playerMenu
-    case syncStatus
 }
 
 enum WatchAccessibilityID {

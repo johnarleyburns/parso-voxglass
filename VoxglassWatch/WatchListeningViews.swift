@@ -189,35 +189,17 @@ struct WatchSleepView: View {
     }
 }
 
-/// D1 — Downloads: what's downloading, how far, and the specific reason it's waiting, with Pause /
-/// Resume / Stop on the same screen; then storage used by books on this watch.
-struct WatchDownloadsView: View {
-    @EnvironmentObject private var services: WatchAppServices
-    var body: some View {
-        List {
-            Text("Send and manage books from Voxglass on your iPhone.").font(.caption2)
-            ForEach(services.visibleBooks, id: \.id) { book in
-                Label(book.title, systemImage: "book.closed").watchCardRow()
-            }
-            if services.visibleBooks.isEmpty { Text("No books installed on this watch.").font(.caption2) }
-        }.navigationTitle("On This Watch").listStyle(.plain)
-    }
-}
-
-/// Connection and metadata are distinct from installed audio; no download/retry actions.
+/// About-only diagnostics: connection, installed audio, and detailed receipts.
 struct WatchListeningSyncStatusView: View {
     @EnvironmentObject private var services: WatchAppServices
     var body: some View {
         List {
-            Section("iPhone") {
+            DisclosureGroup("iPhone") {
                 Text(services.isConnected ? String(localized: "iPhone connected") : String(localized: "iPhone not connected"))
-                Button("Sync Now") { services.session.syncNow() }
-                    .disabled(!services.isConnected || services.session.isSyncing)
-                if !services.isConnected { Text("Sync Now available when connected to iPhone.").font(.caption2) }
                 if let message = services.session.syncMessage { Text(message).font(.caption2) }
                 if let date = services.session.lastCatalogDate { Text("Last iPhone catalog: \(date.formatted())").font(.caption2) }
             }
-            Section("Installed audio") {
+            DisclosureGroup("Installed audio") {
                 Text("\(services.downloaded.count) books on this watch")
                 ForEach(services.books.filter { !services.downloaded.contains($0.id) }, id: \.id) { book in
                     VStack(alignment: .leading) {
@@ -232,13 +214,13 @@ struct WatchListeningSyncStatusView: View {
                     }
                 }
             }
-            Section("Diagnostics") {
+            DisclosureGroup("Diagnostics") {
                 Button("Refresh") { services.session.refresh() }
                 Text(String(localized: "Audio receipt: \(services.session.audioReceipt)")).font(.caption2)
                 Text(String(localized: "Artwork receipt: \(services.session.artworkReceipt)")).font(.caption2)
                 Text(String(localized: "Watch report: \(services.session.reportMessage)")).font(.caption2)
                 if let error = services.session.connectionError { Text(error).font(.caption2) }
             }
-        }.navigationTitle("Sync Status").listStyle(.plain)
+        }.navigationTitle("Sync Details").listStyle(.plain)
     }
 }

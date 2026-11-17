@@ -15,7 +15,9 @@ struct ListenView: View {
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @EnvironmentObject private var listeningStats: ListeningStatsStore
     @State private var importingIdentifier: String?
+    @State private var showSync = false
     @State private var showSettings = false
+    @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedReadWithAIVoiceIdentifier = ""
     @State private var showStats = false
     @State private var statsTotalTime: TimeInterval = 0
     @State private var statsLast7DaysTotal: TimeInterval = 0
@@ -46,6 +48,19 @@ struct ListenView: View {
             }
         )) {
             VStack(alignment: .leading, spacing: 22) {
+                Button { showSync = true } label: {
+                    HStack {
+                        Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+                        Spacer()
+                        SyncStatusSummary(showsDetails: false)
+                            .voxFont(.caption)
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    .padding(14)
+                    .raisedSurface()
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("listen.sync")
                 continueListening
                 weekStrip
                 jumpBackIn
@@ -55,6 +70,12 @@ struct ListenView: View {
             .navigationDestination(item: $selectedCatalogBookID) { bookID in
                 BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
             }
+        }
+        .sheet(isPresented: $showSync) {
+            NavigationStack {
+                SyncView(showingNowPlaying: $showingNowPlaying)
+            }
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -268,6 +289,13 @@ struct ListenView: View {
                             .voxFont(LibraryScreenTypography.card)
                             .foregroundStyle(Palette.ink2)
                             .lineLimit(1)
+                        if let narrator = continueNarrator(for: book) {
+                            Text(narrator)
+                                .voxFont(LibraryScreenTypography.card)
+                                .foregroundStyle(Palette.ink2)
+                                .lineLimit(1)
+                                .accessibilityIdentifier("listen.continueListening.narrator")
+                        }
                     }
 
                     Spacer(minLength: 0)
@@ -285,6 +313,16 @@ struct ListenView: View {
             .accessibilityLabel("\(resumeLabel) \(book.book.title)")
             .accessibilityHint("Resumes playback and opens Now Playing")
         }
+    }
+
+    private func continueNarrator(for book: BookWithChapters) -> String? {
+        _ = selectedReadWithAIVoiceIdentifier
+        if libraryStore.source(for: book.book)?.kind == .readWithAI {
+            let voice = ReadWithAISpeechAudioEngine.voiceDisplayName(
+                for: ReadWithAIVoicePreferences.preference(for: book.book.id))
+            return String(localized: "Read by AI ‘\(voice)’")
+        }
+        return book.book.narratorLine
     }
 
     private var weekStrip: some View {

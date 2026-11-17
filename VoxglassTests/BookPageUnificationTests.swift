@@ -7,8 +7,7 @@ import Testing
         let files = try swiftFiles(under: repoRoot.appendingPathComponent("Voxglass"))
 
         for file in files {
-            let text = try String(contentsOf: file)
-            let path = relativePath(file)
+            let text = try String(contentsOf: file, encoding: .utf8)
             #expect(!(text.contains("struct NowPlayingView")))  // \(path) should not contain struct NowPlayingView
             #expect(!(text.contains("struct BookDetailView")))  // \(path) should not contain struct BookDetailView
             #expect(!(text.contains("BookDetailView(book:")))  // \(path) should not contain BookDetailView(book:
@@ -43,7 +42,6 @@ import Testing
             "nowplaying.sleepTimer",
             "nowplaying.bookmark",
             "nowplaying.download",
-            "nowplaying.watchDownload",
             "nowplaying.eq"
         ]
 
@@ -83,7 +81,7 @@ import Testing
     }
 
     private func source(_ relativePath: String) throws -> String {
-        try String(contentsOf: repoRoot.appendingPathComponent(relativePath))
+        try String(contentsOf: repoRoot.appendingPathComponent(relativePath), encoding: .utf8)
     }
 
     private func swiftFiles(under directory: URL) throws -> [URL] {
@@ -111,43 +109,37 @@ import Testing
 @Suite struct BookPageWatchDownloadContractTests {
     private func read(_ path: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        return try String(contentsOf: root.appendingPathComponent(path))
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 
     @Test func overflowAndActionRowNeverCallTransport() throws {
         let overflow = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
         let row = try read("Voxglass/Features/Player/BookPageActionRow.swift")
-        #expect(overflow.contains("requestWatchDownload()"))
+        #expect(!overflow.contains("requestWatchDownload()"))
         #expect(!overflow.contains("transferBookToWatch("))
         #expect(!row.contains("transferBookToWatch("))
-        #expect(row.contains("requestWatchDownload()"))
-        #expect(row.contains("nowplaying.watchDownload"))
+        #expect(!row.contains("requestWatchDownload()"))
+        #expect(!row.contains("nowplaying.watchDownload"))
     }
 
-    @Test func bookPageViewOwnsConfirmationsAndSingleHelper() throws {
+    @Test func syncViewOwnsConfirmationsAndSingleTransportCall() throws {
         let page = try read("Voxglass/Features/Player/BookPageView.swift")
-        #expect(page.components(separatedBy: "transferBookToWatch(").count == 2)
-        #expect(page.contains("private func submitWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async"))
-        #expect(page.contains("case .started:"))
-        #expect(page.contains("case .needsCellularConfirmation:"))
-        #expect(page.contains("case .failed(let message):"))
-        #expect(page.contains("\"Download to Apple Watch?\""))
-        #expect(page.contains("submitWatchTransfer(book, allowCellular: true)"))
-        #expect(page.contains("Couldn't Send to Apple Watch"))
-        // The root owns one callback into Book Details. The moved action
-        // controls forward from that sheet, without owning the transport.
-        #expect(page.components(separatedBy: "requestWatchDownload: { requestWatchDownload() }").count == 2)
-        let details = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
-        #expect(details.contains("BookPageActionRow("))
-        #expect(details.contains("requestWatchDownload()"))
-        #expect(!page.contains("BookPageActionRow("))
+        #expect(!page.contains("transferBookToWatch("))
+        let sync = try read("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(sync.components(separatedBy: "transferBookToWatch(").count == 2)
+        #expect(sync.contains("case .started:"))
+        #expect(sync.contains("case .needsCellularConfirmation:"))
+        #expect(sync.contains("case .failed(let message):"))
+        #expect(sync.contains("Sync selected books?"))
+        #expect(sync.contains("startSync(allowCellular: true)"))
     }
+
 }
 
 @Suite struct WatchPreparationProgressContractTests {
     private func read(_ path: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        return try String(contentsOf: root.appendingPathComponent(path))
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 
     @Test func relayPublishesPerBookPreparationBeforeAwaitingDownload() throws {
@@ -172,14 +164,11 @@ import Testing
         #expect(guardRange.lowerBound < download.lowerBound)
     }
 
-    @Test func actionRowRendersBothPreparationStatesForSelectedBookOnly() throws {
-        let row = try read("Voxglass/Features/Player/BookPageActionRow.swift")
-        #expect(row.contains("phoneAudioRelay.watchPreparationByBook[book.book.id]"))
-        #expect(row.contains("case .downloadingOnPhone(let progress):"))
-        #expect(row.contains("\"Preparing for Apple Watch, "))
-        #expect(row.contains("percent"))
-        #expect(row.contains("case .preparingAudio:"))
-        #expect(row.contains("\"Preparing audio for Apple Watch\""))
-        #expect(row.contains("watchTransferButton"))
+    @Test func syncRendersPreparationForTheMatchingBook() throws {
+        let sync = try read("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(sync.contains("watchPreparationByBook[id]"))
+        #expect(sync.contains("case .downloadingOnPhone(let fraction):"))
+        #expect(sync.contains("case .preparingAudio:"))
+        #expect(sync.contains("watchBookStatus(for: book.book.id)"))
     }
 }

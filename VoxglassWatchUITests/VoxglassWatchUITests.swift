@@ -45,6 +45,25 @@ final class VoxglassWatchUITests: XCTestCase {
         _ = element.waitForExistence(timeout: 2)
     }
 
+    func testWatchHasOneSyncEntryAndAboutOwnsDetails() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeed", "watch-library"]
+        app.launch()
+        let sync = app.buttons["watch.sync"]
+        ensureVisible(sync, app: app)
+        XCTAssertTrue(sync.exists)
+        XCTAssertFalse(app.buttons["watch.downloads.row"].exists)
+        XCTAssertFalse(app.buttons["watch.syncStatus"].exists)
+        let about = app.buttons["watch.about.row"]
+        ensureVisible(about, app: app)
+        about.tap()
+        let details = app.buttons["watch.about.syncDetails"]
+        ensureVisible(details, app: app)
+        XCTAssertTrue(details.exists)
+        details.tap()
+        XCTAssertTrue(app.navigationBars["Sync Details"].waitForExistence(timeout: 5))
+    }
+
     func testWatchLibraryAndNowPlayingSmoke() {
         let app = XCUIApplication()
         app.launchArguments += ["-uiTestSeed", "watch-library"]

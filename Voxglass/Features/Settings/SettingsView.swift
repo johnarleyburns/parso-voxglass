@@ -2,6 +2,7 @@ import ParsoAudioStreaming
 import SwiftUI
 import AVFoundation
 import VoxglassCore
+import VoxglassWatchProtocol
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -17,7 +18,7 @@ struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
 
     var body: some View {
-        VoxglassScreen(title: "Settings") {
+        VoxglassScreen(title: "Settings", embedsNavigationStack: false) {
             VStack(alignment: .leading, spacing: 16) {
                 settingsGroup("Support") {
                     SupportDevelopmentCard()
@@ -35,7 +36,12 @@ struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Sync")
-                    SyncSettingsCard()
+                    NavigationLink {
+                        SyncView(showingNowPlaying: $showingNowPlaying)
+                    } label: {
+                        Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .accessibilityIdentifier("settings.sync")
                 }
 
                 settingsGroup("Audio") {
@@ -86,11 +92,6 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
 
                     LibraryBackupRow()
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    SectionTitle(title: "Apple Watch")
-                    WatchSyncCard()
                 }
 
                 settingsGroup("About") {
@@ -712,6 +713,12 @@ struct AboutView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
+                    NavigationLink {
+                        SyncDiagnosticsView()
+                    } label: {
+                        Label("Sync Details", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .accessibilityIdentifier("about.syncDetails")
                     aboutSection
                     languagesSection
                     privacySection
@@ -907,11 +914,9 @@ struct AboutView: View {
     }
 }
 
-private struct SyncSettingsCard: View {
+private struct CloudSyncDiagnosticsCard: View {
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
     @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
-    @EnvironmentObject private var libraryStore: LibraryStore
-    @Environment(PlaybackCoordinator.self) private var playback
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
 
     var body: some View {
@@ -989,23 +994,7 @@ private struct SyncSettingsCard: View {
                         .accessibilityIdentifier("sync.library.status")
                 }
 
-                Button {
-                    Task {
-                        await cloudSync.sync()
-                        await cloudKitSync.start()
-                        await libraryStore.refresh()
-                        await playback.adoptCloudNowPlayingIfNewer(
-                            cloudKitSync.lastFetchedPlaybackPosition,
-                            from: libraryStore.books
-                        )
-                    }
-                } label: {
-                    Text(cloudSync.isSyncing || cloudKitSync.syncState == .syncing ? "Syncing…" : "Sync Now") // l10n-exempt: state-dependent accessibility or status copy
-                        .voxFont(.caption, weight: .semibold)
-                        .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
-                }
-                .disabled(cloudSync.isSyncing || cloudKitSync.syncState == .syncing || !cloudSync.isAvailable)
-                .accessibilityIdentifier("sync.now")
+
             }
         }
         .padding(15)
@@ -1013,37 +1002,12 @@ private struct SyncSettingsCard: View {
     }
 }
 
-private struct WatchSyncCard: View {
-    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
-    @EnvironmentObject private var syncEngine: CloudKitSyncEngine
+private struct WatchSyncDiagnosticsCard: View {
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
-    @State private var isSyncingWatch = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: "applewatch")
-                    .foregroundStyle(Palette.brass)
-                Text("Apple Watch & Sync")
-                    .voxFont(.footnote, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                Spacer()
-                if isSyncingWatch {
-                    ProgressView().scaleEffect(0.8)
-                }
-            }
-
-            HStack(spacing: 7) {
-                Circle()
-                    .fill(phoneAudioRelay.isReachable ? Color.green : Color.orange)
-                    .frame(width: 8, height: 8)
-                Text(phoneAudioRelay.connectionStatusText)
-                    .voxFont(.caption2, weight: .semibold)
-                    .foregroundStyle(Palette.ink2)
-            }
-            .accessibilityIdentifier("watchsync.connectionStatus")
-
-            Text("Only books you send from this iPhone appear on Apple Watch, prepared as 96 kbps AAC. Use “Download to Apple Watch” on a book page or in its My Books context menu; manage them in My Books → On My Watch.")
+            Text("Choose books in Sync to listen on Apple Watch.")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
 
@@ -1052,49 +1016,25 @@ private struct WatchSyncCard: View {
                 .foregroundStyle(Palette.ink3)
                 .accessibilityIdentifier("watchsync.storageSummary")
 
-            if let date = phoneAudioRelay.lastCatalogSentDate {
-                Text("Last iPhone catalog sent: \(date.formatted())").voxFont(.caption2)
-            }
-            if let date = phoneAudioRelay.lastWatchReportDate {
-                Text("Last watch report: \(date.formatted())").voxFont(.caption2)
-            } else { Text("No watch report received this session.").voxFont(.caption2) }
             if !phoneAudioRelay.watchStalledBookIDs.isEmpty {
-                Text("\(phoneAudioRelay.watchStalledBookIDs.count) Watch sends stalled: \(phoneAudioRelay.watchStalledBookTitles.joined(separator: ", ")). Open the book and tap the Watch button to retry.")
-                    .voxFont(.caption2, weight: .semibold)
-                    .foregroundStyle(Palette.danger)
-                    .accessibilityIdentifier("watchsync.stalled")
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Sync needs attention").foregroundStyle(Palette.danger)
+                    ForEach(phoneAudioRelay.watchStalledBookTitles, id: \.self) { Text($0) }
+                    Text("Open Sync to retry")
+                }
+                .voxFont(.caption2)
+                .accessibilityIdentifier("watchsync.stalled")
             }
             if let status = phoneAudioRelay.watchSyncStatus {
                 Text(status)
                     .voxFont(.caption2)
                     .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? Palette.danger : Palette.ink3)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("watchsync.result")
             }
 
-            if phoneAudioRelay.isPreparingWatchAudio {
-                Button("Cancel watch audio preparation", role: .cancel) {
-                    phoneAudioRelay.cancelWatchPreparation()
-                }
-                .accessibilityIdentifier("watchsync.cancelPreparation")
-            }
 
-            Button {
-                Task {
-                    isSyncingWatch = true
-                    await phoneAudioRelay.syncWatchNow()
-                    isSyncingWatch = false
-                }
-            } label: {
-                Text(isSyncingWatch ? "Syncing with Watch…" : "Sync with Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
-                    .voxFont(.caption, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-            }
-            .disabled(isSyncingWatch)
-            .accessibilityIdentifier("watchsync.now")
-
-            Text("iCloud: \(syncEnabled ? syncEngine.accountStatusText : "Off")")
-                .voxFont(.caption2)
-                .foregroundStyle(Palette.ink3)
         }
         .padding(15)
         .raisedSurface()
@@ -1552,6 +1492,379 @@ private struct BackupImportSheet: View {
                     dismiss()
                 }
             }
+        }
+    }
+}
+
+// One control surface for manual sync, explicit audio selection and recovery.
+struct SyncView: View {
+    @Binding var showingNowPlaying: Bool
+    @EnvironmentObject private var relay: PhoneAudioRelay
+    @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var cloudSync: VoxglassCloudSync
+    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
+    @Environment(PlaybackCoordinator.self) private var playback
+    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var cloudEnabled = true
+    @State private var selectedIDs = Set<UUID>()
+    @State private var loadedSelection = false
+    @State private var baselineIDs = Set<UUID>()
+    @State private var showingBooks = false
+    @State private var confirmChanges = false
+    @State private var confirmCellular = false
+    @State private var isRunning = false
+    @State private var isPausing = false
+    @State private var startedAt: Date?
+    @State private var syncTask: Task<Void, Never>?
+    @State private var operationError: String?
+
+    private var libraryBooks: [BookWithChapters] { libraryStore.books.filter { !$0.book.isPending } }
+
+    private var candidates: [BookWithChapters] {
+        libraryBooks.filter { book in
+            guard selectedIDs.contains(book.book.id), watchDownloadSupported(book) else { return false }
+            switch relay.watchState(for: book.book.id) {
+            case .notAvailable, .failed, .stalled, .paused: return true
+            default: return false
+            }
+        }
+    }
+    private func watchDownloadSupported(_ book: BookWithChapters) -> Bool {
+        WatchDownloadEligibility.allowsTransfer(
+            isReadByAI: libraryStore.source(for: book.book)?.kind == .readWithAI,
+            chapterExtensions: book.chapters.flatMap { [$0.localURL?.pathExtension, $0.remoteURL?.pathExtension].compactMap { $0 } })
+    }
+
+    private var removals: Set<UUID> {
+        Set(relay.watchSelectedBookIDs.subtracting(selectedIDs).filter {
+            relay.watchDesiredStates[WatchBookID($0.uuidString)] != .removing
+        })
+    }
+
+    var body: some View {
+        List {
+            Section {
+                SyncStatusSummary(isRequesting: isRunning)
+                if let startedAt, isRunning {
+                    LabeledContent("Started", value: startedAt.formatted(date: .omitted, time: .shortened))
+                        .voxFont(.caption2)
+                }
+                if let operationError {
+                    Text(operationError).foregroundStyle(Palette.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button {
+                    operationError = nil
+                    if candidates.isEmpty && removals.isEmpty { startSync(allowCellular: false) }
+                    else { confirmChanges = true }
+                } label: {
+                    Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .disabled(isRunning || isPausing || relay.isTransferringToWatch || cloudSync.isSyncing || cloudKitSync.syncState == .syncing)
+                .accessibilityIdentifier("sync.now")
+                if isRunning || relay.isPreparingWatchAudio || hasActiveTransfers {
+                    Button("Pause") { pause() }
+                        .disabled(isPausing)
+                        .accessibilityIdentifier("sync.pause")
+                }
+            }
+            Section {
+                DisclosureGroup("Apple Watch", isExpanded: $showingBooks) {
+                    Text("Choose books to keep on Apple Watch, then tap Sync. Turn a book off to remove only its watch copy.")
+                        .voxFont(.caption)
+                    if !relay.isPaired || !relay.isWatchAppInstalled {
+                        Text(relay.connectionStatusText).voxFont(.caption)
+                    }
+                    ForEach(libraryBooks) { book in
+                        if !watchDownloadSupported(book) {
+                            HStack {
+                                Text(book.book.title)
+                                Spacer()
+                                ReadByAIWatchInfoButton()
+                            }
+                            if relay.watchSelectedBookIDs.contains(book.book.id) {
+                                Toggle("On My Watch", isOn: Binding(
+                                    get: { selectedIDs.contains(book.book.id) },
+                                    set: { if $0 { selectedIDs.insert(book.book.id) } else { selectedIDs.remove(book.book.id) } }
+                                ))
+                                .disabled(isRunning)
+                            }
+                        } else {
+                            Toggle(isOn: Binding(
+                                get: { selectedIDs.contains(book.book.id) },
+                                set: { if $0 { selectedIDs.insert(book.book.id) } else { selectedIDs.remove(book.book.id) } }
+                            )) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(book.book.title)
+                                    Text(relay.watchBookStatus(for: book.book.id))
+                                        .voxFont(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                            .disabled(isRunning || relay.isTransferringToWatch || !relay.isPaired || !relay.isWatchAppInstalled)
+                            .accessibilityIdentifier("sync.book.\(book.book.id.uuidString)")
+                        }
+                    }
+                    // Selected books deleted from the phone must remain removable.
+                    ForEach(relay.watchCatalogBooks.filter { dto in
+                        !libraryStore.books.contains { $0.book.id.uuidString == dto.id.rawValue }
+                    }, id: \.id) { book in
+                        if let id = UUID(uuidString: book.id.rawValue) {
+                            Toggle(book.title, isOn: Binding(
+                                get: { selectedIDs.contains(id) },
+                                set: { if $0 { selectedIDs.insert(id) } else { selectedIDs.remove(id) } }
+                            ))
+                            .disabled(isRunning)
+                        }
+                    }
+                    if libraryStore.books.isEmpty && relay.watchCatalogBooks.isEmpty {
+                        Text("No Audiobooks Yet")
+                    }
+                }
+                .accessibilityIdentifier("sync.books")
+            }
+            Section {
+                NavigationLink {
+                    AboutView()
+                } label: { Label("About", systemImage: "info.circle") }
+                .accessibilityIdentifier("sync.about")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(VoxglassBackground())
+        .navigationTitle("Sync")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isRunning || isPausing)
+        .interactiveDismissDisabled(isRunning || isPausing)
+        .onAppear { reconcileSelection() }
+        .onChange(of: relay.watchSelectedBookIDs) { _, _ in reconcileSelection() }
+        .confirmationDialog("Sync selected books?", isPresented: $confirmChanges, titleVisibility: .visible) {
+            Button("Sync") { startSync(allowCellular: false) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(estimate)
+        }
+        .confirmationDialog("Send to Apple Watch on cellular data?", isPresented: $confirmCellular, titleVisibility: .visible) {
+            Button("Send now on cellular") { startSync(allowCellular: true) }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
+        }
+    }
+
+    private func reconcileSelection() {
+        let latest = Set(relay.watchSelectedBookIDs.filter {
+            relay.watchDesiredStates[WatchBookID($0.uuidString)] != .removing
+        })
+        selectedIDs = loadedSelection
+            ? WatchSyncSelection.reconcile(selected: selectedIDs, baseline: baselineIDs, latest: latest)
+            : latest
+        baselineIDs = latest
+        loadedSelection = true
+    }
+
+    private var hasActiveTransfers: Bool {
+        relay.watchDesiredStates.values.contains { [.queued, .preparing, .transferring, .installing].contains($0) }
+    }
+
+    private var estimate: String {
+        let bytes = candidates.reduce(Int64(0)) { total, book in
+            total + ByteFormatting.estimatedAudiobookBytes(duration: book.chapters.reduce(0) { $0 + ($1.duration ?? 0) })
+        }
+        var message = String(localized: "This will use approximately \(ByteFormatting.string(bytes)) of storage on your Apple Watch.")
+        if !removals.isEmpty { message += "\n" + String(localized: "Unselected books will be removed from Apple Watch. The iPhone originals are kept.") }
+        return message
+    }
+
+    private func startSync(allowCellular: Bool) {
+        guard !isRunning else { return }
+        let books = candidates
+        let removed = removals
+        isRunning = true
+        relay.watchTransferError = nil
+        startedAt = SystemClock().now
+        syncTask = Task { @MainActor in
+            defer { isRunning = false; syncTask = nil }
+            if cloudEnabled {
+                await cloudSync.sync()
+                guard !Task.isCancelled else { return }
+                await cloudKitSync.start()
+                guard !Task.isCancelled else { return }
+                await libraryStore.refresh()
+                await playback.adoptCloudNowPlayingIfNewer(cloudKitSync.lastFetchedPlaybackPosition, from: libraryStore.books)
+            }
+            guard !Task.isCancelled else { return }
+            for id in removed {
+                await relay.removeBookFromWatch(bookID: id)
+                guard !Task.isCancelled else { return }
+            }
+            for book in books {
+                let result = await relay.transferBookToWatch(book, allowCellularOverride: allowCellular)
+                guard !Task.isCancelled else { return }
+                switch result {
+                case .started: break
+                case .needsCellularConfirmation:
+                    confirmCellular = true
+                    return
+                case .failed(let message):
+                    operationError = message
+                    return
+                }
+            }
+            if relay.isPaired && relay.isWatchAppInstalled { await relay.syncWatchNow() }
+        }
+    }
+
+    private func pause() {
+        guard !isPausing else { return }
+        isPausing = true
+        syncTask?.cancel()
+        relay.cancelWatchPreparation()
+        // Include preparation waiting on a phone download, not just handed-off files.
+        let ids = relay.watchSelectedBookIDs.union(relay.watchPreparationByBook.keys).filter { id in
+            relay.watchPreparationByBook[id] != nil || {
+                switch relay.watchDesiredStates[WatchBookID(id.uuidString)] {
+                case .queued, .preparing, .transferring, .installing: return true
+                default: return false
+                }
+            }()
+        }
+        Task {
+            defer { isPausing = false }
+            for id in ids { await relay.pauseBookTransferToWatch(bookID: id) }
+        }
+    }
+}
+
+struct SyncStatusSummary: View {
+    @EnvironmentObject private var relay: PhoneAudioRelay
+    @EnvironmentObject private var cloudSync: VoxglassCloudSync
+    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
+    var isRequesting = false
+    var showsDetails = true
+    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var cloudEnabled = true
+
+    private var isWorking: Bool { isRequesting || cloudSync.isSyncing || cloudKitSync.syncState == .syncing }
+    private var hasCloudError: Bool { cloudEnabled && (cloudSync.syncError != nil || cloudKitSync.syncError != nil || !cloudKitSync.importErrors.isEmpty) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                if relay.syncPresentation(isRequesting: isWorking).showsProgress { ProgressView() }
+                Text(hasCloudError && !isWorking
+                     ? String(localized: "Sync needs attention")
+                     : relay.syncStatusText(isRequesting: isWorking))
+            }
+            .accessibilityIdentifier("sync.status")
+            if showsDetails {
+                LabeledContent("iCloud Sync", value: cloudEnabled
+                    ? (cloudSync.isAvailable ? String(localized: "On") : String(localized: "Sign in to iCloud to sync"))
+                    : String(localized: "Off"))
+                    .voxFont(.caption2)
+                if !cloudKitSync.importErrors.isEmpty { Text("Sync needs attention").foregroundStyle(Palette.danger) }
+            }
+            if showsDetails, let status = relay.watchSyncStatus, relay.isPreparingWatchAudio {
+                Text(status).voxFont(.caption2)
+            }
+            if showsDetails, let error = relay.watchSyncError { Text(error).voxFont(.caption2).foregroundStyle(Palette.danger) }
+            if showsDetails, let error = relay.watchTransferError { Text(error).voxFont(.caption2).foregroundStyle(Palette.danger) }
+            if showsDetails, cloudEnabled, let error = cloudSync.syncError ?? cloudKitSync.syncError {
+                Text(error).voxFont(.caption2).foregroundStyle(Palette.danger)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+struct SyncDiagnosticsView: View {
+    @EnvironmentObject private var relay: PhoneAudioRelay
+    var body: some View {
+        List {
+            DisclosureGroup("Connection") {
+                Text(relay.connectionStatusText)
+                if let date = relay.lastWatchReportDate { LabeledContent("Last watch report", value: date.formatted()) }
+                if let date = relay.lastCatalogSentDate { LabeledContent("Last iPhone catalog sent", value: date.formatted()) }
+                Text("Sent does not mean installed. Apple Watch confirms each completed book.")
+            }
+            DisclosureGroup("Apple Watch") { WatchSyncDiagnosticsCard() }
+            DisclosureGroup("iCloud Sync") { CloudSyncDiagnosticsCard() }
+        }
+        .navigationTitle("Sync Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("sync.diagnostics")
+    }
+}
+
+private extension PhoneAudioRelay {
+    func watchState(for id: UUID) -> WatchTransferState {
+        WatchDisplayStateResolver.resolve(desiredState: watchDesiredStates[WatchBookID(id.uuidString)], storageState: watchStorageInfo(for: id)?.state)
+    }
+
+    func syncPresentation(isRequesting: Bool = false) -> WatchSyncPresentation {
+        let states = watchSelectedBookIDs.map { watchState(for: $0) }
+        return WatchSyncPresentation(isReachable: isReachable,
+            isPreparing: isTransferringToWatch || isPreparingWatchAudio, isRequesting: isRequesting,
+            selectedCount: states.count,
+            pendingCount: states.filter { [.queued, .waitingForPhone].contains($0) }.count,
+            installedCount: states.filter { $0 == .available }.count,
+            transferringCount: states.filter { if case .transferring = $0 { return true }; return false }.count,
+            failedCount: states.filter { if case .stalled = $0 { return true }; return $0 == .failed }.count,
+            pausedCount: states.filter { $0 == .paused }.count)
+    }
+
+    func syncStatusText(isRequesting: Bool = false) -> String {
+        if watchSyncError != nil, !isRequesting, !isTransferringToWatch { return String(localized: "Sync needs attention") }
+        if case .downloadingOnPhone(let fraction)? = watchPreparationByBook.values.first {
+            return String(localized: "Downloading \(Int(fraction * 100))%")
+        }
+        if !isPaired { return isRequesting ? String(localized: "Syncing…") : String(localized: "Ready to sync") }
+        if !isWatchAppInstalled { return connectionStatusText }
+        switch syncPresentation(isRequesting: isRequesting).phase {
+        case .ready: return String(localized: "Ready to sync")
+        case .preparing: return String(localized: "Preparing audio")
+        case .requesting: return String(localized: "Syncing…")
+        case .failed: return String(localized: "Sync needs attention")
+        case .paused: return String(localized: "Download paused.")
+        case .disconnected: return String(localized: "Waiting for Apple Watch")
+        case .transferring: return String(localized: "Transferring audio to Apple Watch")
+        case .waiting: return String(localized: "Waiting for Apple Watch to confirm books")
+        case .installed: return String(localized: "Selected books are on Apple Watch")
+        }
+    }
+
+    func watchBookStatus(for id: UUID) -> String {
+        if let preparation = watchPreparationByBook[id] {
+            switch preparation {
+            case .preparingAudio: return watchSyncStatus ?? String(localized: "Preparing audio")
+            case .downloadingOnPhone(let fraction): return String(localized: "Downloading \(Int(fraction * 100))%")
+            }
+        }
+        if case .failed(let message)? = watchDesiredStates[WatchBookID(id.uuidString)] { return message }
+        if watchDesiredStates[WatchBookID(id.uuidString)] == .removing { return String(localized: "Removal sent to Apple Watch.") }
+        switch watchState(for: id) {
+        case .available: return String(localized: "On My Watch")
+        case .notAvailable: return String(localized: "Not on this watch")
+        case .paused: return String(localized: "Download paused.")
+        case .stalled: return String(localized: "Sync needs attention")
+        case .failed: return String(localized: "Sync needs attention")
+        case .transferring(let fraction): return String(localized: "Sending \(Int(fraction * 100))%")
+        case .queued, .waitingForPhone: return String(localized: "Waiting for Apple Watch")
+        }
+    }
+}
+
+struct ReadByAIWatchInfoButton: View {
+    @State private var showingExplanation = false
+    var body: some View {
+        Button { showingExplanation = true } label: {
+            Image(systemName: "info.circle")
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel("Apple Watch")
+        .accessibilityIdentifier("watch.readByAI.info")
+        .alert("Apple Watch", isPresented: $showingExplanation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Read by AI books play on iPhone. Apple Watch downloads are available for books with recorded audio.")
         }
     }
 }

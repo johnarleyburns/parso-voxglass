@@ -27,18 +27,13 @@ import Testing
         return result
     }
 
-    // The app target requires iOS. This contract protects the view lifecycle
-    // responsible for expiry when WCSession connects before RootView mounts.
-    @Test func watchConnectionToastExpiresForItsInitialValueAndHonorsCancellation() throws {
-        let source = try read("Voxglass/App/RootView.swift")
-        let start = try #require(source.range(of: ".task(id: phoneAudioRelay.connectionToast)"))
-        let remainder = source[start.lowerBound...]
-        let end = try #require(remainder.range(of: "\n        }"))
-        let expiry = source[start.lowerBound..<end.lowerBound]
-        #expect(expiry.contains("Task.sleep(for: .seconds(3))"))
-        #expect(expiry.contains("catch { return }"))
-        #expect(expiry.contains("!Task.isCancelled"))
-        #expect(!expiry.contains("try? await Task.sleep"))
+    @Test func watchStatusHasOneSyncSurfaceInsteadOfRootBanners() throws {
+        let root = try read("Voxglass/App/RootView.swift")
+        #expect(!root.contains("WatchTransferPill"))
+        #expect(!root.contains("connectionToast"))
+        let listen = try read("Voxglass/Features/Listen/ListenView.swift")
+        #expect(listen.contains("listen.sync"))
+        #expect(listen.contains("SyncStatusSummary(showsDetails: false)"))
     }
 
     @Test func widgetBundleDoesNotRegisterBookLiveActivity() throws {

@@ -15,8 +15,7 @@ struct BookPageView: View {
     @State private var showingEQ = false
     @State private var showingBookmarks = false
     @State private var showingOverflow = false
-    @State private var watchTransferConfirmationBook: BookWithChapters?
-    @State private var watchCellularConfirmationBook: BookWithChapters?
+    @State private var showingBookDetails = false
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
@@ -95,28 +94,22 @@ struct BookPageView: View {
                             }
                         }
                     }
-                    .navigationTitle(resolved.book.title)
+                    .navigationTitle(presentationContext == .nowPlayingSheet ? String(localized: "Book") : resolved.book.title)
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationBarBackButtonHidden(presentationContext == .nowPlayingSheet)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            NavigationLink {
-                                ChaptersView(book: resolved, showingNowPlaying: $showingNowPlaying)
-                            } label: {
-                                Image(systemName: "list.bullet")
-                                    .frame(width: 44, height: 44)
-                                    .glassEffect(.regular.interactive(), in: .circle)
+                            Button { showingBookDetails = true } label: {
+                                Image(systemName: "info")
                             }
-                            .accessibilityLabel("Chapters")
-                            .accessibilityIdentifier("nowplaying.chapters")
+                            .accessibilityLabel("Book Details")
+                            .accessibilityIdentifier("nowplaying.info")
                         }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { showingOverflow = true } label: {
-                                Image(systemName: "line.3.horizontal")
-                                    .frame(width: 44, height: 44)
-                                    .glassEffect(.regular.interactive(), in: .circle)
+                                Image(systemName: "ellipsis")
                             }
-                            .accessibilityLabel("Book details and playback options")
+                            .accessibilityLabel("Audio controls")
                             .accessibilityIdentifier("nowplaying.more")
                         }
                     }
@@ -180,23 +173,11 @@ struct BookPageView: View {
             }
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingBookDetails) {
+            bookOptionsSheet(audioOnly: false)
+        }
         .sheet(isPresented: $showingOverflow) {
-            BookPageOverflowSheet(
-                book: resolved ?? BookWithChapters(book: Book(title: "", authors: [], sourceID: UUID()), chapters: []),
-                showingNowPlaying: $showingNowPlaying,
-                showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
-                showCellularPrompt: $showCellularPrompt,
-                showAddToLibraryConfirm: $showAddToLibraryConfirm,
-                showRemoveConfirm: $showRemoveConfirm,
-                showReconnectAudio: $showingReconnect,
-                genre: genre,
-                requestWatchDownload: { requestWatchDownload() }
-            )
-            .environment(playback)
-            .environmentObject(libraryStore)
-            .environmentObject(offlineManager)
-            .environmentObject(phoneAudioRelay)
-            .presentationDragIndicator(.visible)
+            bookOptionsSheet(audioOnly: true)
         }
         .sheet(isPresented: $showingPlaylistPicker) {
             NavigationStack {
@@ -215,38 +196,6 @@ struct BookPageView: View {
             Button("Wait for Wi-Fi", role: .cancel) {}
         } message: {
             Text("Caching a whole book can use significant cellular data.")
-        }
-        .confirmationDialog("Download to Apple Watch?", isPresented: initialWatchDialogBinding) {
-            Button("Download") {
-                guard let book = watchTransferConfirmationBook else { return }
-                Task { await submitWatchTransfer(book, allowCellular: false) }
-            }
-            Button("Cancel", role: .cancel) { watchTransferConfirmationBook = nil }
-        } message: {
-            Text(watchTransferEstimateMessage)
-        }
-        .confirmationDialog(
-            "Send to Apple Watch on cellular data?",
-            isPresented: cellularWatchDialogBinding,
-            titleVisibility: .visible
-        ) {
-            Button("Send now on cellular") {
-                guard let book = watchCellularConfirmationBook else { return }
-                Task { await submitWatchTransfer(book, allowCellular: true) }
-            }
-            Button("Wait for Wi-Fi", role: .cancel) { watchCellularConfirmationBook = nil }
-        } message: {
-            Text("Sending a book to the watch can use significant cellular data.")
-        }
-        .alert(
-            "Couldn't Send to Apple Watch",
-            isPresented: watchTransferErrorBinding
-        ) {
-            Button("OK", role: .cancel) {
-                phoneAudioRelay.watchTransferError = nil
-            }
-        } message: {
-            Text(phoneAudioRelay.watchTransferError ?? "")
         }
         .alert("Playback Interrupted", isPresented: playbackErrorBinding) {
             if let failure = playbackFailure, failure.isRetryable {
@@ -795,6 +744,25 @@ struct BookPageView: View {
         .accessibilityIdentifier("nowplaying.details")
     }
 
+    private func bookOptionsSheet(audioOnly: Bool) -> some View {
+        BookPageOverflowSheet(
+            book: resolved ?? BookWithChapters(book: Book(title: "", authors: [], sourceID: UUID()), chapters: []),
+            showingNowPlaying: $showingNowPlaying,
+            showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
+            showCellularPrompt: $showCellularPrompt,
+            showAddToLibraryConfirm: $showAddToLibraryConfirm,
+            showRemoveConfirm: $showRemoveConfirm,
+            showReconnectAudio: $showingReconnect,
+            genre: genre,
+            audioOnly: audioOnly
+        )
+        .environment(playback)
+        .environmentObject(libraryStore)
+        .environmentObject(offlineManager)
+        .environmentObject(phoneAudioRelay)
+        .presentationDragIndicator(.visible)
+    }
+
     private func readWithAIVoiceName(for bookID: UUID) -> String {
         // Observe the preference so this copy updates immediately after a
         // selection, while the engine remains the single source of truth for
@@ -1046,66 +1014,6 @@ struct BookPageView: View {
             showCellularPrompt = true
         case .start:
             break
-        }
-    }
-
-    private var watchEstimatedBytes: Int64 {
-        let chapters = watchTransferConfirmationBook?.chapters ?? []
-        if WatchNarrationEstimate.needsGeneratedAudio(for: chapters) {
-            return WatchNarrationEstimate.estimatedAudioBytes(duration: chapters.reduce(0) { $0 + ($1.duration ?? 0) })
-        }
-        return ByteFormatting.estimatedAudiobookBytes(duration: chapters.reduce(0) { $0 + ($1.duration ?? 0) })
-    }
-
-    private var watchTransferEstimateMessage: String {
-        let chapters = watchTransferConfirmationBook?.chapters ?? []
-        guard WatchNarrationEstimate.needsGeneratedAudio(for: chapters) else {
-            return String(localized: "This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
-        }
-        let narrationDuration = chapters.reduce(0) { $0 + ($1.duration ?? 0) }
-        let creation = WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: narrationDuration)
-        return String(localized: "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
-    }
-
-    private var initialWatchDialogBinding: Binding<Bool> {
-        Binding {
-            watchTransferConfirmationBook != nil
-        } set: { isPresented in
-            if !isPresented { watchTransferConfirmationBook = nil }
-        }
-    }
-
-    private var cellularWatchDialogBinding: Binding<Bool> {
-        Binding {
-            watchCellularConfirmationBook != nil
-        } set: { isPresented in
-            if !isPresented { watchCellularConfirmationBook = nil }
-        }
-    }
-
-    private func requestWatchDownload() {
-        guard let resolved else { return }
-        watchTransferConfirmationBook = resolved
-    }
-
-    private func submitWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async {
-        switch await phoneAudioRelay.transferBookToWatch(book, allowCellularOverride: allowCellular) {
-        case .started:
-            break
-        case .needsCellularConfirmation:
-            watchCellularConfirmationBook = book
-        case .failed(let message):
-            phoneAudioRelay.watchTransferError = message
-        }
-    }
-
-    private var watchTransferErrorBinding: Binding<Bool> {
-        Binding {
-            phoneAudioRelay.watchTransferError != nil
-        } set: { isPresented in
-            if !isPresented {
-                phoneAudioRelay.watchTransferError = nil
-            }
         }
     }
 

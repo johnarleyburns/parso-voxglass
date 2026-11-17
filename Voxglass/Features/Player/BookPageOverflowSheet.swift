@@ -16,7 +16,7 @@ struct BookPageOverflowSheet: View {
     @Binding var showRemoveConfirm: Bool
     @Binding var showReconnectAudio: Bool
     let genre: LibriVoxBrowseCategory?
-    let requestWatchDownload: () -> Void
+    var audioOnly = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -29,22 +29,21 @@ struct BookPageOverflowSheet: View {
             ZStack {
                 VoxglassTheme.warmBackground.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(Color.white.opacity(0.35))
-                        .frame(width: 36, height: 5)
-                        .padding(.top, 6)
-
                     List {
-                        detailsSection
-                        thisBookSection
-                        audioSection
-                        discoverSection
-                        manageSection
+                        if audioOnly {
+                            audioSection
+                        } else {
+                            detailsSection
+                            thisBookSection
+                            chaptersSection
+                            discoverSection
+                            manageSection
+                        }
                     }
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Book Details")
+            .navigationTitle(audioOnly ? String(localized: "Audio") : String(localized: "Book Details"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -115,19 +114,30 @@ struct BookPageOverflowSheet: View {
                 overflowRow(icon: "text.badge.plus", title: "Add to Playlist…")
             }
 
-            if let count = playback.bookmarkCount, count > 0 {
-                Button {
-                    showingBookmarks = true
-                } label: {
-                    overflowRow(icon: "bookmark.fill", title: "Bookmarks", detail: "\(count)")
-                }
-            }
 
-            NavigationLink {
-                ChaptersView(book: book, showingNowPlaying: $showingNowPlaying)
-            } label: {
-                overflowRow(icon: "list.bullet", title: "All Chapters", detail: "\(book.chapters.count) total")
+        }
+    }
+
+    private var chaptersSection: some View {
+        Section {
+            ForEach(book.chapters) { chapter in
+                Button {
+                    playback.selectAndPlay(book, chapter: chapter)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(chapter.title)
+                            .foregroundStyle(Palette.ink)
+                        Spacer()
+                        Text(TimeFormatting.clock(chapter.duration))
+                            .foregroundStyle(Palette.ink3)
+                    }
+                }
+                .accessibilityHint("Plays this chapter")
             }
+        } header: {
+            Text("Chapters")
+                .accessibilityIdentifier("nowplaying.detailChapters")
         }
     }
 
@@ -140,11 +150,7 @@ struct BookPageOverflowSheet: View {
                 showingBookmarks: $showingBookmarks,
                 showingOverflow: .constant(false),
                 showCellularPrompt: $showCellularPrompt,
-                showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
-                requestWatchDownload: {
-                    dismiss()
-                    requestWatchDownload()
-                }
+                showRemoveOfflineConfirm: $showRemoveOfflineConfirm
             )
             if libraryStore.source(for: book.book)?.kind == .readWithAI {
                 NavigationLink {
@@ -171,6 +177,37 @@ struct BookPageOverflowSheet: View {
             } label: {
                 let enabled = UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
                 overflowRow(icon: "speaker.wave.2", title: "Volume normalization", detail: enabled ? "On" : "Off")
+            }
+
+            if libraryStore.source(for: book.book)?.kind == .localFiles {
+                Button {
+                    showReconnectAudio = true
+                    dismiss()
+                } label: {
+                    overflowRow(icon: "link", title: "Reconnect Audio")
+                }
+                .accessibilityIdentifier("nowplaying.reconnectAudio")
+            }
+            if offlineState == .cached {
+                Button(role: .destructive) {
+                    showRemoveOfflineConfirm = true
+                    dismiss()
+                } label: {
+                    overflowRow(icon: "trash", title: "Remove offline copy")
+                }
+                .accessibilityIdentifier("nowplaying.download")
+            } else {
+                Button {
+                    Task {
+                        _ = await offlineManager.makeAvailableOffline(
+                            book: book,
+                            isCellular: NetworkMonitor.shared.isCellular
+                        )
+                    }
+                } label: {
+                    overflowRow(icon: "arrow.down.circle", title: "Make available offline")
+                }
+                .accessibilityIdentifier("nowplaying.download")
             }
         }
     }
@@ -230,37 +267,6 @@ struct BookPageOverflowSheet: View {
     @ViewBuilder
     private var manageSection: some View {
         Section("Manage") {
-            if libraryStore.source(for: book.book)?.kind == .localFiles {
-                Button {
-                    showReconnectAudio = true
-                    dismiss()
-                } label: {
-                    overflowRow(icon: "link", title: "Reconnect Audio")
-                }
-                .accessibilityIdentifier("nowplaying.reconnectAudio")
-            }
-            if offlineState == .cached {
-                Button(role: .destructive) {
-                    showRemoveOfflineConfirm = true
-                    dismiss()
-                } label: {
-                    overflowRow(icon: "trash", title: "Remove offline copy")
-                }
-                .accessibilityIdentifier("nowplaying.download")
-            } else {
-                Button {
-                    Task {
-                        _ = await offlineManager.makeAvailableOffline(
-                            book: book,
-                            isCellular: NetworkMonitor.shared.isCellular
-                        )
-                    }
-                } label: {
-                    overflowRow(icon: "arrow.down.circle", title: "Make available offline")
-                }
-                .accessibilityIdentifier("nowplaying.download")
-            }
-
             Button(role: .destructive) {
                 showRemoveConfirm = true
                 dismiss()
