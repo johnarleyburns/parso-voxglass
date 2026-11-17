@@ -16,6 +16,7 @@ struct BookPageView: View {
     @State private var showingBookmarks = false
     @State private var showingOverflow = false
     @State private var showingBookDetails = false
+    @State private var showingChapters = false
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
@@ -63,7 +64,7 @@ struct BookPageView: View {
             if let resolved {
                 NavigationStack {
                     VStack(spacing: 0) {
-                        Group {
+                        GeometryReader { viewport in
                             ScrollView(showsIndicators: false) {
                                 VStack(spacing: 0) {
                                     Spacer().frame(height: 16)
@@ -74,19 +75,21 @@ struct BookPageView: View {
                                         libraryAction(resolved)
                                         chipRow(resolved)
                                     }
-                                    scrubber(resolved)
-                                    transportControls(resolved)
+                                    Spacer(minLength: 16)
+                                    VStack(spacing: 0) {
+                                        scrubber(resolved)
+                                        transportControls(resolved)
+                                    }
                                     if presentationContext != .nowPlayingSheet {
                                         aboutSection(resolved)
                                         chapterList(resolved)
                                         discoveryLinks(resolved)
                                     }
-                                    Spacer(minLength: 24)
                                 }
                                 .padding(.horizontal, 24)
                                 .padding(.bottom, 20)
+                                .frame(minHeight: viewport.size.height)
                             }
-                            .safeAreaPadding(.bottom, Spacing.section)
                             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                                 geometry.contentOffset.y + geometry.contentInsets.top
                             } action: { _, offset in
@@ -98,12 +101,17 @@ struct BookPageView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationBarBackButtonHidden(presentationContext == .nowPlayingSheet)
                     .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
+                        ToolbarItemGroup(placement: .topBarLeading) {
                             Button { showingBookDetails = true } label: {
                                 Image(systemName: "info")
                             }
                             .accessibilityLabel("Book Details")
                             .accessibilityIdentifier("nowplaying.info")
+                            Button { showingChapters = true } label: {
+                                Image(systemName: "list.bullet")
+                            }
+                            .accessibilityLabel("Chapters")
+                            .accessibilityIdentifier("nowplaying.chapters")
                         }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { showingOverflow = true } label: {
@@ -172,6 +180,19 @@ struct BookPageView: View {
                     .environmentObject(libraryStore)
             }
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingChapters) {
+            if let resolved {
+                NavigationStack {
+                    ChaptersView(book: resolved, showingNowPlaying: $showingNowPlaying)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { showingChapters = false }
+                            }
+                        }
+                }
+                .presentationDragIndicator(.visible)
+            }
         }
         .sheet(isPresented: $showingBookDetails) {
             bookOptionsSheet(audioOnly: false)

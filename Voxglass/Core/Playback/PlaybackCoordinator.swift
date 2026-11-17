@@ -71,7 +71,6 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var lastPeriodicSave = Date.distantPast
     @ObservationIgnored private var currentSessionUpdatedAt: Date?
-    @ObservationIgnored private var isHandlingInterruption = false
     /// Limits automatic reloads for AVFoundation's transient "interrupted /
     /// action could not be completed" failures. A user-initiated play resets
     /// this budget; a failed retry falls through to the normal retryable error.
@@ -2493,7 +2492,6 @@ public final class PlaybackCoordinator {
 
     /// An audio interruption began (call, Siri, another app). Pause and persist.
     public func handleAudioInterruptionBegan() {
-        isHandlingInterruption = engine.isPlaying
         invalidatePlaybackOwnership()
         saveCurrentSnapshot()
         engine.pause()
@@ -2509,34 +2507,17 @@ public final class PlaybackCoordinator {
         }
     }
 
-    /// An audio interruption ended. Resume only if we were the one interrupted.
+    /// Interruption completion is informational. Only an explicit play command
+    /// may restart audio, even if playback was active before the interruption.
     public func handleAudioInterruptionEnded() {
-        guard isHandlingInterruption, isEngineLoaded else { return }
-        isHandlingInterruption = false
-        engine.play()
-        mutateSession { $0.isPlaying = true }
-        suppressNextIsPlayingSync = true
-        playbackPhase = .playing
-        startProgressLoop()
         updateNowPlayingInfo()
     }
 
-    /// An audio route change (e.g. headphones unplugged) — persist position.
+    /// Preserve the playhead on route changes without restarting audio. The
+    /// session's playing flag can lag behind an OS pause or a lost audio route.
     public func handleAudioRouteChanged() {
-        // A CarPlay attach/detach is a route change. Capture the live playhead
-        // first; calling play/configureAudioSession can otherwise race the
-        // player into exposing the pre-CarPlay seek position.
         checkpointCurrentPositionForHandoff()
-        let shouldResume = currentSession?.isPlaying == true && isEngineLoaded
-        // A CarPlay attach/detach can leave AVPlayer paused while the app's
-        // session still says playing. Reactivate the audio session and replay
-        // the current item on the new route instead of waiting for a force quit.
-        if shouldResume {
-            engine.configureAudioSession()
-            engine.play()
-            suppressNextIsPlayingSync = true
-        }
-        if shouldResume { updateNowPlayingInfo() }
+        updateNowPlayingInfo()
     }
 
     private func updateNowPlayingInfo() {

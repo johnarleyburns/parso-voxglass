@@ -241,13 +241,6 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
             }
         })
         observerRegistry.tokens.append(center.addObserver(
-            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.coordinator?.handleAudioRouteChanged()
-            }
-        })
-        observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in

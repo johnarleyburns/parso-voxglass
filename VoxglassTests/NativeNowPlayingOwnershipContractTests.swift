@@ -36,6 +36,11 @@ import Testing
         #expect(listen.contains("SyncStatusSummary(showsDetails: false)"))
     }
 
+    @Test func foregroundingDoesNotInvokeRouteRecovery() throws {
+        let source = try read("Voxglass/App/SystemPlaybackBridge.swift")
+        #expect(!source.contains("UIApplication.didBecomeActiveNotification"))
+    }
+
     @Test func widgetBundleDoesNotRegisterBookLiveActivity() throws {
         let source = try read("VoxglassWidgets/VoxglassWidgets.swift")
         #expect(!source.contains("BookLiveActivity()"))

@@ -120,14 +120,33 @@ import Foundation
         #expect(engine.calls.contains(.setRate(3.5)))  // At 2.5×, 1.5× boost would be 3.75×, must clamp to 3.5×
     }
 
-    @Test func routeChangeReactivatesAPlayingBook() async {
+    @Test func routeChangeNeverRestartsAStoppedEngine() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
+        // The OS stopped audio before the progress loop reconciles the session.
+        engine.isPlaying = false
         engine.reset()
 
         coordinator.handleAudioRouteChanged()
 
-        #expect(engine.calls.contains(.configureAudioSession))
-        #expect(engine.calls.contains(.play))
+        #expect(!engine.calls.contains(.configureAudioSession))
+        #expect(!engine.calls.contains(.play))
+        #expect(!engine.isPlaying)
+    }
+
+    @Test func interruptionEndRequiresExplicitPlay() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.handleAudioInterruptionBegan()
+        engine.reset()
+
+        coordinator.handleAudioInterruptionEnded()
+        coordinator.handleAudioRouteChanged()
+
+        #expect(!engine.calls.contains(.play))
+        #expect(coordinator.currentSession?.isPlaying == false)
+        coordinator.resumeCurrentSession()
+        for _ in 0..<100 where !engine.isPlaying { await Task.yield() }
+        #expect(engine.isPlaying)
     }
 }

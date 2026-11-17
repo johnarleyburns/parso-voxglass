@@ -32,10 +32,9 @@ struct BookPageOverflowSheet: View {
                     List {
                         if audioOnly {
                             audioSection
+                            thisBookSection
                         } else {
                             detailsSection
-                            thisBookSection
-                            chaptersSection
                             discoverSection
                             manageSection
                         }
@@ -115,29 +114,6 @@ struct BookPageOverflowSheet: View {
             }
 
 
-        }
-    }
-
-    private var chaptersSection: some View {
-        Section {
-            ForEach(book.chapters) { chapter in
-                Button {
-                    playback.selectAndPlay(book, chapter: chapter)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Text(chapter.title)
-                            .foregroundStyle(Palette.ink)
-                        Spacer()
-                        Text(TimeFormatting.clock(chapter.duration))
-                            .foregroundStyle(Palette.ink3)
-                    }
-                }
-                .accessibilityHint("Plays this chapter")
-            }
-        } header: {
-            Text("Chapters")
-                .accessibilityIdentifier("nowplaying.detailChapters")
         }
     }
 
