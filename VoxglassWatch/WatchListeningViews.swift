@@ -189,38 +189,63 @@ struct WatchSleepView: View {
     }
 }
 
-/// About-only diagnostics: connection, installed audio, and detailed receipts.
+/// About-only diagnostics use native watch drill-down pages.
 struct WatchListeningSyncStatusView: View {
     @EnvironmentObject private var services: WatchAppServices
+
     var body: some View {
         List {
-            DisclosureGroup("iPhone") {
-                Text(services.isConnected ? String(localized: "iPhone connected") : String(localized: "iPhone not connected"))
-                if let message = services.session.syncMessage { Text(message).font(.caption2) }
-                if let date = services.session.lastCatalogDate { Text("Last iPhone catalog: \(date.formatted())").font(.caption2) }
+            NavigationLink("iPhone") { connectionDetails }
+            NavigationLink("Installed audio") { installedAudioDetails }
+            NavigationLink("Diagnostics") { diagnosticsDetails }
+        }
+        .navigationTitle("Sync Details")
+        .listStyle(.plain)
+    }
+
+    private var connectionDetails: some View {
+        List {
+            Text(services.isConnected ? String(localized: "iPhone connected") : String(localized: "iPhone not connected"))
+            if let message = services.session.syncMessage { Text(message).font(.caption2) }
+            if let date = services.session.lastCatalogDate {
+                Text("Last iPhone catalog: \(date.formatted())").font(.caption2)
             }
-            DisclosureGroup("Installed audio") {
-                Text("\(services.downloaded.count) books on this watch")
-                ForEach(services.books.filter { !services.downloaded.contains($0.id) }, id: \.id) { book in
-                    VStack(alignment: .leading) {
-                        Text(book.title)
-                        let count = services.session.bookReports[book.id]?.installedChapterIDs?.count ?? 0
-                        Text("\(count) of \(book.chapters.count) chapters installed").font(.caption2)
-                        if case .failed(let message)? = services.session.snapshot?.downloadStates?[book.id] {
-                            Text(message).font(.caption2)
-                        } else if let failure = services.session.bookReports[book.id]?.failureMessage {
-                            Text(failure).font(.caption2)
-                        } else { Text("Audio submitted by iPhone; installation is unconfirmed.").font(.caption2) }
+        }
+        .navigationTitle("iPhone")
+        .listStyle(.plain)
+    }
+
+    private var installedAudioDetails: some View {
+        List {
+            Text("\(services.downloaded.count) books on this watch")
+            ForEach(services.books.filter { !services.downloaded.contains($0.id) }, id: \.id) { book in
+                VStack(alignment: .leading) {
+                    Text(book.title)
+                    let count = services.session.bookReports[book.id]?.installedChapterIDs?.count ?? 0
+                    Text("\(count) of \(book.chapters.count) chapters installed").font(.caption2)
+                    if case .failed(let message)? = services.session.snapshot?.downloadStates?[book.id] {
+                        Text(message).font(.caption2)
+                    } else if let failure = services.session.bookReports[book.id]?.failureMessage {
+                        Text(failure).font(.caption2)
+                    } else {
+                        Text("Audio submitted by iPhone; installation is unconfirmed.").font(.caption2)
                     }
                 }
             }
-            DisclosureGroup("Diagnostics") {
-                Button("Refresh") { services.session.refresh() }
-                Text(String(localized: "Audio receipt: \(services.session.audioReceipt)")).font(.caption2)
-                Text(String(localized: "Artwork receipt: \(services.session.artworkReceipt)")).font(.caption2)
-                Text(String(localized: "Watch report: \(services.session.reportMessage)")).font(.caption2)
-                if let error = services.session.connectionError { Text(error).font(.caption2) }
-            }
-        }.navigationTitle("Sync Details").listStyle(.plain)
+        }
+        .navigationTitle("Installed audio")
+        .listStyle(.plain)
+    }
+
+    private var diagnosticsDetails: some View {
+        List {
+            Button("Refresh") { services.session.refresh() }
+            Text(String(localized: "Audio receipt: \(services.session.audioReceipt)")).font(.caption2)
+            Text(String(localized: "Artwork receipt: \(services.session.artworkReceipt)")).font(.caption2)
+            Text(String(localized: "Watch report: \(services.session.reportMessage)")).font(.caption2)
+            if let error = services.session.connectionError { Text(error).font(.caption2) }
+        }
+        .navigationTitle("Diagnostics")
+        .listStyle(.plain)
     }
 }
