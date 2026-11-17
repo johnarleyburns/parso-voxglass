@@ -10,32 +10,13 @@ struct RootView: View {
     @State private var selectedTab: VoxglassTab = .launchDefault
     @State private var miniPlayerRouter = MiniPlayerPresentationRouter()
     @State private var deepLinkedBook: DeepLinkedBook?
-    @State private var watchTransferBannerDismissed = false
     @Namespace private var zoomNamespace
 
     var body: some View {
-        ZStack {
-            tabsWithPresentation
-
-            if let toast = phoneAudioRelay.connectionToast {
-                VStack {
-                    Text(toast)
-                        .voxType(.body)
-                        .foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 11)
-                        .glassEffect(.regular, in: .capsule)
-                        .accessibilityIdentifier("watch.connectionToast")
-                    Spacer()
-                }
-                .safeAreaPadding(.top, 10)
-                .zIndex(20)
-            }
-        }
+        tabsWithPresentation
         .tint(VoxglassTheme.accent)
         .environment(miniPlayerRouter)
         .environment(\.voxglassZoomNamespace, zoomNamespace)
-        .animation(.easeInOut(duration: 0.2), value: phoneAudioRelay.connectionToast)
         .onChange(of: playback.currentSession) { _, _ in
             WidgetSnapshotWriter.write(playback: playback)
         }
@@ -63,19 +44,7 @@ struct RootView: View {
                   let title = libraryStore.book(withID: bookID)?.book.title else { return }
             AccessibilityNotification.Announcement("\(title) downloaded").post()
         }
-        .task(id: phoneAudioRelay.connectionToast) {
-            // Also schedule expiry when WCSession connected before this view
-            // appeared. SwiftUI cancels this timer on replacement/disappearance.
-            guard let toast = phoneAudioRelay.connectionToast else { return }
-            do { try await Task.sleep(for: .seconds(3)) }
-            catch { return }
-            guard !Task.isCancelled, phoneAudioRelay.connectionToast == toast else { return }
-            phoneAudioRelay.connectionToast = nil
-        }
-    }
 
-    private var showsWatchTransferBanner: Bool {
-        phoneAudioRelay.watchTransferStatusBanner != nil && !watchTransferBannerDismissed
     }
 
     /// Single root-owned transition: an explicit change of tab dismisses the
@@ -96,26 +65,9 @@ struct RootView: View {
         )
     }
 
-    private func openWatchList() {
-        tabSelection.wrappedValue = .library
-        NotificationCenter.default.post(name: .showMyWatchBooks, object: nil)
-    }
-
     private var tabsWithPresentation: some View {
         tabShell
             .modifier(MiniPlayerBottomAccessory())
-            // Independent of the system-sized accessory slot so its visibility can never
-            // change the accessory's height.
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if showsWatchTransferBanner, let banner = phoneAudioRelay.watchTransferStatusBanner {
-                    WatchTransferPill(banner: banner, open: openWatchList, dismiss: { watchTransferBannerDismissed = true })
-                        .glassEffect(.regular, in: .capsule)
-                        .padding(.horizontal, 12)
-                }
-            }
-            .onChange(of: phoneAudioRelay.watchTransferStatusBanner == nil) { _, isEmpty in
-                if isEmpty { watchTransferBannerDismissed = false }
-            }
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environment(playback)
@@ -154,7 +106,7 @@ struct RootView: View {
             .presentationDragIndicator(.visible)
         }
         // Watch "Continue on iPhone" hands off here (after the person accepts it in the App
-        // Switcher) and opens My Books, where "Download to Apple Watch" lives.
+        // Switcher) and opens My Books. Watch audio is managed from Sync.
         .onContinueUserActivity(WatchHandoffRoute.activityType) { activity in
             if WatchHandoffRoute.route(forActivityType: activity.activityType) == .library {
                 selectedTab = .library
@@ -215,51 +167,12 @@ private struct DeepLinkedBook: Identifiable {
     let id: UUID
 }
 
-extension Notification.Name {
-    static let showMyWatchBooks = Notification.Name("voxglass.showMyWatchBooks")
-}
-
 private struct MiniPlayerBottomAccessory: ViewModifier {
     @Environment(PlaybackCoordinator.self) private var playback
-
     @ViewBuilder
     func body(content: Content) -> some View {
         content.tabViewBottomAccessory {
             MiniPlayerAccessory().environment(playback)
-        }
-    }
-}
-
-private struct WatchTransferPill: View {
-    let banner: WatchTransferStatusBanner
-    let open: () -> Void
-    let dismiss: () -> Void
-
-    var body: some View {
-        let label = WatchTransferStatusBannerResolver.label(for: banner)
-        HStack(spacing: 0) {
-            Button(action: open) {
-                HStack(spacing: 8) {
-                    Image(systemName: banner.hasFailure ? "exclamationmark.triangle.fill" : "applewatch")
-                    Text(label).voxType(.body).lineLimit(1)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                }
-                .foregroundStyle(banner.hasFailure ? Color.red : Palette.ink)
-                .padding(.leading, 16)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(label)
-            .accessibilityHint("Opens books on Apple Watch")
-            .accessibilityIdentifier("watch.transferBanner")
-            Button(action: dismiss) {
-                Image(systemName: "xmark").frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Dismiss Apple Watch status")
-            .accessibilityIdentifier("watch.transferBanner.dismiss")
         }
     }
 }

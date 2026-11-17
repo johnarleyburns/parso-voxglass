@@ -34,6 +34,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     )
     @Published private(set) var lastWatchSyncDate: Date?
     @Published private(set) var watchSyncStatus: String?
+    @Published private(set) var watchSyncError: String?
     @Published var connectionToast: String?
     @Published var watchTransferError: String?
     @Published private(set) var watchSelectedBookIDs = Set<UUID>()
@@ -135,6 +136,20 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                         metadataRevision: root.revision, chapters: chapters))
                     try? await watchProjectionStore.setDesired(.failed("Send again from iPhone to prepare the new watch AAC96 format."), for: id)
                 }
+                // Stop old queued text-narration transfers after upgrading. Keep
+                // already installed copies until the person removes them in Sync.
+                let previous = await watchProjectionStore.current()
+                for book in libraryStore.books where !WatchDownloadEligibility.allowsTransfer(
+                    isReadByAI: libraryStore.source(for: book.book)?.kind == .readWithAI,
+                    chapterExtensions: book.chapters.flatMap { [$0.localURL?.pathExtension, $0.remoteURL?.pathExtension].compactMap { $0 } }
+                ) {
+                    cancelOutstandingWatchTransfers(for: book.book.id)
+                    let id = WatchBookID(book.book.id.uuidString)
+                    if previous.selectedBooks[id] != nil,
+                       previous.desired[id] != .downloaded, previous.desired[id] != .removing {
+                        try? await watchProjectionStore.setDesired(.failed(String(localized: "Read by AI books play on iPhone. Apple Watch downloads are available for books with recorded audio.")), for: id)
+                    }
+                }
                 let state = await watchProjectionStore.current()
                 watchSelectedBookIDs = Set(state.selectedBooks.keys.compactMap { UUID(uuidString: $0.rawValue) })
                 for value in state.acknowledgements.values { applyWatchAcknowledgement(value, desiredStates: state.desired) }
@@ -163,6 +178,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 lastCatalogContent = sent
             }
             if session.isReachable { session.sendMessage(message, replyHandler: nil, errorHandler: nil) }
+            watchSyncError = nil
             lastCatalogSentDate = SystemClock().now
             UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
             lastWatchSyncDate = Date()
@@ -174,6 +190,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         } catch {
             guard generation == catalogPublishGeneration else { return }
             lastCatalogContent = nil
+            watchSyncError = error.localizedDescription
             watchSyncStatus = String(localized: "Watch sync failed: \(error.localizedDescription)")
         }
     }
@@ -443,6 +460,12 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
     ) async -> WatchTransferStart {
+        guard WatchDownloadEligibility.allowsTransfer(
+            isReadByAI: libraryStore?.source(for: book.book)?.kind == .readWithAI,
+            chapterExtensions: book.chapters.flatMap { [$0.localURL?.pathExtension, $0.remoteURL?.pathExtension].compactMap { $0 } }
+        ) else {
+            return .failed(String(localized: "Read by AI books play on iPhone. Apple Watch downloads are available for books with recorded audio."))
+        }
         // `refreshConnectionState()` takes one synchronous, coherently-timed
         // reading of all connection flags. `WatchSendReadinessResolver` must
         // only ever see flags from that same reading — a later independent
@@ -597,12 +620,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         var resolvedChapterFiles: [(chapter: Chapter, key: String, url: URL)] = []
         for chapter in book.chapters {
             if let localURL = localOnDiskURL(for: chapter) {
-                // Read With AI chapters are durable UTF-8 assets rather than
-                // audio. Their stable chapter ID is sufficient until the
-                // renderer below creates the actual AAC source file.
-                let key = localURL.pathExtension.lowercased() == "voxtext"
-                    ? "read-with-ai-\(chapter.id.uuidString)"
-                    : ChapterAudioIdentity.cacheKey(for: chapter)
+                let key = ChapterAudioIdentity.cacheKey(for: chapter)
                 guard let key else {
                     return await fail("A chapter's audio file couldn't be identified.")
                 }
@@ -624,8 +642,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             return await fail("No chapters were ready to transfer.")
         }
 
+        guard !resolvedChapterFiles.contains(where: { $0.url.pathExtension.lowercased() == "voxtext" }) else {
+            return await fail(String(localized: "Read by AI books play on iPhone. Apple Watch downloads are available for books with recorded audio."))
+        }
+
         var preparedFiles: [(Chapter, String, URL, Int64, String)] = []
-        var sourceHashes: [URL: String] = [:]
         var artwork: (url: URL, bytes: Int64, hash: String)?
         do {
             // Media conversion needs foreground execution or a finite iOS
@@ -635,105 +656,41 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             let preparation = Task { @MainActor () async throws -> Void in
                 let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                     .appendingPathComponent("Voxglass/WatchAAC96", isDirectory: true)
-                let hasReadWithAI = resolvedChapterFiles.contains { $0.url.pathExtension.lowercased() == "voxtext" }
-                if !hasReadWithAI {
-                    // Ordinary audio: all heavy work runs in the worker actor and
-                    // returns one immutable result; only the commit is on MainActor.
-                    let chapterInputs = resolvedChapterFiles.map { chapter, key, source in
-                        let remote = chapter.remoteURL
-                        let mime = remote.flatMap { RemoteAudioURL.contentTypeMIME(for: $0) }
-                            ?? (remote?.pathExtension.lowercased() == "mp3" ? "audio/mpeg" : nil)
-                        return OrdinaryWatchChapterInput(
-                            chapterID: chapter.id, chapterKey: key, index: chapter.index, title: chapter.title,
-                            source: source, startTime: max(0, chapter.startTime),
-                            duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil }, mimeType: mime)
-                    }
-                    let coverURL = book.book.coverURL
-                    let worker = WatchAudioPreparationWorker(dependencies: .live(artwork: { directory in
-                        guard let coverURL else { return nil }
-                        return await PhoneAudioRelay.renderWatchArtwork(coverURL: coverURL, directory: directory)
-                    }))
-                    let prepared = try await worker.prepare(
-                        OrdinaryWatchPreparationInput(bookID: book.book.id, chapters: chapterInputs, directory: directory)
-                    ) { [weak self] progress in await self?.watchProgressCoalescer.submit(progress) }
-                    try Task.checkCancellation()
-                    // A newer submission superseded this one: commit nothing.
-                    guard watchPreparationGenerations.isCurrent(generation, for: book.book.id) else {
-                        throw CancellationError()
-                    }
-                    selected.chapters = prepared.chapters
-                    selected.duration = prepared.chapters.reduce(0) { $0 + $1.duration }
-                    let chaptersByID = Dictionary(uniqueKeysWithValues: book.chapters.map { ($0.id, $0) })
-                    preparedFiles = prepared.files.compactMap { file in
-                        chaptersByID[file.chapterID].map { ($0, file.chapterKey, file.url, file.bytes, file.sha256) }
-                    }
-                    artwork = prepared.artwork.map { ($0.url, $0.bytes, $0.hash) }
-                    if let artwork { selected.artworkKey = "\(book.book.id.uuidString)/\(artwork.hash).jpg" }
-                    else if book.book.coverURL != nil {
-                        watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
-                    }
-                    try await watchProjectionStore.select(selected)
-                    watchSelectedBookIDs.insert(book.book.id)
-                    try await watchProjectionStore.setDesiredRoot(WatchManifest(bookID: selected.id, revision: revision,
-                        requiredChapterIDs: selected.chapters.map(\.id)))
-                    await publishTypedWatchProjection()
-                    return
-                }
-                selected.chapters = []
-                for (index, item) in resolvedChapterFiles.enumerated() {
-                    try Task.checkCancellation()
-                    let (chapter, key, source) = item
-                    watchProgressCoalescer.submit(WatchPreparationProgress(
-                        bookID: book.book.id, phase: .preparing,
-                        completed: index, total: resolvedChapterFiles.count,
-                        detail: "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
-                    ))
-                    if source.pathExtension.lowercased() == "voxtext" {
-                        let narrationWorker = WatchAudioPreparationWorker(dependencies: .live(artwork: { _ in nil }))
-                        let adapter = ReadWithAIWatchPreparationAdapter(
-                            chapterID: chapter.id, chapterKey: key, directory: directory)
-                        let prepared = try await adapter.prepareNarration(
-                            textURL: source,
-                            preference: ReadWithAIVoicePreferences.preference(for: book.book.id),
-                            renderer: ReadWithAIWatchNarrationRenderer(directory: directory),
-                            cache: ReadWithAIWatchNarrationUserDefaultsCache(managedRoot: directory),
-                            worker: narrationWorker)
-                        try WatchAACAssetValidator.validate(prepared.url)
-                        let (url, size, checksum) = (prepared.url, prepared.bytes, prepared.sha256)
-                        selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
-                            index: chapter.index, title: chapter.title, duration: prepared.duration, startTime: 0,
-                            expectedBytes: size, expectedSHA256: checksum, durableFilename: "\(chapter.id.uuidString).m4a"))
-                        preparedFiles.append((chapter, key, url, size, checksum))
-                        continue
-                    }
-                    let hash: String
-                    if let cached = sourceHashes[source] { hash = cached }
-                    else {
-                        hash = try await Task.detached {
-                            let accessed = source.startAccessingSecurityScopedResource()
-                            defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-                            return try WatchChecksum.sha256(of: source)
-                        }.value
-                        sourceHashes[source] = hash
-                    }
+                // Ordinary audio: all heavy work runs in the worker actor and
+                // returns one immutable result; only the commit is on MainActor.
+                let chapterInputs = resolvedChapterFiles.map { chapter, key, source in
                     let remote = chapter.remoteURL
                     let mime = remote.flatMap { RemoteAudioURL.contentTypeMIME(for: $0) }
                         ?? (remote?.pathExtension.lowercased() == "mp3" ? "audio/mpeg" : nil)
-                    let url = try await WatchChapterTransfer.prepareAAC(source: source, directory: directory,
-                        startTime: max(0, chapter.startTime), duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil },
-                        sourceHash: hash, mimeType: mime)
-                    let size = Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
-                    let checksum = try await Task.detached { try WatchChecksum.sha256(of: url) }.value
-                    let filename = "\(chapter.id.uuidString).m4a"
-                    let preparedDuration = try await AVURLAsset(url: url).load(.duration).seconds
-                    selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
-                        index: chapter.index, title: chapter.title, duration: preparedDuration, startTime: 0,
-                        expectedBytes: size, expectedSHA256: checksum, durableFilename: filename))
-                    preparedFiles.append((chapter, key, url, size, checksum))
+                    return OrdinaryWatchChapterInput(
+                        chapterID: chapter.id, chapterKey: key, index: chapter.index, title: chapter.title,
+                        source: source, startTime: max(0, chapter.startTime),
+                        duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil }, mimeType: mime)
                 }
-                selected.duration = selected.chapters.reduce(0) { $0 + $1.duration }
-                artwork = await prepareWatchArtwork(book: book, directory: directory)
+                let coverURL = book.book.coverURL
+                let worker = WatchAudioPreparationWorker(dependencies: .live(artwork: { directory in
+                    guard let coverURL else { return nil }
+                    return await PhoneAudioRelay.renderWatchArtwork(coverURL: coverURL, directory: directory)
+                }))
+                let prepared = try await worker.prepare(
+                    OrdinaryWatchPreparationInput(bookID: book.book.id, chapters: chapterInputs, directory: directory)
+                ) { [weak self] progress in await self?.watchProgressCoalescer.submit(progress) }
+                try Task.checkCancellation()
+                // A newer submission superseded this one: commit nothing.
+                guard watchPreparationGenerations.isCurrent(generation, for: book.book.id) else {
+                    throw CancellationError()
+                }
+                selected.chapters = prepared.chapters
+                selected.duration = prepared.chapters.reduce(0) { $0 + $1.duration }
+                let chaptersByID = Dictionary(uniqueKeysWithValues: book.chapters.map { ($0.id, $0) })
+                preparedFiles = prepared.files.compactMap { file in
+                    chaptersByID[file.chapterID].map { ($0, file.chapterKey, file.url, file.bytes, file.sha256) }
+                }
+                artwork = prepared.artwork.map { ($0.url, $0.bytes, $0.hash) }
                 if let artwork { selected.artworkKey = "\(book.book.id.uuidString)/\(artwork.hash).jpg" }
+                else if book.book.coverURL != nil {
+                    watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
+                }
                 try await watchProjectionStore.select(selected)
                 watchSelectedBookIDs.insert(book.book.id)
                 try await watchProjectionStore.setDesiredRoot(WatchManifest(bookID: selected.id, revision: revision,
@@ -804,16 +761,6 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         watchSyncStatus = WatchTransferStatusCopy.sentStatus(title: book.book.title)
         watchTransferSupervisor(for: book.book.id, fileTransfers: fileTransfers)
         return .started
-    }
-
-    /// Prepare a bounded cover on the phone. The watch never fetches an artwork URL.
-    private func prepareWatchArtwork(book: BookWithChapters, directory: URL) async -> (url: URL, bytes: Int64, hash: String)? {
-        guard let cover = book.book.coverURL else { return nil }
-        if let result = await Self.renderWatchArtwork(coverURL: cover, directory: directory) {
-            return (result.url, result.bytes, result.hash)
-        }
-        watchSyncStatus = "Audio preparation continues; artwork could not be prepared."
-        return nil
     }
 
     /// Off-MainActor cover rendering; any failure is nonfatal and yields nil.

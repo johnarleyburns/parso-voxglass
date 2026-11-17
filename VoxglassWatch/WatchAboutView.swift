@@ -14,6 +14,12 @@ struct WatchAboutView: View {
                 Text("Voxglass plays audiobooks downloaded from your iPhone directly on your wrist — no phone nearby required once a book is on the watch.")
                     .font(.caption)
             }
+            Section {
+                NavigationLink {
+                    WatchListeningSyncStatusView()
+                } label: { Label("Sync Details", systemImage: "arrow.triangle.2.circlepath") }
+                .accessibilityIdentifier("watch.about.syncDetails")
+            }
             Section("License") {
                 Text("Free software, GNU GPLv3+. Full source is public.")
                     .font(.caption2)

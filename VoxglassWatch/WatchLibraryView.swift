@@ -96,7 +96,7 @@ struct WatchHomeView: View {
         VStack(spacing: 6) {
             Image(systemName: "book").font(.title3).foregroundStyle(WatchPalette.accent)
             Text("No books on this watch").font(.headline).multilineTextAlignment(.center)
-            Text("On iPhone, open a book and tap Download to Apple Watch. It keeps your place.")
+            Text("On iPhone, open Sync and choose books for Apple Watch.")
                 .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
             WatchHandoffButton()
         }
@@ -110,37 +110,33 @@ struct WatchHomeView: View {
 
     private var footer: some View {
         Section {
-            WatchStatusChip(title: services.isConnected ? String(localized: "iPhone connected")
-                                                        : String(localized: "On This Watch"),
-                            tone: services.isConnected ? .good : .warning)
-                .accessibilityIdentifier(WatchAccessibilityID.connection)
-                .listRowBackground(Color.clear)
-            if !services.downloads.isEmpty || !services.downloaded.isEmpty {
-                Button { path.append(.downloads) } label: {
-                    HStack {
-                        Label("Downloads", systemImage: "arrow.down.circle")
-                        Spacer()
-                        if !services.downloads.isEmpty {
-                            WatchTransferRing(fraction: aggregateDownloadFraction, size: 16)
-                        }
-                    }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(syncStatus).font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("watch.sync.status")
+                Button { services.session.syncNow() } label: {
+                    Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                 }
-                .watchCardRow()
-                .accessibilityIdentifier("watch.downloads.row")
+                .disabled(!services.isConnected || services.session.isSyncing)
+                .accessibilityIdentifier("watch.sync")
+                if services.session.isSyncing { ProgressView().controlSize(.mini) }
             }
-            Button { path.append(.syncStatus) } label: { Text("Sync Status") }
-                .watchCardRow().accessibilityIdentifier("watch.syncStatus")
+            .watchCardRow()
             Button { path.append(.about) } label: { Text("About") }
                 .watchCardRow()
                 .accessibilityIdentifier("watch.about.row")
         }
     }
 
-    private var aggregateDownloadFraction: Double? {
-        let entries = Array(services.downloads.values)
-        let total = entries.reduce(0) { $0 + $1.total }
-        guard total > 0 else { return nil }
-        return Double(entries.reduce(0) { $0 + $1.done }) / Double(total)
+    private var syncStatus: String {
+        if services.session.isSyncing { return String(localized: "Syncing…") }
+        if services.session.syncNeedsAttention || services.session.connectionError != nil
+            || services.session.bookReports.values.contains(where: { $0.failureMessage != nil })
+            || services.session.snapshot?.downloadStates?.values.contains(where: {
+                if case .failed = $0 { return true }; return false
+            }) == true {
+            return String(localized: "Sync needs attention")
+        }
+        return services.isConnected ? String(localized: "iPhone connected") : String(localized: "iPhone not connected")
     }
 
     private func open(_ book: WatchBookDTO) {

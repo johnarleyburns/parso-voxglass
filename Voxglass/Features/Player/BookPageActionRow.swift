@@ -1,13 +1,11 @@
 import SwiftUI
 import VoxglassCore
-import VoxglassWatchProtocol
 
 struct BookPageActionRow: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
-    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     var isDetailList = false
     let book: BookWithChapters
     @Binding var showingEQ: Bool
@@ -15,10 +13,7 @@ struct BookPageActionRow: View {
     @Binding var showingOverflow: Bool
     @Binding var showCellularPrompt: Bool
     @Binding var showRemoveOfflineConfirm: Bool
-    let requestWatchDownload: () -> Void
     @State private var showCacheSizeWarning = false
-    @State private var showRemoveWatchConfirm = false
-    @State private var showWatchTransferActions = false
     @State private var bookmarkCount = 0
     @State private var showingBookmarkPrompt = false
     @State private var userPlaybackRateChangeCount = 0
@@ -41,19 +36,6 @@ struct BookPageActionRow: View {
         libraryStore.source(for: book.book)?.kind == .localFiles
     }
 
-    private var watchState: WatchTransferState {
-        WatchDisplayStateResolver.resolve(
-            desiredState: phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)],
-            storageState: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state
-        )
-    }
-
-    private var watchProgress: Double {
-        if let progress = watchState.progressFraction { return min(max(progress, 0), 1) }
-        guard let info = phoneAudioRelay.watchStorageInfo(for: book.book.id), info.totalChapterCount > 0 else { return 0 }
-        return min(max(Double(info.completeChapterCount) / Double(info.totalChapterCount), 0), 1)
-    }
-
     /// No real byte count exists before a download finishes, so the
     /// space-usage warning shows an estimate from the book's total duration.
     private var estimatedBytes: Int64 {
@@ -67,8 +49,13 @@ struct BookPageActionRow: View {
                 LabeledContent("Playback speed") { speedButton }
                 LabeledContent("Sleep timer") { sleepTimerButton }
                 LabeledContent("Bookmark") { bookmarkButton }
-                LabeledContent("Apple Watch") { watchButton }
                 LabeledContent("AirPlay") { airplayButton }
+                if !WatchDownloadEligibility.allowsTransfer(
+                    isReadByAI: libraryStore.source(for: book.book)?.kind == .readWithAI,
+                    chapterExtensions: book.chapters.flatMap { [$0.localURL?.pathExtension, $0.remoteURL?.pathExtension].compactMap { $0 } }
+                ) {
+                    LabeledContent("Apple Watch") { ReadByAIWatchInfoButton() }
+                }
             } else {
                 ViewThatFits(in: .horizontal) {
                     fullRow
@@ -88,41 +75,7 @@ struct BookPageActionRow: View {
         } message: {
             Text("This will use approximately \(ByteFormatting.string(estimatedBytes)) of storage on your iPhone.")
         }
-        .confirmationDialog(
-            "Remove from Apple Watch?",
-            isPresented: $showRemoveWatchConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Remove from Watch", role: .destructive) {
-                Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("The book stays in My Books; only the copy on your Apple Watch is removed.")
-        }
-        .confirmationDialog(
-            String(localized: "Apple Watch Download"),
-            isPresented: $showWatchTransferActions,
-            titleVisibility: .visible
-        ) {
-            if watchState == .paused {
-                Button(String(localized: "Continue Download")) {
-                    Task { await phoneAudioRelay.resumeBookTransferToWatch(book) }
-                }
-            } else {
-                Button(String(localized: "Pause Download")) {
-                    Task { await phoneAudioRelay.pauseBookTransferToWatch(bookID: book.book.id) }
-                }
-            }
-            Button(String(localized: "Remove from Watch"), role: .destructive) {
-                Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(watchState == .paused
-                ? String(localized: "This book is paused on its way to your Apple Watch.")
-                : String(localized: "You can pause this download and continue it later, or remove its partial copy from your Apple Watch."))
-        }
+
     }
 
     private var fullRow: some View {
@@ -133,8 +86,6 @@ struct BookPageActionRow: View {
             Spacer(minLength: 0)
             bookmarkButton
             Spacer(minLength: 0)
-            watchButton
-            Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
             overflowButton
@@ -144,8 +95,6 @@ struct BookPageActionRow: View {
     private var compactRow: some View {
         HStack(spacing: 0) {
             speedButton
-            Spacer(minLength: 0)
-            watchButton
             Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
@@ -364,102 +313,6 @@ struct BookPageActionRow: View {
             .accessibilityLabel("Retry caching")
             .accessibilityIdentifier("nowplaying.download")
         }
-    }
-
-    @ViewBuilder
-    private var watchButton: some View {
-        switch phoneAudioRelay.watchPreparationByBook[book.book.id] {
-        case .downloadingOnPhone(let progress):
-            watchProgressButton(
-                progress: progress,
-                label: String(localized: "Preparing for Apple Watch"),
-                accessibilityValue: String(localized: "Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent")
-            )
-        case .preparingAudio:
-            watchProgressButton(progress: 0, label: String(localized: "Preparing audio for Apple Watch"))
-        case nil:
-            watchTransferButton
-        }
-    }
-
-    @ViewBuilder
-    private var watchTransferButton: some View {
-        switch watchState {
-        case .notAvailable, .failed:
-            Button {
-                TactileFeedback.tap()
-                requestWatchDownload()
-            } label: {
-                Image(systemName: "applewatch")
-                    .voxFont(.callout)
-                    .foregroundStyle(watchState == .failed ? Palette.danger : Color.white.opacity(0.6))
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
-            .accessibilityIdentifier("nowplaying.watchDownload")
-        case .queued, .waitingForPhone:
-            watchProgressButton(progress: watchProgress, label: String(localized: "Waiting to send to Apple Watch"))
-        case .transferring(let progress):
-            watchProgressButton(progress: progress, label: String(localized: "Sending to Apple Watch"))
-        case .stalled(let progress):
-            Button {
-                TactileFeedback.tap()
-                Task { await phoneAudioRelay.retryStalledBookTransferToWatch(book) }
-            } label: {
-                Image(systemName: "exclamationmark.arrow.circlepath")
-                    .voxFont(.callout)
-                    .foregroundStyle(Palette.danger)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel(String(localized: "Apple Watch send stalled — tap to retry"))
-            .accessibilityValue("\(Int(min(max(progress, 0), 1) * 100))%")
-            .accessibilityIdentifier("nowplaying.watchRetryStalled")
-        case .paused:
-            watchProgressButton(progress: watchProgress, label: String(localized: "Apple Watch download paused"), paused: true)
-        case .available:
-            Button {
-                TactileFeedback.tap()
-                showRemoveWatchConfirm = true
-            } label: {
-                Image(systemName: "applewatch")
-                    .symbolVariant(.fill)
-                    .voxFont(.callout)
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Downloaded to Apple Watch — tap to remove")
-            .accessibilityIdentifier("nowplaying.watchDownload")
-        }
-    }
-
-    private func watchProgressButton(
-        progress: Double,
-        label: String,
-        paused: Bool = false,
-        accessibilityValue: String? = nil
-    ) -> some View {
-        let boundedProgress = min(max(progress, 0), 1)
-        return Button {
-            TactileFeedback.tap()
-            showWatchTransferActions = true
-        } label: {
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
-                Circle()
-                    .trim(from: 0, to: CGFloat(boundedProgress))
-                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Image(systemName: paused ? "applewatch.slash" : "applewatch")
-                    .voxFont(.caption2, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-            }
-            .frame(width: 22, height: 22)
-            .frame(width: 44, height: 44)
-        }
-        .accessibilityLabel(label)
-        .accessibilityValue(accessibilityValue ?? "\(Int((boundedProgress * 100).rounded())) percent")
-        .accessibilityIdentifier("nowplaying.watchDownload")
     }
 
     private func startOffline(allowCellular: Bool) async {

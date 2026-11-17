@@ -14,6 +14,8 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     @Published private(set) var phoneTransferProgress: [WatchBookID: (done: Int, total: Int)] = [:]
     @Published private(set) var bookReports: [WatchBookID: WatchManifestAcknowledgement] = [:]
     @Published private(set) var isSyncing = false
+    @Published private(set) var syncNeedsAttention = false
+    private var syncGeneration = 0
     @Published private(set) var syncMessage: String?
     @Published private(set) var lastCatalogDate: Date?
     @Published private(set) var isReconciling = false
@@ -114,10 +116,15 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         }
         guard !isSyncing else { return }
         isSyncing = true
+        syncNeedsAttention = false
+        syncGeneration += 1
+        let generation = syncGeneration
         syncMessage = "Sync sent."
         guard let data = try? WatchProtocolEnvelope.encode(kind: .reconcileRequest,
             payload: [String: String](), libraryID: snapshot?.pairedLibraryID ?? .unknown) else {
             isSyncing = false
+            syncNeedsAttention = true
+            syncMessage = String(localized: "Sync needs attention")
             return
         }
         // `replyHandler`/`errorHandler` closures written inline inside this @MainActor class
@@ -130,14 +137,17 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
             errorHandler: { @Sendable [weak self] error in
                 let message = error.localizedDescription
                 Task { @MainActor in
-                    self?.isSyncing = false
-                    self?.syncMessage = message
+                    guard let self, self.isSyncing, self.syncGeneration == generation else { return }
+                    self.isSyncing = false
+                    self.syncNeedsAttention = true
+                    self.syncMessage = message
                 }
             })
         Task { [weak self] in
-            try? await Task.sleep(for: .seconds(8))
-            guard let self, isSyncing else { return }
+            do { try await Task.sleep(for: .seconds(8)) } catch { return }
+            guard let self, isSyncing, syncGeneration == generation else { return }
             isSyncing = false
+            syncNeedsAttention = true
             syncMessage = "Sync sent. No updated iPhone catalog received yet."
         }
     }
@@ -170,6 +180,7 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         snapshot = value
         lastCatalogDate = catalog.sentAt
         isSyncing = false
+        syncNeedsAttention = false
         syncMessage = "Sync updated."
         connectionError = nil
         var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])

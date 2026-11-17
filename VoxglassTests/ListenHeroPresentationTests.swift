@@ -85,7 +85,7 @@ import Testing
         #expect(!block.contains("Close"))
 
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
-        #expect(settings.contains("VoxglassScreen(title: \"Settings\")"))
+        #expect(settings.contains("VoxglassScreen(title: \"Settings\", embedsNavigationStack: false)"))
         #expect(!settings.contains("VoxglassScreen(title: \"More\")"))
     }
 }

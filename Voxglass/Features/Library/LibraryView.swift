@@ -12,23 +12,16 @@ struct LibraryView: View {
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
-    @State private var initialWatchTransferBook: BookWithChapters?
-    @State private var cellularWatchTransferBook: BookWithChapters?
     @State private var showSearch = false
     @State private var searchText = ""
-    @State private var searchScope: LibrarySearchScope = .all
     @State private var isEditing = false
     @ScaledMetric(relativeTo: .footnote) private var libraryRowMinimumHeight = BookListRow.libraryRowMinimumHeight
     @State private var showingAddArchiveURL = false
     @State private var lastPlayedAt: [UUID: Date] = [:]
     @State private var selectedBookID: UUID?
-    // My Books is the user's complete shelf by default. Solo narration and
-    // Created by me are local refinements, so a discovery preference cannot
-    // silently hide saved books from the primary library view.
+    // Discovery preferences must not silently hide saved books.
     @State private var soloOnly = false
-    @State private var myNarrationOnly = false
     @State private var onMyWatchOnly = false
-    @State private var pendingWatchRemoval: WatchBookDTO?
 
     var body: some View {
         VoxglassScreen(
@@ -39,7 +32,6 @@ struct LibraryView: View {
                 shelfPicker
                 if onMyWatchOnly { watchMirror } else { bookList }
             }
-            .onReceive(NotificationCenter.default.publisher(for: .showMyWatchBooks)) { _ in onMyWatchOnly = true }
             .padding(.top, 12)
             // The tab bar and expanded mini-player are outside the screen's
             // scroll content safe area. Leave enough trailing room for the
@@ -67,17 +59,6 @@ struct LibraryView: View {
         } message: {
             Text(libraryStore.importError ?? "")
         }
-        .confirmationDialog("Remove from Apple Watch?", isPresented: Binding(
-            get: { pendingWatchRemoval != nil }, set: { if !$0 { pendingWatchRemoval = nil } }
-        ), titleVisibility: .visible) {
-            Button("Remove from Apple Watch", role: .destructive) {
-                if let book = pendingWatchRemoval, let id = UUID(uuidString: book.id.rawValue) {
-                    Task { await phoneAudioRelay.removeBookFromWatch(bookID: id) }
-                }
-                pendingWatchRemoval = nil
-            }
-            Button("Cancel", role: .cancel) { pendingWatchRemoval = nil }
-        } message: { Text("The iPhone original stays in My Books.") }
         .sheet(isPresented: $showingAddArchiveURL) {
             AddArchiveURLSheet(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
@@ -104,44 +85,6 @@ struct LibraryView: View {
             } else {
                 Text("This deletes the book and its cached audio from this device.")
             }
-        }
-        .confirmationDialog(
-            "Download to Apple Watch?",
-            isPresented: initialWatchBinding,
-            titleVisibility: .visible
-        ) {
-            Button("Download") {
-                guard let book = initialWatchTransferBook else { return }
-                Task { await submitLibraryWatchTransfer(book, allowCellular: false) }
-            }
-            Button("Cancel", role: .cancel) { initialWatchTransferBook = nil }
-        } message: {
-            Text(watchTransferEstimateMessage(initialWatchTransferBook))
-        }
-        .confirmationDialog(
-            "Send to Apple Watch on cellular data?",
-            isPresented: watchCellularBinding,
-            titleVisibility: .visible
-        ) {
-            Button("Send now on cellular") {
-                guard let book = cellularWatchTransferBook else { return }
-                Task { await submitLibraryWatchTransfer(book, allowCellular: true) }
-            }
-            Button("Wait for Wi-Fi", role: .cancel) {
-                cellularWatchTransferBook = nil
-            }
-        } message: {
-            Text("Sending a book to the watch can use significant cellular data.")
-        }
-        .alert(
-            "Couldn't Send to Apple Watch",
-            isPresented: watchTransferErrorBinding
-        ) {
-            Button("OK", role: .cancel) {
-                phoneAudioRelay.watchTransferError = nil
-            }
-        } message: {
-            Text(phoneAudioRelay.watchTransferError ?? "")
         }
         .task {
             if libraryStore.progressFilter == .all { libraryStore.progressFilter = .inProgress }
@@ -170,7 +113,7 @@ struct LibraryView: View {
     @ViewBuilder
     private var watchMirror: some View {
         if phoneAudioRelay.watchCatalogBooks.isEmpty {
-            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch", usesThreeSizeTypography: true)
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Choose books in Sync to listen on Apple Watch.", systemImage: "applewatch", usesThreeSizeTypography: true)
         } else {
             ForEach(orderedWatchBooks, id: \.id) { book in
                 let id = UUID(uuidString: book.id.rawValue)
@@ -189,24 +132,8 @@ struct LibraryView: View {
                                 .accessibilityLabel("Installed on Apple Watch")
                         }
                     }
-                    if desired == .removing {
-                        Text("Removal sent to Apple Watch.").voxFont(LibraryScreenTypography.card)
-                    } else if case .failed(let reason)? = desired {
-                        Text(reason).voxFont(LibraryScreenTypography.card)
-                        Button("Try Again") {
-                            if let original = libraryStore.books.first(where: { $0.book.id == id }) {
-                                initialWatchTransferBook = original
-                            } else { phoneAudioRelay.watchTransferError = "Add this book to My Books before sending it again." }
-                        }.buttonStyle(.borderless).disabled(phoneAudioRelay.isTransferringToWatch)
-                    } else if case .transferring(let fraction) = resolved {
-                        ProgressView(value: fraction)
-                        Text("Transferring audio to Apple Watch").voxFont(LibraryScreenTypography.card)
-                    } else if resolved != .available {
-                        Text(desired == .preparing ? String(localized: "Preparing watch AAC on iPhone…") : String(localized: "Submitted to Apple's transfer service; not yet installed.")).voxFont(LibraryScreenTypography.card)
-                        ProgressView()
-                    }
-                    Button("Remove from Apple Watch", role: .destructive) { pendingWatchRemoval = book }
-                        .buttonStyle(.borderless).disabled(desired == .removing)
+                    Text(resolved == .available ? String(localized: "On My Watch") : String(localized: "Open Sync to manage this book"))
+                        .voxFont(LibraryScreenTypography.card).foregroundStyle(.secondary)
                 }.voxFont(LibraryScreenTypography.card).padding(14).raisedSurface()
             }
         }
@@ -263,21 +190,6 @@ struct LibraryView: View {
                             Button("Open Details") {
                                 selectedBookID = book.book.id
                             }
-                            Button {
-                                if watchDisplayState(for: book) == .available {
-                                    pendingWatchRemoval = phoneAudioRelay.watchCatalogBooks.first { $0.id.rawValue == book.book.id.uuidString }
-                                } else {
-                                    initialWatchTransferBook = book
-                                }
-                            } label: {
-                                Label(watchContextTitle(for: book), systemImage: "applewatch")
-                            }
-                            .disabled(phoneAudioRelay.isTransferringToWatch)
-                            .accessibilityIdentifier(
-                                (watchDisplayState(for: book) == .available
-                                    ? "library.watchRemove."
-                                    : "library.watchDownload.") + book.book.id.uuidString
-                            )
                             Button("Remove from My Books", role: .destructive) {
                                 pendingDeletion = book
                             }
@@ -313,7 +225,7 @@ struct LibraryView: View {
     @ViewBuilder
     private var filteredEmptyState: some View {
         if onMyWatchOnly {
-            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch", usesThreeSizeTypography: true)
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Choose books in Sync to listen on Apple Watch.", systemImage: "applewatch", usesThreeSizeTypography: true)
         } else if libraryStore.downloadedOnly {
             EmptyStatePanel(
                 title: "No Downloads Yet",
@@ -338,14 +250,6 @@ struct LibraryView: View {
                 usesThreeSizeTypography: true
             )
             .accessibilityIdentifier("library.soloEmptyState")
-        } else if myNarrationOnly {
-            EmptyStatePanel(
-                title: "No Narrations by Me",
-                message: "Narrations you create on this device will appear here.",
-                systemImage: "person.wave.2",
-                usesThreeSizeTypography: true
-            )
-            .accessibilityIdentifier("library.myNarrationEmptyState")
         } else if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             EmptyStatePanel(
                 title: "No Matching Books",
@@ -373,7 +277,6 @@ struct LibraryView: View {
             metadata: progressText(for: book),
             accessory: .play,
             style: .grouped,
-            watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
             isMyNarration: isMyNarration(book),
             progress: progressFraction(for: book),
             usesThreeSizeTypography: true
@@ -443,7 +346,6 @@ struct LibraryView: View {
                     showSearch.toggle()
                     if !showSearch {
                         searchText = ""
-                        searchScope = .all
                     }
                 }
             } label: {
@@ -475,7 +377,6 @@ struct LibraryView: View {
                     Toggle("Downloaded", isOn: $libraryStore.downloadedOnly)
                         .accessibilityIdentifier("library.downloadedFilter")
                     Toggle("Single narrator", isOn: $soloOnly)
-                    Toggle("Created by me", isOn: $myNarrationOnly)
                 }
                 Divider()
                 Button(isEditing ? "Done editing" : "Edit books") { // l10n-exempt: state-dependent accessibility or status copy
@@ -522,14 +423,7 @@ struct LibraryView: View {
             .contentShape(Rectangle())
             .raisedSurface()
 
-            Picker("Scope", selection: $searchScope) {
-                ForEach(LibrarySearchScope.allCases) { scope in
-                    Text(scope.title).tag(scope)
-                }
-            }
-            .pickerStyle(.segmented)
-            .voxFont(LibraryScreenTypography.controls)
-            .tint(Palette.brass)
+
         }
     }
 
@@ -579,26 +473,13 @@ struct LibraryView: View {
             books = books.filter { $0.narrationKind == .solo }
         }
 
-        if myNarrationOnly {
-            books = books.filter { isMyNarration($0) }
-        }
-
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return books }
 
         return books.filter { book in
-            switch searchScope {
-            case .all:
-                return book.book.title.localizedCaseInsensitiveContains(query)
-                    || book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
-                    || book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
-            case .title:
-                return book.book.title.localizedCaseInsensitiveContains(query)
-            case .author:
-                return book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
-            case .narrator:
-                return book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
-            }
+            book.book.title.localizedCaseInsensitiveContains(query)
+                || book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
+                || book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
         }
     }
 
@@ -610,95 +491,6 @@ struct LibraryView: View {
             if left != right { return left > right }
             if lhs.book.updatedAt != rhs.book.updatedAt { return lhs.book.updatedAt > rhs.book.updatedAt }
             return lhs.book.id.uuidString < rhs.book.id.uuidString
-        }
-    }
-
-    private func watchDisplayState(for book: BookWithChapters) -> WatchTransferState {
-        WatchDisplayStateResolver.resolve(
-            desiredState: phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)],
-            storageState: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state
-        )
-    }
-
-    private func watchContextTitle(for book: BookWithChapters) -> String {
-        switch watchDisplayState(for: book) {
-        case .available:
-            return String(localized: "Downloaded on Apple Watch")
-        case .transferring, .queued, .waitingForPhone, .paused:
-            return String(localized: "Downloading to Apple Watch…")
-        case .stalled:
-            return String(localized: "Retry Stalled Download to Apple Watch")
-        case .failed:
-            return String(localized: "Retry Download to Apple Watch")
-        case .notAvailable:
-            return String(localized: "Download to Apple Watch")
-        }
-    }
-
-    private func estimatedWatchBytes(_ book: BookWithChapters?) -> Int64 {
-        let chapters = book?.chapters ?? []
-        let duration = chapters.reduce(0) { $0 + ($1.duration ?? 0) }
-        if WatchNarrationEstimate.needsGeneratedAudio(for: chapters) {
-            return WatchNarrationEstimate.estimatedAudioBytes(duration: duration)
-        }
-        return ByteFormatting.estimatedAudiobookBytes(duration: duration)
-    }
-
-    private func watchTransferEstimateMessage(_ book: BookWithChapters?) -> String {
-        guard let book, WatchNarrationEstimate.needsGeneratedAudio(for: book.chapters) else {
-            return String(localized: "This will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch.")
-        }
-        let duration = book.chapters.reduce(0) { $0 + ($1.duration ?? 0) }
-        let creation = WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: duration)
-        return String(localized: "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch.")
-    }
-
-    private func submitLibraryWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async {
-        let start = await phoneAudioRelay.transferBookToWatch(
-            book,
-            allowCellularOverride: allowCellular
-        )
-        switch start {
-        case .started:
-            initialWatchTransferBook = nil
-            cellularWatchTransferBook = nil
-        case .needsCellularConfirmation:
-            initialWatchTransferBook = nil
-            cellularWatchTransferBook = book
-        case .failed(let message):
-            initialWatchTransferBook = nil
-            cellularWatchTransferBook = nil
-            phoneAudioRelay.watchTransferError = message
-        }
-    }
-
-    private var initialWatchBinding: Binding<Bool> {
-        Binding {
-            initialWatchTransferBook != nil
-        } set: { isPresented in
-            if !isPresented {
-                initialWatchTransferBook = nil
-            }
-        }
-    }
-
-    private var watchCellularBinding: Binding<Bool> {
-        Binding {
-            cellularWatchTransferBook != nil
-        } set: { isPresented in
-            if !isPresented {
-                cellularWatchTransferBook = nil
-            }
-        }
-    }
-
-    private var watchTransferErrorBinding: Binding<Bool> {
-        Binding {
-            phoneAudioRelay.watchTransferError != nil
-        } set: { isPresented in
-            if !isPresented {
-                phoneAudioRelay.watchTransferError = nil
-            }
         }
     }
 
@@ -1138,24 +930,6 @@ private enum LocalAudiobookImportError: LocalizedError {
             return String(localized: "No chapter text file was found in that folder.")
         case .invalidChapterTiming:
             return String(localized: "The chapter timestamps do not fit within the selected audio file.")
-        }
-    }
-}
-
-private enum LibrarySearchScope: CaseIterable, Identifiable, Hashable {
-    case all
-    case title
-    case author
-    case narrator
-
-    var id: Self { self }
-
-    var title: String {
-        switch self {
-        case .all: return String(localized: "All")
-        case .title: return String(localized: "Title")
-        case .author: return String(localized: "Author")
-        case .narrator: return String(localized: "Narrator")
         }
     }
 }

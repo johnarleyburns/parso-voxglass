@@ -420,6 +420,42 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["chrome.miniPlayer"].waitForExistence(timeout: 5))
     }
 
+    func testSyncKeepsBookManagementCollapsedAndDetailsInAbout() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-VoxglassInitialTab", "listen", "-uiTestDisableCloudKit"]
+        app.launch()
+        let sync = app.buttons["listen.sync"]
+        XCTAssertTrue(sync.waitForExistence(timeout: 10))
+        sync.tap()
+        XCTAssertTrue(app.buttons["sync.now"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.switches.matching(NSPredicate(format: "identifier BEGINSWITH %@", "sync.book.")).count, 0)
+        XCTAssertFalse(app.buttons["watchsync.now"].exists)
+        app.buttons["sync.about"].tap()
+        let details = app.buttons["about.syncDetails"]
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        details.tap()
+        XCTAssertTrue(app.navigationBars["Sync Details"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["sync.now"].exists)
+    }
+
+    func testMyBooksSearchUsesAllFieldsWithoutScopePicker() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-VoxglassInitialTab", "library", "-uiTestDisableCloudKit"]
+        app.launch()
+        tab("My Books", in: app).tap()
+        let search = app.buttons["library.searchButton"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        XCTAssertTrue(app.textFields["library.booksSearch"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.segmentedControls.buttons["All"].exists)
+        XCTAssertFalse(app.segmentedControls.buttons["Title"].exists)
+        XCTAssertFalse(app.segmentedControls.buttons["Author"].exists)
+        XCTAssertFalse(app.segmentedControls.buttons["Narrator"].exists)
+        app.buttons["library.moreMenu"].tap()
+        XCTAssertFalse(app.buttons["Created by me"].exists)
+        XCTAssertFalse(app.switches["Created by me"].exists)
+    }
+
     func testContinueListeningOpensSimplifiedDismissiblePlayer() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-VoxglassInitialTab", "listen", "-uiTestDisableCloudKit"]
@@ -432,14 +468,29 @@ final class VoxglassUITests: XCTestCase {
         resume.tap()
         let details = app.buttons["nowplaying.more"]
         XCTAssertTrue(details.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["nowplaying.chapters"].exists)
+        XCTAssertTrue(app.buttons["nowplaying.info"].exists)
         XCTAssertFalse(app.buttons["nowplaying.speed"].exists)
         XCTAssertFalse(app.buttons["nowplaying.readWithAIVoice"].exists)
         XCTAssertFalse(app.staticTexts["In My Books"].exists)
 
+        XCTAssertTrue(app.navigationBars["Book"].exists)
+        app.buttons["nowplaying.info"].tap()
+        XCTAssertTrue(app.navigationBars["Book Details"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["nowplaying.speed"].exists)
+        XCTAssertFalse(app.buttons["nowplaying.sleepTimer"].exists)
+        XCTAssertFalse(app.buttons["nowplaying.eq"].exists)
+        app.swipeUp()
+        let chapters = app.staticTexts["nowplaying.detailChapters"]
+        for _ in 0..<5 where !chapters.exists { app.swipeUp() }
+        XCTAssertTrue(chapters.exists)
+        app.buttons["Done"].tap()
+
         details.tap()
+        XCTAssertTrue(app.navigationBars["Audio"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["nowplaying.speed"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["nowplaying.sleepTimer"].exists)
+        XCTAssertFalse(app.staticTexts["In My Books"].exists)
+        XCTAssertFalse(app.staticTexts["Details"].exists)
         app.buttons["Done"].tap()
         XCTAssertTrue(details.waitForExistence(timeout: 5))
         // Swipe from the sheet header so the content scroll view cannot consume it.

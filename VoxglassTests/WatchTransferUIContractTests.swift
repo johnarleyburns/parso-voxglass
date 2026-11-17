@@ -1,92 +1,131 @@
 import Foundation
 import Testing
+@testable import VoxglassCore
 
-/// Source-level guard: iPhone UI must route Watch transfers through the
-/// shared confirmation/result helpers and never discard the transfer result.
-/// The transport API in `PhoneAudioRelay.swift` and non-UI test doubles are
-/// intentionally out of scope.
+/// Platform views need physical-device tests. These guards cover ownership of
+/// transfer consent/results and the pure summary used by the single sync surface.
 @Suite struct WatchTransferUIContractTests {
-    private static let bookPage = "Voxglass/Features/Player/BookPageView.swift"
-    private static let actionRow = "Voxglass/Features/Player/BookPageActionRow.swift"
-    private static let overflow = "Voxglass/Features/Player/BookPageOverflowSheet.swift"
-    private static let library = "Voxglass/Features/Library/LibraryView.swift"
-
-    @Test func noUIFileDiscardsTransferResult() throws {
-        for path in [Self.bookPage, Self.actionRow, Self.overflow, Self.library] {
-            let text = try source(path)
-            let discarded = text.range(
-                of: #"_\s*=\s*await[^\n]*transferBookToWatch"#,
-                options: .regularExpression
-            ) != nil
-            #expect(!discarded, "\(path) discards the result of transferBookToWatch")
-        }
-    }
-
-    @Test func noFeatureFileDiscardsTransferResult() throws {
-        let root = repositoryRoot().appendingPathComponent("Voxglass/Features")
-        let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?
-            .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" } ?? []
-        #expect(!files.isEmpty)
-        for file in files {
-            let text = try String(contentsOf: file, encoding: .utf8)
-            #expect(
-                text.range(of: #"_\s*=\s*await[^\n]*transferBookToWatch"#, options: .regularExpression) == nil,
-                "\(file.lastPathComponent) discards the result of transferBookToWatch"
-            )
-        }
-    }
-
-    @Test func overflowSheetNeverCallsTransportDirectly() throws {
-        let text = try source(Self.overflow)
-        #expect(!text.contains("transferBookToWatch("))
-        #expect(text.contains("requestWatchDownload()"))
-    }
-
-    @Test func bookPageOwnsConfirmationsAndErrorBinding() throws {
-        let text = try source(Self.bookPage)
-        #expect(text.contains("\"Download to Apple Watch?\""))
-        #expect(text.contains("Send to Apple Watch on cellular data?"))
-        #expect(text.contains("case .needsCellularConfirmation"))
-        #expect(text.contains("watchTransferErrorBinding"))
-        #expect(text.contains("phoneAudioRelay.watchTransferError = message"))
-    }
-
-    @Test func libraryOwnsConfirmationsAndErrorBinding() throws {
-        let text = try source(Self.library)
-        #expect(text.contains("\"Download to Apple Watch?\""))
-        #expect(text.contains("Send to Apple Watch on cellular data?"))
-        #expect(text.contains("case .needsCellularConfirmation"))
-        #expect(text.contains("watchTransferErrorBinding"))
-        #expect(text.contains("phoneAudioRelay.watchTransferError = message"))
-    }
-
-    @Test func actionRowShowsPerBookPreparationState() throws {
-        let text = try source(Self.actionRow)
-        #expect(text.contains("watchPreparationByBook[book.book.id]"))
-        #expect(text.contains("Preparing for Apple Watch"))
-        #expect(text.contains(".accessibilityValue("))
-    }
-
-    @Test func actionRowRendersStalledWithDirectRetry() throws {
-        let text = try source(Self.actionRow)
-        #expect(text.contains("case .stalled"))
-        #expect(text.contains("retryStalledBookTransferToWatch"))
-        #expect(text.contains("nowplaying.watchRetryStalled"))
-        #expect(text.contains("Palette.danger"))
-    }
-
-    @Test func settingsSurfacesStalledBooks() throws {
+    @Test func syncOwnsTransferConsentAndResults() throws {
         let text = try source("Voxglass/Features/Settings/SettingsView.swift")
-        #expect(text.contains("watchStalledBookTitles"))
+        #expect(text.contains("struct SyncView: View"))
+        #expect(text.contains("Send to Apple Watch on cellular data?"))
+        #expect(text.contains("case .needsCellularConfirmation"))
+        #expect(text.contains("case .failed(let message)"))
+        #expect(text.contains("pauseBookTransferToWatch"))
+        #expect(text.contains("cancelWatchPreparation"))
+        #expect(text.contains("sync.books"))
     }
 
-    private func source(_ relativePath: String) throws -> String {
-        try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
+    @Test func playerAndLibraryDoNotOwnWatchTransport() throws {
+        for path in ["Voxglass/Features/Player/BookPageView.swift",
+                     "Voxglass/Features/Player/BookPageActionRow.swift",
+                     "Voxglass/Features/Player/BookPageOverflowSheet.swift",
+                     "Voxglass/Features/Library/LibraryView.swift"] {
+            let text = try source(path)
+            #expect(!text.contains("transferBookToWatch("), "\(path)")
+            #expect(!text.contains("retryStalledBookTransferToWatch("), "\(path)")
+            #expect(!text.contains("Download to Apple Watch?"), "\(path)")
+        }
     }
 
-    private func repositoryRoot() -> URL {
-        URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
+    @Test func aboutOwnsDiagnosticsAndRecovery() throws {
+        let phone = try source("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(phone.contains("struct SyncDiagnosticsView: View"))
+        #expect(phone.contains("DisclosureGroup(\"Connection\")"))
+        #expect(phone.contains("DisclosureGroup(\"iCloud Sync\")"))
+        #expect(phone.contains("DisclosureGroup(\"Apple Watch\")"))
+        #expect(!phone.contains("private struct WatchSyncCard"))
+        let watch = try source("VoxglassWatch/WatchAboutView.swift")
+        #expect(watch.contains("WatchListeningSyncStatusView()"))
+        #expect(watch.contains("Reset watch listening data"))
+        let watchDetails = try source("VoxglassWatch/WatchListeningViews.swift")
+        #expect(!watchDetails.contains("DisclosureGroup"))
+        #expect(watchDetails.contains("NavigationLink(\"Diagnostics\")"))
+        let home = try source("VoxglassWatch/WatchLibraryView.swift")
+        #expect(home.contains("services.session.syncNow()"))
+        #expect(!home.contains("path.append(.downloads)"))
+        #expect(!home.contains("path.append(.syncStatus)"))
+    }
+
+    @Test func sentCatalogIsNeverConfirmedAudio() {
+        let state = WatchSyncPresentation(isReachable: true, selectedCount: 1,
+                                          pendingCount: 1, installedCount: 0)
+        #expect(state.phase == .waiting)
+        #expect(!state.showsProgress)
+    }
+
+    @Test func installedRequiresEverySelectedBookToBeConfirmed() {
+        #expect(WatchSyncPresentation(isReachable: true, selectedCount: 2,
+                                     installedCount: 1).phase == .waiting)
+        #expect(WatchSyncPresentation(isReachable: true, selectedCount: 2,
+                                     installedCount: 2).phase == .installed)
+    }
+
+    @Test func pausedFailedAndDisconnectedAreNotAnimatedProgress() {
+        #expect(WatchSyncPresentation(isReachable: true, failedCount: 1).phase == .failed)
+        #expect(WatchSyncPresentation(isReachable: true, pausedCount: 1).phase == .paused)
+        #expect(WatchSyncPresentation(isReachable: false, pendingCount: 1).phase == .disconnected)
+        #expect(!WatchSyncPresentation(isReachable: true, failedCount: 1).showsProgress)
+        #expect(!WatchSyncPresentation(isReachable: true, pausedCount: 1).showsProgress)
+    }
+
+    @Test func onlyRealPreparationOrRequestShowsProgress() {
+        #expect(WatchSyncPresentation(isReachable: true, isPreparing: true).showsProgress)
+        #expect(WatchSyncPresentation(isReachable: true, isRequesting: true).showsProgress)
+        #expect(!WatchSyncPresentation(isReachable: true).showsProgress)
+    }
+
+    @Test func lateInventoryDoesNotSilentlyDeselectBooks() {
+        let id = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        #expect(WatchSyncSelection.reconcile(selected: [], baseline: [], latest: [id]) == [id])
+    }
+
+    @Test func inventoryRefreshPreservesStagedAdditionsAndRemovals() {
+        let old = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        let added = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+        let incoming = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+        #expect(WatchSyncSelection.reconcile(selected: [added], baseline: [old], latest: [old, incoming]) == [added, incoming])
+    }
+
+    @Test func readByAIIsRejectedEvenWithRecordedLookingChapters() {
+        #expect(!WatchDownloadEligibility.allowsTransfer(isReadByAI: true, chapterExtensions: ["m4a"]))
+        #expect(!WatchDownloadEligibility.allowsTransfer(isReadByAI: false, chapterExtensions: ["VOXTEXT"]))
+        #expect(!WatchDownloadEligibility.allowsTransfer(isReadByAI: false, chapterExtensions: ["mp3", "voxtext"]))
+        #expect(WatchDownloadEligibility.allowsTransfer(isReadByAI: false, chapterExtensions: ["mp3", "m4a"]))
+    }
+
+    @Test func readByAIBlockRunsBeforeWatchReadinessAndPreparation() throws {
+        let relay = try source("Voxglass/App/PhoneAudioRelay.swift")
+        let gate = try #require(relay.range(of: "guard WatchDownloadEligibility.allowsTransfer("))
+        let preparation = try #require(relay.range(of: "switch WatchSendReadinessResolver.resolve("))
+        #expect(gate.lowerBound < preparation.lowerBound)
+        #expect(!relay.contains("ReadWithAIWatchNarrationRenderer("))
+        let retiredRenderer = try source("Voxglass/App/ReadWithAIWatchNarrationRenderer.swift")
+        #expect(!retiredRenderer.contains("AVSpeechSynthesizer"))
+        #expect(retiredRenderer.contains("@available(*, unavailable"))
+        let row = try source("Voxglass/Features/Player/BookPageActionRow.swift")
+        #expect(row.contains("ReadByAIWatchInfoButton()"))
+        let sync = try source("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(sync.contains("watchDownloadSupported(book)"))
+        #expect(sync.contains("struct ReadByAIWatchInfoButton: View"))
+    }
+
+    @Test func activeTransferIsDistinctFromWaitingForInstallation() {
+        let transfer = WatchSyncPresentation(isReachable: true, selectedCount: 1, transferringCount: 1)
+        #expect(transfer.phase == .transferring)
+        #expect(!transfer.showsProgress)
+    }
+
+    @Test func oldWatchTimeoutCannotOverrideNewRequest() throws {
+        let watch = try source("VoxglassWatch/WatchSessionAdapter.swift")
+        #expect(watch.contains("syncGeneration == generation"))
+        #expect(watch.contains("self.syncGeneration == generation"))
+        #expect(watch.contains("syncNeedsAttention = true"))
+        #expect(!watch.contains("try? await Task.sleep(for: .seconds(8))"))
+    }
+
+    private func source(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 }
