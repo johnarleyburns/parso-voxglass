@@ -33,6 +33,18 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
 
+      # Resolving the xcodeproj's Swift packages (parso-audio-engine,
+      # ZIPFoundation) is a cold git clone on every hosted-runner job; pin the
+      # clone location so it is cacheable across runs instead of the default
+      # DerivedData path, which is keyed by an unstable hash.
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/SourcePackages
+          key: spm-xcode-${{ runner.os }}-${{ hashFiles('Voxglass.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            spm-xcode-${{ runner.os }}-
+
       - name: Enforce Swift 6 contract
         run: bash scripts/check-swift6.sh
 
@@ -45,6 +57,7 @@ jobs:
             -project Voxglass.xcodeproj \
             -scheme Voxglass \
             -destination generic/platform=iOS \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build watchOS
@@ -54,6 +67,7 @@ jobs:
             -project Voxglass.xcodeproj \
             -scheme VoxglassWatch \
             -destination 'generic/platform=watchOS' \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             CODE_SIGNING_ALLOWED=NO
 
 
@@ -76,6 +90,17 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
+
+      # `swift test` resolves and builds parso-audio-engine from scratch on
+      # every hosted-runner job; cache SwiftPM's own build/checkout directory
+      # so an unchanged dependency graph restores instead of recompiling.
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
 
       # The driver streams swift-testing output through a pty (it otherwise
       # block-buffers and a hung suite logs nothing) and samples the test
@@ -202,6 +227,17 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
+
+      # Same cache the compile job populates: this job runs after compile in
+      # the same workflow run (needs: [compile, ...]), so it is usually
+      # already warm by the time this restores it.
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/SourcePackages
+          key: spm-xcode-${{ runner.os }}-${{ hashFiles('Voxglass.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            spm-xcode-${{ runner.os }}-
 
       - name: Write App Store Connect API key
         if: steps.preflight.outputs.ready == 'true'
@@ -390,6 +426,7 @@ jobs:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/Voxglass.xcarchive" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
             MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \

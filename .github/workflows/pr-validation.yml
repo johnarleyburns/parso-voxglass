@@ -1,6 +1,16 @@
 name: PR Swift Validation
 # Read-only: no write token, no release/signing secrets. Runs the shared
 # scripts/ci-validate.sh so issue agent, repair agent and CI cannot drift.
+#
+# Runs with --fast: the iOS workflow's Compile (iOS), Logic Tests (swift test)
+# and Guarded Tests jobs already build both app schemes and run the full
+# `swift test` suite on every PR push, so repeating that here duplicated the
+# same build and test work on every push. --fast keeps the checks ios.yml
+# does not cover (shell/YAML lint, automation regression tests, source-level
+# wiring guards) and skips the Swift 6 contract check, logic tests, and
+# xcodebuild steps that ios.yml's required checks already enforce. The issue
+# agent and repair agent still call ci-validate.sh without --fast, since they
+# must validate an unpushed patch before any of those checks ever run.
 on:
   pull_request:
     branches: [main]
@@ -19,11 +29,5 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Select stable Xcode
-        run: |
-          XCODE=$(find /Applications -maxdepth 1 -type d -name 'Xcode_*.app' ! -iname '*beta*' ! -iname '*rc*' -print | sort -V | tail -1)
-          test -n "$XCODE"
-          sudo xcode-select -s "$XCODE"
-          xcodebuild -version
-      - name: Validate (shell, YAML, automation tests, Swift tests, builds, guardrails)
-        run: bash scripts/ci-validate.sh
+      - name: Validate (shell, YAML, automation tests, guardrails)
+        run: bash scripts/ci-validate.sh --fast
