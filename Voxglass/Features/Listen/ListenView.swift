@@ -542,7 +542,7 @@ struct ListenView: View {
                             Button {
                                 Task { await presentResult(result) }
                             } label: {
-                                HorizontalCatalogCard(result: result, usesThreeSizeTypography: true, cardWidth: 198)
+                                HorizontalCatalogCard(result: result, usesThreeSizeTypography: true)
                             }
                             .buttonStyle(.plain)
                             .tactileTap()
@@ -668,8 +668,7 @@ struct ListenBookCard: View {
             title: book.book.title,
             author: book.book.displayAuthorLine,
             coverURL: book.book.coverURL,
-            usesThreeSizeTypography: true,
-            cardWidth: 198
+            usesThreeSizeTypography: true
         )
     }
 }
