@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 import CryptoKit
 
 /// Portable, path-free identity of a local audiobook's audio bytes.

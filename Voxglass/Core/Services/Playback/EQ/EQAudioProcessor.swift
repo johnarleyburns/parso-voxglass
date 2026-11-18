@@ -3,6 +3,7 @@ import AudioToolbox
 #endif
 @preconcurrency import AVFoundation
 import Foundation
+import VoxglassPortable
 import ParsoAudioPlayback
 
 #if !os(watchOS)
