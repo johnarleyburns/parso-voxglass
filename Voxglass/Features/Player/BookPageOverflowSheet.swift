@@ -32,17 +32,17 @@ struct BookPageOverflowSheet: View {
                     List {
                         if audioOnly {
                             audioSection
-                            thisBookSection
                         } else {
                             detailsSection
                             discoverSection
+                            thisBookSection
                             manageSection
                         }
                     }
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle(audioOnly ? String(localized: "Audio") : String(localized: "Book Details"))
+            .navigationTitle(audioOnly ? String(localized: "Playback") : String(localized: "Book Details"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -86,9 +86,6 @@ struct BookPageOverflowSheet: View {
                 Label("In My Books", systemImage: "checkmark.circle.fill")
             }
             Text("\(book.chapters.count) chapters")
-            if book.narrationKind == .solo {
-                Text("Single narrator")
-            }
             if offlineState == .cached || libraryStore.source(for: book.book)?.kind == .localFiles {
                 Label("Available offline", systemImage: "checkmark.circle")
             }
@@ -112,13 +109,32 @@ struct BookPageOverflowSheet: View {
             } label: {
                 overflowRow(icon: "text.badge.plus", title: "Add to Playlist…")
             }
-
-
+            if offlineState == .cached {
+                Button(role: .destructive) {
+                    showRemoveOfflineConfirm = true
+                    dismiss()
+                } label: {
+                    overflowRow(icon: "trash", title: "Remove offline copy")
+                }
+                .accessibilityIdentifier("nowplaying.download")
+            } else {
+                Button {
+                    Task {
+                        _ = await offlineManager.makeAvailableOffline(
+                            book: book,
+                            isCellular: NetworkMonitor.shared.isCellular
+                        )
+                    }
+                } label: {
+                    overflowRow(icon: "arrow.down.circle", title: "Make available offline")
+                }
+                .accessibilityIdentifier("nowplaying.download")
+            }
         }
     }
 
     private var audioSection: some View {
-        Section("Audio") {
+        Section("Playback") {
             BookPageActionRow(
                 isDetailList: true,
                 book: book,
@@ -164,27 +180,7 @@ struct BookPageOverflowSheet: View {
                 }
                 .accessibilityIdentifier("nowplaying.reconnectAudio")
             }
-            if offlineState == .cached {
-                Button(role: .destructive) {
-                    showRemoveOfflineConfirm = true
-                    dismiss()
-                } label: {
-                    overflowRow(icon: "trash", title: "Remove offline copy")
-                }
-                .accessibilityIdentifier("nowplaying.download")
-            } else {
-                Button {
-                    Task {
-                        _ = await offlineManager.makeAvailableOffline(
-                            book: book,
-                            isCellular: NetworkMonitor.shared.isCellular
-                        )
-                    }
-                } label: {
-                    overflowRow(icon: "arrow.down.circle", title: "Make available offline")
-                }
-                .accessibilityIdentifier("nowplaying.download")
-            }
+
         }
     }
 

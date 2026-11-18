@@ -26,7 +26,7 @@ Always use the `gh` CLI directly for every GitHub interaction (issues, PRs, comm
 - **`Date()` / `UUID()` only through the `Clock` / `IDGenerator` seams** in `Voxglass/Core/Production/Domain/`.
 - Core code lives in `Voxglass/Core/Production/<Area>/`, iPhone UI in `Voxglass/Features/Production/`, watch in `VoxglassWatch/Production/`. Core stays free of CloudKit and StoreKit; the watch never links CloudKit.
 - Never lose a take (bytes durable before metadata mutation); never evict a recording before its iCloud copy is SHA-256-verified (use `ProductionAssetRecord.isEvictable`); `LicenseGate` appears only in the export destination picker, export runner, and Settings; validation is never gated; do not regress the consumer player, downloads, CarPlay, or position sync.
-- Verification: `swift test` (what CI runs), `scripts/test_logic.sh`, `scripts/guard_production.sh`, `scripts/test_guards.sh` (every new gate needs an entry), `scripts/test.sh --all` (local UI smoke only; CI runs no simulator).
+- Verification: `swift test` (what CI runs), `scripts/test_logic.sh`, `scripts/guard_production.sh`, `scripts/test_guards.sh` (every new gate needs an entry), `scripts/test.sh` (Swift Testing wrapper; CI runs no simulator).
 
 ## Physical iPhone first
 
@@ -73,12 +73,10 @@ Always use the `gh` CLI directly for every GitHub interaction (issues, PRs, comm
 - Always run iPhone and Watch `xcodebuild` commands sequentially. Never background them, run them
   through `&`, or launch them from parallel tool calls: both targets share project/build state and
   concurrent builds can race on generated resources and the build database.
-- The local UI runner (`scripts/test.sh`) must acquire its checkout-wide lock before starting the
-  iPhone smoke test and hold it until the Watch smoke test and cleanup finish. Separate local
-  invocations must wait for that lock rather than overlap.
+- `scripts/test.sh` forwards arguments to `swift test`. There are no UI test targets.
 - Local logic tests use the default parallel `swift test` runner (or the repository wrapper that
   supplies it). Parallelize independent host suites for reasonable turnaround. Keep Apple-platform
-  builds and UI smoke tests sequential: iPhone and Watch targets share project/build state and may
+  builds sequential: iPhone and Watch targets share project/build state and may
   not overlap.
 - After CI is green for a pushed commit, delete only the disposable Voxglass build caches (`.build`,
   Voxglass Xcode DerivedData, and temporary Voxglass audit/export directories). Do not delete source

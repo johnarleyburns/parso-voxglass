@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import MediaPlayer
 import WatchKit
+import WidgetKit
 import VoxglassWatchCore
 import VoxglassWatchProtocol
 
@@ -50,9 +51,32 @@ final class WatchPlaybackEngine {
         self.smokeFailure = smokeFailure
         self.smokeNoOutput = smokeNoOutput
         if !smokeMode {
+            // No player is restored at launch. Retire metadata left by older
+            // installs, including Read by AI books no longer in the library.
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            MPNowPlayingInfoCenter.default().playbackState = .stopped
             installNotifications()
             installRemoteCommands()
         }
+    }
+
+    func clear() {
+        token += 1
+        player?.pause()
+        removePlayerObservers()
+        player = nil
+        sleepTask?.cancel()
+        sleepTask = nil
+        sleepTimer = nil
+        onSleepChange?(nil, nil)
+        book = nil
+        snapshot = WatchPlaybackSnapshot()
+        onBookChanged?(nil)
+        onSnapshot?(snapshot)
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        MPNowPlayingInfoCenter.default().playbackState = .stopped
+        WatchContinueListeningStore.save(nil)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     isolated deinit {

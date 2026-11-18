@@ -242,10 +242,11 @@ import Testing
         #expect(try await positions.position(for: ids.0, chapterID: ids.1)?.position == 72)
     }
 
-    @Test func oneSyncDrainsMultipleBatchesAndSkipsUnbuildableRows() async throws {
+    @Test func oneSyncDrainsMultipleBatchesAndRetiresObsoleteRows() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         let ids = try await seed(db, books: 61)
         let state = CloudSyncStateStore(database: db)
+        try await state.enqueuePending(localID: UUID().uuidString, recordType: "Unsupported", changeType: "update")
         for _ in 0..<55 { try await state.enqueuePending(localID: UUID().uuidString, recordType: "Book", changeType: "delete") }
         for (book, _) in ids { try await state.enqueuePending(localID: book.uuidString, recordType: "Book", changeType: "update") }
         let sync = await engine(db)
@@ -254,7 +255,8 @@ import Testing
             sentBooks += records.filter { $0.recordType == "Book" }.count
         }
         #expect(sentBooks == 61)
-        #expect(try await state.pendingCount() == 55) // preserve unresolved deletions
+        #expect(try await state.pendingCount() == 0)
+        #expect(sync.blockedCount == 0)
     }
 
     @Test func failedUploadRetainsValidChanges() async throws {

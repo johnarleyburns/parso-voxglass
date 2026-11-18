@@ -117,7 +117,7 @@ struct BookPageView: View {
                             Button { showingOverflow = true } label: {
                                 Image(systemName: "ellipsis")
                             }
-                            .accessibilityLabel("Audio controls")
+                            .accessibilityLabel("Playback controls")
                             .accessibilityIdentifier("nowplaying.more")
                         }
                     }
@@ -615,20 +615,6 @@ struct BookPageView: View {
 
     private func transportControls(_ resolved: BookWithChapters) -> some View {
         let controls = HStack(spacing: 0) {
-            Button {
-                Task { await playback.skipToPreviousChapter() }
-            } label: {
-                Image(systemName: "backward.end.fill")
-                    .voxFont(.title3)
-                    .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
-                    .raisedSurface()
-            }
-            .opacity(isActiveSession ? 1 : 0.42)
-            .allowsHitTesting(isActiveSession)
-            .accessibilityLabel("Previous chapter")
-            .accessibilityIdentifier("nowplaying.previousChapter")
-
             Spacer(minLength: 0)
 
             Button {
@@ -733,20 +719,6 @@ struct BookPageView: View {
             .sensoryFeedback(.impact(flexibility: .soft), trigger: skipForwardCount)
 
             Spacer(minLength: 0)
-
-            Button {
-                Task { await playback.skipToNextChapter() }
-            } label: {
-                Image(systemName: "forward.end.fill")
-                    .voxFont(.title3)
-                    .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
-                    .raisedSurface()
-            }
-            .opacity(isActiveSession ? 1 : 0.42)
-            .allowsHitTesting(isActiveSession)
-            .accessibilityLabel("Next chapter")
-            .accessibilityIdentifier("nowplaying.nextChapter")
         }
         return VStack(spacing: 8) {
             controls

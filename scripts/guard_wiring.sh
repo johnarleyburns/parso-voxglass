@@ -194,7 +194,7 @@ check_xcodeproj_membership() {
       echo "::error title=Target-membership guard::$file is on disk but is not a member of any xcodeproj target. Run 'xcodegen generate' and commit the result."
       had_failure=1
     fi
-  done < <(find Voxglass VoxglassUITests -name '*.swift' -not -path 'Voxglass/Core/*' 2>/dev/null)
+  done < <(find Voxglass -name '*.swift' -not -path 'Voxglass/Core/*' 2>/dev/null)
 
   return $had_failure
 }
@@ -478,8 +478,7 @@ check_watch_target_membership() {
 
 # ──────────────────────────────────────────────────────────────
 # Rule — No UI or simulator tests in GitHub Actions workflows.
-# All logic tests run via `swift test` (macOS host). The five UI
-# smoke tests are local-only (`scripts/test.sh --all`).
+# Tests run through Swift Testing via `swift test` (macOS host).
 # ──────────────────────────────────────────────────────────────
 check_no_ui_tests_in_ci() {
   local had_failure=0

@@ -241,6 +241,25 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         }
     }
 
+    /// Local removal also reports a tombstone so the phone can retire its selection.
+    func removeLocalBook(_ book: WatchBookDTO) async throws {
+        try await Self.files.removeBook(bookID: book.id, at: Self.audioRoot)
+        Self.metadataLock.withLock {
+            var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
+            removed.insert(book.id.rawValue)
+            UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
+            snapshot?.books.removeAll { $0.id == book.id }
+            bookReports.removeValue(forKey: book.id)
+            phoneTransferProgress.removeValue(forKey: book.id)
+        }
+        if let snapshot { await Self.catalogIngestor.persist(snapshot) }
+        var removal = WatchManifestAcknowledgement(bookID: book.id, revision: book.metadataRevision,
+            complete: false, installedBytes: 0)
+        removal.isRemoval = true
+        report(removal)
+        reconcileFiles()
+    }
+
     private func reconcileFiles(forceReport: Bool = false) {
         guard !smoke, let snapshot else { return }
         reportGeneration += 1

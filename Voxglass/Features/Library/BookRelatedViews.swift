@@ -19,7 +19,25 @@ struct ChaptersView: View {
                     Text(currentBook.book.title)
                         .voxFont(.title3, weight: .heavy)
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(2)
+                        .lineLimit(3)
+
+                    HStack {
+                        Button {
+                            Task { await playback.skipToPreviousChapter() }
+                        } label: {
+                            Label("Previous chapter", systemImage: "backward.end.fill")
+                        }
+                        .accessibilityIdentifier("chapters.previousChapter")
+                        Spacer()
+                        Button {
+                            Task { await playback.skipToNextChapter() }
+                        } label: {
+                            Label("Next chapter", systemImage: "forward.end.fill")
+                        }
+                        .accessibilityIdentifier("chapters.nextChapter")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(playback.currentSession?.book.id != currentBook.book.id)
 
                     VoxglassGroupedSection(title: "All Chapters") {
                         let chapters = currentBook.chapters

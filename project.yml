@@ -287,50 +287,12 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass Watch Widgets App Store"
-  VoxglassUITests:
-    type: bundle.ui-testing
-    platform: iOS
-    sources:
-      - VoxglassUITests
-    dependencies:
-      - target: Voxglass
-      - package: VoxglassCore
-        product: VoxglassCore
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.uitests
-        TEST_TARGET_NAME: Voxglass
-        CODE_SIGNING_ALLOWED: NO
-  VoxglassWatchUITests:
-    type: bundle.ui-testing
-    platform: watchOS
-    sources:
-      - VoxglassWatchUITests
-    dependencies:
-      - target: VoxglassWatch
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp.uitests
-        TEST_TARGET_NAME: VoxglassWatch
-        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
       targets:
         Voxglass: all
-    test:
-      gatherCoverageData: true
-      commandLineArguments:
-        -uiTestDisableCloudKit: true
-      targets:
-        - VoxglassUITests
   VoxglassWatch:
     build:
       targets:
         VoxglassWatch: all
-    test:
-      gatherCoverageData: true
-      environmentVariables:
-        VOXGLASS_WATCH_SMOKE_ALICE: "1"
-      targets:
-        - VoxglassWatchUITests

@@ -35,13 +35,7 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    SectionTitle(title: "Sync")
-                    NavigationLink {
-                        SyncView(showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        Label("Sync", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    .accessibilityIdentifier("settings.sync")
+                    SyncSettingsSection()
                 }
 
                 settingsGroup("Audio") {
@@ -138,25 +132,12 @@ private struct ReadWithAIVoiceRow: View {
         NavigationLink {
             ReadWithAIVoicePicker()
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "waveform.and.mic")
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Read with AI Voice")
-                        .voxFont(.body, weight: .semibold)
-                        .foregroundStyle(Palette.ink)
-                    Text(selectedVoiceName)
-                        .voxFont(.caption)
-                        .foregroundStyle(Palette.ink2)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .voxFont(.caption, weight: .semibold)
-                    .foregroundStyle(Palette.ink3)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            DisclosureListRow(
+                icon: "waveform.and.mic",
+                title: "Read with AI Voice",
+                detail: selectedVoiceName,
+                count: nil
+            )
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("settings.readWithAIVoice")
@@ -1007,7 +988,7 @@ private struct WatchSyncDiagnosticsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Choose books in Sync to listen on Apple Watch.")
+            Text("Choose books in Settings to listen on Apple Watch.")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
 
@@ -1497,8 +1478,7 @@ private struct BackupImportSheet: View {
 }
 
 // One control surface for manual sync, explicit audio selection and recovery.
-struct SyncView: View {
-    @Binding var showingNowPlaying: Bool
+private struct SyncSettingsSection: View {
     @EnvironmentObject private var relay: PhoneAudioRelay
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
@@ -1541,8 +1521,8 @@ struct SyncView: View {
     }
 
     var body: some View {
-        List {
-            Section {
+        VStack(alignment: .leading, spacing: 12) {
+            VoxglassGroupedSection(title: "Sync") {
                 SyncStatusSummary(isRequesting: isRunning)
                 if let startedAt, isRunning {
                     LabeledContent("Started", value: startedAt.formatted(date: .omitted, time: .shortened))
@@ -1567,7 +1547,7 @@ struct SyncView: View {
                         .accessibilityIdentifier("sync.pause")
                 }
             }
-            Section {
+            VoxglassGroupedSection(title: "Apple Watch") {
                 DisclosureGroup("Apple Watch", isExpanded: $showingBooks) {
                     Text("Choose books to keep on Apple Watch, then tap Sync. Turn a book off to remove only its watch copy.")
                         .voxFont(.caption)
@@ -1621,19 +1601,7 @@ struct SyncView: View {
                 }
                 .accessibilityIdentifier("sync.books")
             }
-            Section {
-                NavigationLink {
-                    AboutView()
-                } label: { Label("About", systemImage: "info.circle") }
-                .accessibilityIdentifier("sync.about")
-            }
         }
-        .scrollContentBackground(.hidden)
-        .background(VoxglassBackground())
-        .navigationTitle("Sync")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(isRunning || isPausing)
-        .interactiveDismissDisabled(isRunning || isPausing)
         .onAppear { reconcileSelection() }
         .onChange(of: relay.watchSelectedBookIDs) { _, _ in reconcileSelection() }
         .confirmationDialog("Sync selected books?", isPresented: $confirmChanges, titleVisibility: .visible) {

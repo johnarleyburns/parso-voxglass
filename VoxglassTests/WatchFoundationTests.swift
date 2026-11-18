@@ -328,3 +328,25 @@ import Testing
             == "Couldn’t prepare Apple Watch audio: generated narration is not a playable AAC-LC M4A. bad")
     }
 }
+
+@Suite struct WatchLocalRemovalTests {
+    @Test func confirmedWatchRemovalRetiresSelectionButStaleRemovalCannot() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = PhoneWatchProjectionStore(url: root.appendingPathComponent("projection.json"), libraryID: .unknown)
+        let book = WatchBookDTO(id: "local-removal", title: "Book", metadataRevision: 5)
+        try await store.select(book)
+        try await store.setDesiredRoot(WatchManifest(bookID: book.id, revision: 5, requiredChapterIDs: []))
+        var removal = WatchManifestAcknowledgement(bookID: book.id, revision: 4, complete: false, installedBytes: 0)
+        removal.isRemoval = true
+        try await store.acknowledge(removal)
+        #expect(await store.current().selectedBooks[book.id] != nil)
+        removal.revision = 5
+        try await store.acknowledge(removal)
+        let state = await store.current()
+        #expect(state.selectedBooks[book.id] == nil)
+        #expect(state.desiredRoots[book.id] == nil)
+        #expect(state.desired[book.id] == nil)
+    }
+}

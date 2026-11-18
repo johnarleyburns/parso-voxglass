@@ -146,7 +146,9 @@ public actor PhoneWatchProjectionStore {
     }
     public func acknowledge(_ acknowledgement: WatchManifestAcknowledgement) throws {
         if let root = state.desiredRoots[acknowledgement.bookID], root.revision > acknowledgement.revision { return }
-        if state.desired[acknowledgement.bookID] == .removing {
+        // A current-revision tombstone can also originate from confirmed
+        // removal on the watch, without an earlier phone removal request.
+        if state.desired[acknowledgement.bookID] == .removing || acknowledgement.isRemoval == true {
             guard acknowledgement.isRemoval == true, !acknowledgement.complete,
                   acknowledgement.installedBytes == 0 else { return }
             state.selectedBooks.removeValue(forKey: acknowledgement.bookID)

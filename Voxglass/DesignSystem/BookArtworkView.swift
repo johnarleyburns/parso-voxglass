@@ -97,12 +97,14 @@ struct VisualSummaryRow: View {
 struct HorizontalCatalogCard: View {
     var result: InternetArchiveSearchResult
     var usesThreeSizeTypography = false
+    var cardWidth: CGFloat = 132
     var body: some View {
         HorizontalBookCard(
             title: result.title,
             author: result.displayAuthorLine,
             coverURL: result.coverURL,
-            usesThreeSizeTypography: usesThreeSizeTypography
+            usesThreeSizeTypography: usesThreeSizeTypography,
+            cardWidth: cardWidth
         )
     }
 }
@@ -114,6 +116,7 @@ struct HorizontalBookCard: View {
     var author: String?
     var coverURL: URL?
     var usesThreeSizeTypography = false
+    var cardWidth: CGFloat = 132
     @ScaledMetric(relativeTo: .footnote) private var uniformTitleHeight: CGFloat = 54
     @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 63
     @ScaledMetric(relativeTo: .footnote) private var authorHeight: CGFloat = 32
@@ -122,7 +125,7 @@ struct HorizontalBookCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CoverPlate(title: title, author: author, coverURL: coverURL, size: 132)
+            CoverPlate(title: title, author: author, coverURL: coverURL, size: cardWidth)
             Text(title)
                 .voxFont(usesThreeSizeTypography ? LibraryScreenTypography.card : .headline, weight: .medium)
                 .fontDesign(usesThreeSizeTypography ? .default : .serif)
@@ -143,7 +146,7 @@ struct HorizontalBookCard: View {
                     .accessibilityHidden(true)
             }
         }
-        .frame(width: 132, height: 142 + resolvedTitleHeight + authorHeight, alignment: .topLeading)
+        .frame(width: cardWidth, height: cardWidth + 10 + resolvedTitleHeight + authorHeight, alignment: .topLeading)
     }
 }
 

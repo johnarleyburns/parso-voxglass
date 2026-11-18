@@ -10,6 +10,7 @@ import VoxglassWatchProtocol
 struct WatchHomeView: View {
     @EnvironmentObject private var services: WatchAppServices
     @Binding var path: [WatchRoute]
+    @State private var pendingRemoval: WatchBookDTO?
 
     var body: some View {
         List {
@@ -18,6 +19,7 @@ struct WatchHomeView: View {
             }
             if let hero = services.heroBook {
                 heroCard(hero)
+                    .onLongPressGesture { pendingRemoval = hero }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
             }
@@ -29,6 +31,7 @@ struct WatchHomeView: View {
                     ForEach(services.visibleBooks.filter { $0.id != services.heroBook?.id }, id: \.id) { book in
                         Button { open(book) } label: { WatchBookRow(book: book) }
                             .buttonStyle(.plain)
+                            .onLongPressGesture { pendingRemoval = book }
                             .watchCardRow()
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel(watchBookAccessibilityLabel(book))
@@ -42,6 +45,18 @@ struct WatchHomeView: View {
         .listStyle(.plain)
         .navigationTitle("Voxglass")
         .accessibilityIdentifier("watch.library")
+        .confirmationDialog("Remove from Apple Watch?", isPresented: Binding(
+            get: { pendingRemoval != nil },
+            set: { if !$0 { pendingRemoval = nil } }
+        ), titleVisibility: .visible) {
+            Button("Remove from Watch", role: .destructive) {
+                if let book = pendingRemoval { Task { await services.removeFromWatch(book) } }
+                pendingRemoval = nil
+            }
+            Button("Cancel", role: .cancel) { pendingRemoval = nil }
+        } message: {
+            Text(pendingRemoval?.title ?? "")
+        }
     }
 
     // MARK: Hero (H1)
@@ -96,7 +111,7 @@ struct WatchHomeView: View {
         VStack(spacing: 6) {
             Image(systemName: "book").font(.title3).foregroundStyle(WatchPalette.accent)
             Text("No books on this watch").font(.headline).multilineTextAlignment(.center)
-            Text("On iPhone, open Sync and choose books for Apple Watch.")
+            Text("On iPhone, open Settings and choose books for Apple Watch.")
                 .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
             WatchHandoffButton()
         }
