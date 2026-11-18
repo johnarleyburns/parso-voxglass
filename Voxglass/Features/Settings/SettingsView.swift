@@ -135,7 +135,7 @@ private struct ReadWithAIVoiceRow: View {
             DisclosureListRow(
                 icon: "waveform.and.mic",
                 title: "Read with AI Voice",
-                detail: selectedVoiceName,
+                detail: LocalizedStringKey(selectedVoiceName),
                 count: nil
             )
         }
