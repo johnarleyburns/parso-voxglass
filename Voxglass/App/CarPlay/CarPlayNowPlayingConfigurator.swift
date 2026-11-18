@@ -3,11 +3,8 @@ import Observation
 import UIKit
 import VoxglassCore
 
-/// Keeps `CPNowPlayingTemplate.shared` current: rate / sleep / bookmark custom
-/// buttons plus the built-in Up Next button wired to "Chapters". Re-reads the pure
-/// `CarPlayNowPlayingModel.config(...)` on every tracked coordinator change and
-/// re-applies the buttons. Uses Observation instead of Combine to avoid
-/// object-wide invalidation.
+/// Keeps the built-in Up Next button wired to Chapters and clears custom
+/// Now Playing buttons. CarPlay owns the transport and progress layout.
 @MainActor
 final class CarPlayNowPlayingConfigurator: NSObject {
     private let coordinator: PlaybackCoordinator
@@ -56,39 +53,11 @@ final class CarPlayNowPlayingConfigurator: NSObject {
         lastConfig = config
 
         let template = CPNowPlayingTemplate.shared
-        var buttons: [CPNowPlayingButton] = []
-
-        if config.showsRateButton {
-            buttons.append(CPNowPlayingPlaybackRateButton { [weak self] _ in
-                self?.dispatcher?.cycleRate()
-            })
-        }
-
-        buttons.append(sleepButton(config: config))
-
-        if config.showsBookmark {
-            buttons.append(CPNowPlayingImageButton(
-                image: UIImage(systemName: "bookmark") ?? UIImage()
-            ) { [weak self] _ in
-                self?.dispatcher?.dispatch(.addBookmark)
-            })
-        }
-
-        template.updateNowPlayingButtons(buttons)
+        template.updateNowPlayingButtons([])
         template.isUpNextButtonEnabled = config.isUpNextChapters
         template.upNextTitle = String(localized: "Chapters")
     }
 
-    private func sleepButton(config: CarPlayNowPlayingConfig) -> CPNowPlayingButton {
-        let symbolName = config.sleepActive ? "moon.fill" : "moon"
-        var image = UIImage(systemName: symbolName) ?? UIImage()
-        if config.sleepActive {
-            image = image.withTintColor(.systemOrange, renderingMode: .alwaysOriginal)
-        }
-        return CPNowPlayingImageButton(image: image) { [weak self] _ in
-            self?.dispatcher?.presentSleepSheet()
-        }
-    }
 }
 
 extension CarPlayNowPlayingConfigurator: CPNowPlayingTemplateObserver {
