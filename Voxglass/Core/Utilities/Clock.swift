@@ -1,10 +1,6 @@
-import Foundation
+// Compatibility names keep existing VoxglassCore clients on the shared
+// portable implementation.
+import VoxglassPortable
 
-public protocol Clock: Sendable {
-    var now: Date { get }
-}
-
-public struct SystemClock: Clock {
-    public init() {}
-    public var now: Date { Date() }
-}
+public typealias Clock = VoxglassPortable.Clock
+public typealias SystemClock = VoxglassPortable.SystemClock

@@ -1,5 +1,5 @@
 import Testing
-import VoxglassCore
+import VoxglassPortable
 
 @Suite struct CarPlayConnectionStateTests {
     @Test func validationResultExposesNormalizedStateAndFallbackDecision() {

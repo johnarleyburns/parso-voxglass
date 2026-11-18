@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 public struct CachedLocalManifest: Equatable, Sendable {
     public let localBookID: UUID
