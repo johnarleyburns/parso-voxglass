@@ -15,7 +15,6 @@ struct ListenView: View {
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @EnvironmentObject private var listeningStats: ListeningStatsStore
     @State private var importingIdentifier: String?
-    @State private var showSync = false
     @State private var showSettings = false
     @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedReadWithAIVoiceIdentifier = ""
     @State private var showStats = false
@@ -48,7 +47,7 @@ struct ListenView: View {
             }
         )) {
             VStack(alignment: .leading, spacing: 22) {
-                Button { showSync = true } label: {
+                Button { showSettings = true } label: {
                     HStack {
                         Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                         Spacer()
@@ -70,12 +69,6 @@ struct ListenView: View {
             .navigationDestination(item: $selectedCatalogBookID) { bookID in
                 BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
             }
-        }
-        .sheet(isPresented: $showSync) {
-            NavigationStack {
-                SyncView(showingNowPlaying: $showingNowPlaying)
-            }
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -283,7 +276,7 @@ struct ListenView: View {
                         Text(book.book.title)
                             .voxFont(LibraryScreenTypography.card, weight: .medium)
                             .foregroundStyle(Palette.ink)
-                            .lineLimit(2)
+                            .lineLimit(3)
                             .multilineTextAlignment(.leading)
                         Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
                             .voxFont(LibraryScreenTypography.card)
@@ -549,7 +542,7 @@ struct ListenView: View {
                             Button {
                                 Task { await presentResult(result) }
                             } label: {
-                                HorizontalCatalogCard(result: result, usesThreeSizeTypography: true)
+                                HorizontalCatalogCard(result: result, usesThreeSizeTypography: true, cardWidth: 198)
                             }
                             .buttonStyle(.plain)
                             .tactileTap()
@@ -675,7 +668,8 @@ struct ListenBookCard: View {
             title: book.book.title,
             author: book.book.displayAuthorLine,
             coverURL: book.book.coverURL,
-            usesThreeSizeTypography: true
+            usesThreeSizeTypography: true,
+            cardWidth: 198
         )
     }
 }

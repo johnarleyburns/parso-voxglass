@@ -7,7 +7,7 @@ import Testing
 @Suite struct WatchTransferUIContractTests {
     @Test func syncOwnsTransferConsentAndResults() throws {
         let text = try source("Voxglass/Features/Settings/SettingsView.swift")
-        #expect(text.contains("struct SyncView: View"))
+        #expect(text.contains("struct SyncSettingsSection: View"))
         #expect(text.contains("Send to Apple Watch on cellular data?"))
         #expect(text.contains("case .needsCellularConfirmation"))
         #expect(text.contains("case .failed(let message)"))

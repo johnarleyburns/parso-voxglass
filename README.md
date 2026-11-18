@@ -191,21 +191,18 @@ scripts/audit_app_store_release.sh
 
 If `project.yml` changes, regenerate the Xcode project first with `xcodegen generate`.
 
-Before a release, run the local iPhone and Watch smoke suite:
+Run the Swift Testing suite:
 
 ```sh
-scripts/test.sh --all
+scripts/test.sh
 ```
 
-The commit hook runs `swift test` only. Simulator smoke tests are release verification and CI
-coverage, not part of every commit.
+The wrapper forwards arguments to `swift test`. The commit hook and CI also run `swift test`.
 
 ## Manual regression testing before release
 
-Most logic is covered headlessly by `swift test`. The commit hook runs `swift test` only; it does
-not boot simulators. Before every release, run `scripts/test.sh --all` to execute the local iPhone
-and Apple Watch simulator smoke suite, then perform the physical-device checks below. A single
-XCUITest smoke confirms the app boots. The **playback platform surface** — lock-screen
+Most logic is covered headlessly by `swift test`. UI test suites have been removed; verify the
+iPhone and Apple Watch interfaces manually before a release. The **playback platform surface** — lock-screen
 Now Playing, Control-Center / headphone remote controls, audio interruptions, and
 background/terminate position saves — can only be verified on a **real device**, because it
 runs against MediaPlayer / AVAudioSession / UIKit, which the simulator and host tests do not

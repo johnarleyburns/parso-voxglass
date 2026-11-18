@@ -72,7 +72,10 @@ struct LibraryView: View {
         ) {
             Button("Remove from My Books", role: .destructive) {
                 if let book = pendingDeletion {
-                    Task { await libraryStore.delete(book: book) }
+                    Task {
+                        await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id)
+                        await libraryStore.delete(book: book)
+                    }
                 }
                 pendingDeletion = nil
             }
@@ -83,7 +86,7 @@ struct LibraryView: View {
             if let pendingDeletion, libraryStore.source(for: pendingDeletion.book)?.kind == .localFiles {
                 Text("This removes the book from My Books. The audio file and its folder are not touched — they stay exactly where they are in Files.")
             } else {
-                Text("This deletes the book and its cached audio from this device.")
+                Text("This deletes the book and its cached audio from this device and removes its Apple Watch copy.")
             }
         }
         .task {

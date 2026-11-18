@@ -58,7 +58,13 @@ final class WatchAppServices: ObservableObject {
         session.$snapshot
             .compactMap { $0 }
             .receive(on: RunLoop.main)
-            .sink { [weak self] snapshot in self?.books = snapshot.books }
+            .sink { [weak self] snapshot in
+                guard let self else { return }
+                self.books = snapshot.books
+                if let current = self.playbackBook, !snapshot.books.contains(where: { $0.id == current.id }) {
+                    self.playbackEngine.clear()
+                }
+            }
             .store(in: &cancellables)
         session.objectWillChange
             .receive(on: RunLoop.main)
@@ -110,7 +116,25 @@ final class WatchAppServices: ObservableObject {
         }
         books = session.snapshot?.books ?? []
         lastWidgetState = WatchContinueListeningStore.load()
+        if books.isEmpty {
+            WatchContinueListeningStore.save(nil)
+            lastWidgetState = nil
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         session.refresh()
+    }
+
+    func removeFromWatch(_ book: WatchBookDTO) async {
+        if playbackBook?.id == book.id { playbackEngine.clear() }
+        do {
+            try await session.removeLocalBook(book)
+            listened.removeValue(forKey: book.id.rawValue)
+            if let data = try? JSONEncoder().encode(listened) {
+                UserDefaults.standard.set(data, forKey: Self.listenedKey)
+            }
+        } catch {
+            self.error = "Removal failed: \(error.localizedDescription)"
+        }
     }
 
     // MARK: - Progress (H1/H2)
@@ -201,7 +225,12 @@ final class WatchAppServices: ObservableObject {
     /// Writes the "Continue listening" card's state to the App Group. The widget reloads only when
     /// what it shows changes (book, chapter, play state, a minute of time left) — never per tick.
     private func publishWidget() {
-        guard let book = heroBook else { return }
+        guard let book = heroBook else {
+            WatchContinueListeningStore.save(nil)
+            lastWidgetState = nil
+            WidgetCenter.shared.reloadTimelines(ofKind: "VoxglassWatchContinueListening")
+            return
+        }
         let isCurrent = playbackBook?.id == book.id
         let index = resumeChapterIndex(for: book)
         let state = WatchContinueListeningState(

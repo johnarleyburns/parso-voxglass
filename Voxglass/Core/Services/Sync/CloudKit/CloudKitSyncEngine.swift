@@ -103,13 +103,8 @@ public final class CloudKitSyncEngine: ObservableObject {
         do {
             try await sendPendingChanges(modify: modifyRecords)
             lastSyncDate = Date()
-            if blockedCount > 0 {
-                syncState = .error
-                syncError = "\(blockedCount) queued library changes refer to missing or unsupported local records. Other available changes were sent."
-            } else {
-                syncState = .idle
-                syncError = nil
-            }
+            syncState = .idle
+            syncError = nil
         } catch {
             syncState = .error
             syncError = error.localizedDescription
@@ -125,11 +120,10 @@ public final class CloudKitSyncEngine: ObservableObject {
         if pruned > 0 { Self.log.notice("Removed \(pruned, privacy: .public) obsolete playback queue identities") }
         lastUploadedCount = 0
         blockedCount = 0
-        var skipped = 0
         while true {
             try Task.checkCancellation()
             guard shouldSync else { return }
-            let pending = try await stateStore.dequeuePending(limit: 50, offset: skipped)
+            let pending = try await stateStore.dequeuePending(limit: 50)
             guard !pending.isEmpty else { return }
 
             // Dedupe saves by recordName: a Source record is shared across many books,
@@ -142,35 +136,41 @@ public final class CloudKitSyncEngine: ObservableObject {
                 var built = false
                 switch item.recordType {
                 case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
-                    if let record = try? await positionRecord(localID: item.localID) {
+                    if let record = try await positionRecord(localID: item.localID) {
                         recordsToSave[record.recordID.recordName] = record
                         built = true
                     }
                 case CloudKitRecordMapper.RecordType.bookmark.rawValue:
-                    if let record = try? await bookmarkRecord(localID: item.localID) {
+                    if let record = try await bookmarkRecord(localID: item.localID) {
                         recordsToSave[record.recordID.recordName] = record
                         built = true
                     }
                 case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
-                    if let recordID = try? await bookDeleteRecordID(localID: item.localID) {
+                    if let recordID = try await bookDeleteRecordID(localID: item.localID) {
                         recordIDsToDelete.append(recordID)
                         built = true
                     }
-                default:
-                    if let record = try? await bookRecord(localID: item.localID) {
+                case CloudKitRecordMapper.RecordType.book.rawValue:
+                    if let record = try await bookRecord(localID: item.localID) {
                         recordsToSave[record.recordID.recordName] = record
                         // Publish the Book's Source too so the sourceRef isn't dangling.
-                        if let sourceRec = try? await sourceRecordForBook(localID: item.localID) {
+                        if let sourceRec = try await sourceRecordForBook(localID: item.localID) {
                             recordsToSave[sourceRec.recordID.recordName] = sourceRec
                         }
                         built = true
                     } else {
                         Self.log.notice("sendPendingChanges: could not build Book record for localID=\(item.localID, privacy: .public) (missing content_key or /details/ source URL)")
                     }
+                default:
+                    break
                 }
-                if built {
-                    succeeded.append((item.localID, item.recordType, item.enqueuedAt))
+                if !built {
+                    // These queue identities no longer describe a portable local
+                    // record. Retire only this version, preserving newer edits.
+                    try await stateStore.removePending(localID: item.localID, recordType: item.recordType, enqueuedAt: item.enqueuedAt)
+                    continue
                 }
+                succeeded.append((item.localID, item.recordType, item.enqueuedAt))
             }
 
             let saves = Array(recordsToSave.values)
@@ -183,8 +183,6 @@ public final class CloudKitSyncEngine: ObservableObject {
             for item in succeeded {
                 try await stateStore.removePending(localID: item.localID, recordType: item.recordType, enqueuedAt: item.enqueuedAt)
             }
-            skipped += pending.count - succeeded.count
-            blockedCount = skipped
             await refreshPendingCount()
         }
     }
