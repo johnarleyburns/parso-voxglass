@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import VoxglassCore
+@testable import VoxglassPortable
 
 @Suite struct NowPlayingSnapshotTests {
     @Test func codableRoundTripClampsPlaybackValues() throws {

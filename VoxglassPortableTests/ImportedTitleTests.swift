@@ -1,5 +1,5 @@
 import Testing
-@testable import VoxglassCore
+@testable import VoxglassPortable
 
 @Suite struct ImportedTitleTests {
     @Test func parsesAuthorAndSuffixPresentationOnly() {

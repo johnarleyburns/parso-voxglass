@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import VoxglassCore
+@testable import VoxglassPortable
 
 @Suite struct NowPlayingPresentationStateTests {
     let a = UUID(), b = UUID()

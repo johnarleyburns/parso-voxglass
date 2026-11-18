@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import VoxglassCore
+@testable import VoxglassPortable
 
 @Suite struct FindSearchLifecycleTests {
     @Test func sourcesHaveNoCombinedSearchOption() {

@@ -1,0 +1,27 @@
+name: Portable Swift Tests
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portable-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Portable logic (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.2-noble
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Run portable Swift Testing suite
+        run: swift test -Xswiftc -warnings-as-errors

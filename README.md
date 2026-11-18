@@ -199,6 +199,21 @@ scripts/test.sh
 
 The wrapper forwards arguments to `swift test`. The commit hook and CI also run `swift test`.
 
+On Linux, `swift test` builds only `VoxglassPortable` and runs `VoxglassPortableTests`.
+The portable production module contains playback presentation and snapshot models, search state,
+title and URL parsing, silence detection and volume normalization, duration estimation, and Watch
+preparation progress. It has no audio-engine or Apple-framework dependencies. The Linux CI job
+runs this suite with warnings treated as errors.
+
+On macOS, `swift test` runs both the portable suite and the full `VoxglassCoreTests` suite.
+`VoxglassCore` depends on the portable module and preserves its existing public names through
+type aliases, so app code uses the same implementation tested on Linux. Platform playback,
+CloudKit, and device integration remain in the Apple targets.
+
+When extracting more portable logic, move its implementation to `VoxglassPortable/` and its
+tests to `VoxglassPortableTests/`, importing `VoxglassPortable`. Keep any compatibility aliases
+in `Voxglass/Core/`; do not copy the implementation into a separate test-only module.
+
 ## Manual regression testing before release
 
 Most logic is covered headlessly by `swift test`. UI test suites have been removed; verify the

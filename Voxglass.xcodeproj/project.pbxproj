@@ -427,7 +427,6 @@
 		85B1181A1D8983DA914206C2 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
 		8A55A606A8A286E8C139315E /* CatalogBookDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogBookDestinationView.swift; sourceTree = "<group>"; };
-		8B517EFDB7CCF7EF62893681 /* voxglass-listening-settings-publish */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "voxglass-listening-settings-publish"; path = .; sourceTree = SOURCE_ROOT; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
 		92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = divine_comedy_librivox.jpg; sourceTree = "<group>"; };
 		93ECD54380A215C3A3831A60 /* SkipSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSymbol.swift; sourceTree = "<group>"; };
@@ -497,6 +496,7 @@
 		D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlaybackEngine.swift; sourceTree = "<group>"; };
 		D5A94C359467591A27819A47 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D6EFA25128B4DF9F2625F58F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		D95EEA019E1770E27663315D /* tom_sawyer_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tom_sawyer_librivox.jpg; sourceTree = "<group>"; };
 		D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledArtworkProvider.swift; sourceTree = "<group>"; };
 		DAD4F37F93457C1BFA5BE181 /* VoxglassZoomNamespace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassZoomNamespace.swift; sourceTree = "<group>"; };
@@ -972,7 +972,7 @@
 		EBC1B200DDF902108E6154DD /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				8B517EFDB7CCF7EF62893681 /* voxglass-listening-settings-publish */,
+				D78C6344FCDC530F80FCD2DE /* parso-voxglass */,
 			);
 			name = Packages;
 			sourceTree = "<group>";

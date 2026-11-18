@@ -1,6 +1,29 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
+let portableTargets: [Target] = [
+    .target(
+        name: "VoxglassPortable",
+        path: "VoxglassPortable",
+        swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+        name: "VoxglassPortableTests",
+        dependencies: ["VoxglassPortable"],
+        path: "VoxglassPortableTests",
+        swiftSettings: [.swiftLanguageMode(.v6)]
+    )
+]
+
+// Linux deliberately resolves only portable production logic and its tests.
+// Apple builds retain the full app/audio graph and also run the portable suite.
+#if os(Linux)
+let package = Package(
+    name: "VoxglassCore",
+    products: [.library(name: "VoxglassPortable", targets: ["VoxglassPortable"])],
+    targets: portableTargets
+)
+#else
 let package = Package(
     name: "VoxglassCore",
     defaultLocalization: "en",
@@ -21,7 +44,7 @@ let package = Package(
             exact: "1.2.2"
         )
     ],
-    targets: [
+    targets: portableTargets + [
         .target(
             name: "VoxglassWatchProtocol",
             path: "VoxglassWatchProtocol",
@@ -36,7 +59,7 @@ let package = Package(
         .target(
             name: "VoxglassCore",
             dependencies: [
-                "VoxglassWatchProtocol", "VoxglassWatchCore",
+                "VoxglassPortable", "VoxglassWatchProtocol", "VoxglassWatchCore",
                 .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
                 .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
             ],
@@ -100,3 +123,5 @@ let package = Package(
         )
     ]
 )
+
+#endif

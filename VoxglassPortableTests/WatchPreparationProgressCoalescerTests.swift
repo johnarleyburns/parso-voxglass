@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import VoxglassCore
+@testable import VoxglassPortable
 
 private final class TestClock: Clock, @unchecked Sendable {
     var current = Date(timeIntervalSince1970: 1_000)
