@@ -182,7 +182,7 @@ struct BookPageOverflowSheet: View {
                         overflowRow(
                             icon: "applewatch",
                             title: "Send to Apple Watch",
-                            detail: LocalizedStringKey(verbatim: phoneAudioRelay.watchBookStatus(for: book.book.id))
+                            detail: phoneAudioRelay.watchBookStatus(for: book.book.id)
                         )
                     }
                     .accessibilityIdentifier("nowplaying.watchDownload")
@@ -309,7 +309,10 @@ struct BookPageOverflowSheet: View {
         }
     }
 
-    private func overflowRow(icon: String, title: LocalizedStringKey, detail: LocalizedStringKey? = nil) -> some View {
+    // `detail` is a plain String, not LocalizedStringKey: it carries dynamic,
+    // already-resolved content (e.g. a live watch-transfer status), which
+    // must never be reinterpreted as a localization/format key.
+    private func overflowRow(icon: String, title: LocalizedStringKey, detail: String? = nil) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .voxFont(.subheadline)
