@@ -376,7 +376,7 @@ struct BookPageView: View {
             CoverPlate(title: resolved.book.title, author: resolved.book.displayAuthorLine, coverURL: resolved.book.coverURL, size: 44)
             VStack(alignment: .leading, spacing: 1) {
                 Text(resolved.book.title).voxType(.body)
-                Text("\(Int((progressFor(resolved) * 100).rounded()))% · \(TimeFormatting.compactDuration(playback.currentSession?.bookRemaining ?? 0)) left")
+                Text("\(Int((progressFor(resolved) * 100).rounded()))% · \(TimeFormatting.compactDuration(bookRemaining(for: resolved) ?? 0)) left")
                     .voxType(.timecode)
                     .foregroundStyle(Palette.ink2)
             }
@@ -422,6 +422,17 @@ struct BookPageView: View {
         guard let progress = libraryStore.progressByBook[resolved.book.id],
               let totalDuration = resolved.totalDuration, totalDuration > 0 else { return 0 }
         return progress.lastPosition / totalDuration
+    }
+
+    /// Remaining time for the book this page is showing — never another
+    /// book's session. Mirrors `progressFor`'s per-book source of truth.
+    private func bookRemaining(for resolved: BookWithChapters) -> TimeInterval? {
+        if let session = playback.currentSession, session.book.id == resolved.book.id {
+            return session.bookRemaining
+        }
+        guard let total = resolved.totalDuration else { return nil }
+        let saved = libraryStore.progressByBook[resolved.book.id]?.lastPosition ?? 0
+        return max(total - saved, 0)
     }
 
     private func resumeChapterTitle(for resolved: BookWithChapters) -> String? {
@@ -616,7 +627,14 @@ struct BookPageView: View {
             chapterFallbackPosition: chapterFallbackPosition,
             chapterFallbackDuration: chapterFallbackDuration,
             elapsedBeforeChapter: elapsedBeforeChapter,
-            totalBookDuration: session?.totalBookDuration ?? resolved.totalDuration,
+            // Only reuse the live session's duration when the session is the
+            // SAME book. Previously any existing session supplied the total,
+            // so opening an inactive book (e.g. from Jump Back In) while a
+            // longer book kept playing reported that other book's length —
+            // live report: The Two Gentlemen of Verona (2 hr) showed
+            // "23 hr, 57 min left in book".
+            totalBookDuration: (session?.book.id == resolved.book.id ? session?.totalBookDuration : nil)
+                ?? resolved.totalDuration,
             onSeekChapterPosition: { target in
                 Task { await playback.seek(to: target) }
             }

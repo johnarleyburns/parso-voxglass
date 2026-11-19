@@ -93,7 +93,14 @@ import Testing
             }
             #expect(text.contains("private func presentResult"))  // \(path)
             #expect(text.contains("resolveForNavigation(result, into: libraryStore)"))  // \(path)
-            #expect(text.contains("selectedCatalogBookID = resolved.book.id"))  // \(path)
+            if path.hasSuffix("Listen/ListenView.swift") {
+                // Listen's catalog shelf presents the pending preview as a
+                // dismissable sheet instead of pushing a page with a back arrow.
+                #expect(text.contains("previewBook = resolved"))  // \(path)
+                #expect(text.contains(".sheet(item: $previewBook)"))  // \(path)
+            } else {
+                #expect(text.contains("selectedCatalogBookID = resolved.book.id"))  // \(path)
+            }
             #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
