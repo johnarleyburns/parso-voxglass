@@ -5,6 +5,7 @@ struct BookPageOverflowSheet: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     let book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @Binding var showRemoveOfflineConfirm: Bool
@@ -13,6 +14,8 @@ struct BookPageOverflowSheet: View {
     @State private var showingPlaylistPicker = false
     @State private var showingBookmarks = false
     @State private var showingEQ = false
+    @State private var showWatchCellularPrompt = false
+    @State private var watchTransferError: String?
     @Binding var showRemoveConfirm: Bool
     @Binding var showReconnectAudio: Bool
     let genre: LibriVoxBrowseCategory?
@@ -22,6 +25,22 @@ struct BookPageOverflowSheet: View {
 
     private var offlineState: OfflineState {
         offlineManager.state(for: book.book.id)
+    }
+
+    private var watchTransferEligible: Bool {
+        WatchDownloadEligibility.allowsTransfer(
+            isReadByAI: libraryStore.source(for: book.book)?.kind == .readWithAI,
+            chapterExtensions: book.chapters.flatMap { [$0.localURL?.pathExtension, $0.remoteURL?.pathExtension].compactMap { $0 } }
+        )
+    }
+
+    private func startWatchTransfer(allowCellular: Bool) async {
+        let result = await phoneAudioRelay.transferBookToWatch(book, allowCellularOverride: allowCellular)
+        switch result {
+        case .started: break
+        case .needsCellularConfirmation: showWatchCellularPrompt = true
+        case .failed(let message): watchTransferError = message
+        }
     }
 
     var body: some View {
@@ -71,6 +90,24 @@ struct BookPageOverflowSheet: View {
                     .environment(playback)
             }
             .presentationDragIndicator(.visible)
+        }
+        .confirmationDialog(
+            "Send to Apple Watch on cellular data?",
+            isPresented: $showWatchCellularPrompt,
+            titleVisibility: .visible
+        ) {
+            Button("Send now on cellular") { Task { await startWatchTransfer(allowCellular: true) } }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
+        }
+        .alert(
+            "Couldn't Send to Apple Watch",
+            isPresented: Binding(get: { watchTransferError != nil }, set: { if !$0 { watchTransferError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(watchTransferError ?? "")
         }
     }
 
@@ -129,6 +166,30 @@ struct BookPageOverflowSheet: View {
                     overflowRow(icon: "arrow.down.circle", title: "Make available offline")
                 }
                 .accessibilityIdentifier("nowplaying.download")
+            }
+            if watchTransferEligible {
+                if phoneAudioRelay.watchState(for: book.book.id) == .available {
+                    Button(role: .destructive) {
+                        Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
+                    } label: {
+                        overflowRow(icon: "applewatch.slash", title: "Remove from Apple Watch")
+                    }
+                    .accessibilityIdentifier("nowplaying.watchRemove")
+                } else {
+                    Button {
+                        Task { await startWatchTransfer(allowCellular: false) }
+                    } label: {
+                        overflowRow(
+                            icon: "applewatch",
+                            title: "Send to Apple Watch",
+                            detail: LocalizedStringKey(verbatim: phoneAudioRelay.watchBookStatus(for: book.book.id))
+                        )
+                    }
+                    .accessibilityIdentifier("nowplaying.watchDownload")
+                    .disabled(phoneAudioRelay.isTransferringToWatch)
+                }
+            } else {
+                LabeledContent("Apple Watch") { ReadByAIWatchInfoButton() }
             }
         }
     }

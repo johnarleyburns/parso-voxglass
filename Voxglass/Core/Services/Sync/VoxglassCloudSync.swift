@@ -514,6 +514,8 @@ public final class VoxglassCloudSync: ObservableObject {
         guard isAvailable, isEnabled else { return }
         isSyncing = true
         defer { isSyncing = false }
+        // A prior run's error must not outlive a later successful one.
+        syncError = nil
 
         // Positions are free and always run.
         await pullPlaybackPositions()

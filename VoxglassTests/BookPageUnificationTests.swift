@@ -74,6 +74,21 @@ import Testing
         #expect(page.contains("Show more"))  // BookPageView must contain Show more
     }
 
+    @Test func nowPlayingToolbarUsesBookIconNotInfo() throws {
+        let page = try source("Voxglass/Features/Player/BookPageView.swift")
+
+        #expect(!(page.contains("Image(systemName: \"info\")")))  // The Book Details button must not use the info icon
+        #expect(page.contains("Image(systemName: \"book\")"))  // It must use the book icon instead
+    }
+
+    @Test func previewingBookHidesDetailsChaptersAndPlaybackAndIsTitledPreview() throws {
+        let page = try source("Voxglass/Features/Player/BookPageView.swift")
+
+        #expect(page.contains("resolved.book.isPending ? String(localized: \"Preview\")"))  // Previewing a book must title the page "Preview"
+        // Guards the toolbar's info/chapters buttons, the playback controls, and the about/chapters sections.
+        #expect(page.components(separatedBy: "if !resolved.book.isPending {").count - 1 == 3)
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -112,17 +127,23 @@ import Testing
         return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 
-    @Test func overflowAndActionRowNeverCallTransport() throws {
-        let overflow = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
+    @Test func actionRowNeverCallsTransportDirectly() throws {
         let row = try read("Voxglass/Features/Player/BookPageActionRow.swift")
-        #expect(!overflow.contains("requestWatchDownload()"))
-        #expect(!overflow.contains("transferBookToWatch("))
         #expect(!row.contains("transferBookToWatch("))
         #expect(!row.contains("requestWatchDownload()"))
         #expect(!row.contains("nowplaying.watchDownload"))
     }
 
-    @Test func syncViewOwnsConfirmationsAndSingleTransportCall() throws {
+    @Test func overflowSheetOwnsTheSingleBookQuickAction() throws {
+        let overflow = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
+        #expect(overflow.contains("transferBookToWatch("))
+        #expect(overflow.contains("removeBookFromWatch("))
+        #expect(overflow.contains("nowplaying.watchDownload"))
+        // The old removed helper name must not return.
+        #expect(!overflow.contains("requestWatchDownload()"))
+    }
+
+    @Test func syncViewOwnsConfirmationsAndTheBatchTransportCall() throws {
         let page = try read("Voxglass/Features/Player/BookPageView.swift")
         #expect(!page.contains("transferBookToWatch("))
         let sync = try read("Voxglass/Features/Settings/SettingsView.swift")
