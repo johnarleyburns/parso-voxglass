@@ -59,10 +59,6 @@ import Foundation
         return BookWithChapters(book: Book(id: bookID, title: title, authors: ["A"], sourceID: UUID()), chapters: chapters)
     }
 
-    private func drainMainQueue() async {
-        try? await Task.sleep(nanoseconds: 200_000_000)
-    }
-
     // MARK: - Tick does not assign currentSession.position
 
     @Test func tickDrivesPlayheadNotSessionPosition() async {
@@ -74,7 +70,7 @@ import Foundation
         h.engine.currentTime = 15
         h.engine.isPlaying = true
         await h.coordinator.tickProgress()
-        await drainMainQueue()
+        await waitUntil { abs(h.coordinator.playhead - 15) <= 0.001 }
 
         // playhead should update
         #expect(abs((h.coordinator.playhead) - (15)) <= 0.001)
@@ -197,7 +193,7 @@ import Foundation
             await h.coordinator.seek(to: 42)
         }
         // Allow the synchronous part to run
-        await drainMainQueue()
+        await waitUntil { abs(h.coordinator.playhead - 42) <= 0.001 }
 
         #expect(abs((h.coordinator.playhead) - (42)) <= 0.001)  // playhead must be set optimistically before engine.seek completes
 

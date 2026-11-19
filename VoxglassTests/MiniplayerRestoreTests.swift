@@ -82,28 +82,6 @@ import Foundation
         )
     }
 
-    /// Lets the fire-and-forget MainActor tasks spawned by togglePlayPause /
-    /// remote resume run to completion.
-    private func drainMainQueue() async {
-        try? await Task.sleep(nanoseconds: 100_000_000)
-    }
-
-    /// Waits for an async effect to land instead of sleeping a fixed duration.
-    /// The coordinator's play pipeline runs on the main actor behind a spawned
-    /// task; under a contended parallel batch a fixed sleep can elapse before
-    /// the effect completes and produce a false failure. Polling yields to the
-    /// main actor so the effect always gets a chance to settle.
-    private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 5_000_000_000) async -> Bool {
-        var waited: UInt64 = 0
-        let step: UInt64 = 20_000_000
-        while waited < timeoutNanoseconds {
-            if condition() { return true }
-            try? await Task.sleep(nanoseconds: step)
-            waited += step
-        }
-        return condition()
-    }
-
     // MARK: - §5.1 Engine-free presented restore
 
     @Test func restorePresentedSessionPresentsPausedSessionWithoutTouchingEngine() async throws {
@@ -302,7 +280,7 @@ import Foundation
         #expect(abs((persisted?.position ?? -1) - (77)) <= 0.001)  // A pre-play seek must land durably while unloaded
 
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { !h.engine.loadCalls.isEmpty }
 
         #expect(abs((h.engine.loadCalls.last?.startTime ?? -1) - (77)) <= 0.001)  // The lazy load must pick up the seeked offset
     }
@@ -345,7 +323,7 @@ import Foundation
         let book = makeBook(chapters: chapters)
         await h.coordinator.restorePresentedSession(from: [book])
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { !h.engine.loadCalls.isEmpty }
         h.coordinator.togglePlayPause()   // pause again — engine stays loaded
         await drainMainQueue()
 

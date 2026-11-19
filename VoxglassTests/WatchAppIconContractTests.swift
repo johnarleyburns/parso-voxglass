@@ -15,7 +15,7 @@ import Testing
     WHAT TO DO: Restore Voxglass/Resources/AppIcon.icon with watchOS enabled under Icon Composer's platforms, keep it in the VoxglassWatch target's sources in project.yml, do not re-add a Watch AppIcon.appiconset (two icons named AppIcon clash), then run `bash scripts/check_watch_app_icon.sh` and `swift test --filter WatchAppIconContractTests`.
     """
 
-    @Test func sharedIconDeclaresWatchCircleAndCompilesRuntimeIcon() throws {
+    @Test func sharedIconDeclaresWatchCircleAndCompilesRuntimeIcon() async throws {
         let iconURL = repoRoot.appendingPathComponent("Voxglass/Resources/AppIcon.icon")
         let manifestURL = iconURL.appendingPathComponent("icon.json")
         guard let data = try? Data(contentsOf: manifestURL) else {
@@ -41,7 +41,7 @@ import Testing
         #expect(watchTarget.contains("path: Voxglass/Resources/AppIcon.icon"), Comment(rawValue: failureMessage("WHY THIS TEST FAILS: project.yml no longer lists AppIcon.icon in the VoxglassWatch target's sources.")))
 
         #if os(macOS)
-        if let infoPlist = try compileForWatchOS(iconURL) {
+        if let infoPlist = try await compileForWatchOS(iconURL) {
             let icons = infoPlist["CFBundleIcons"] as? [String: Any]
             let primary = icons?["CFBundlePrimaryIcon"] as? [String: Any]
             #expect(primary?["CFBundleIconName"] as? String == "AppIcon", Comment(rawValue: failureMessage("WHY THIS TEST FAILS: watchOS actool did not produce CFBundleIconName=AppIcon from AppIcon.icon; archive export would fail with a missing watch icon.")))
@@ -52,7 +52,7 @@ import Testing
     #if os(macOS)
     /// Returns the partial Info.plist actool writes, or nil when Xcode is unavailable
     /// (the manifest checks above still ran) or actool failed (recorded as a failure).
-    private func compileForWatchOS(_ iconURL: URL) throws -> [String: Any]? {
+    private func compileForWatchOS(_ iconURL: URL) async throws -> [String: Any]? {
         let output = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-watch-icon-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -74,12 +74,18 @@ import Testing
         ]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
-        do {
-            try process.run()
-        } catch {
-            return nil
+        // Suspend instead of blocking the thread on waitUntilExit(); terminationHandler
+        // must be set before run() so a fast-exiting process can't be missed.
+        let launched: Bool = await withCheckedContinuation { continuation in
+            process.terminationHandler = { _ in continuation.resume(returning: true) }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                continuation.resume(returning: false)
+            }
         }
-        process.waitUntilExit()
+        guard launched else { return nil }
         guard process.terminationStatus == 0, let data = try? Data(contentsOf: partialPlist) else {
             fail("WHY THIS TEST FAILS: watchOS actool rejected AppIcon.icon (exit \(process.terminationStatus)).")
             return nil

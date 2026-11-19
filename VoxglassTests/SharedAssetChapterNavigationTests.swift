@@ -83,10 +83,6 @@ import ParsoAudioStreaming
         )
     }
 
-    private func drainMainQueue() async {
-        try? await Task.sleep(nanoseconds: 100_000_000)
-    }
-
     @Test func directChapterTapSeeksToTheChaptersOwnAbsolutePosition() async {
         let h = makeHarness()
         let book = makeSharedAssetBook()
@@ -115,11 +111,7 @@ import ParsoAudioStreaming
         await h.coordinator.present(book)
         h.engine.reset()
         h.coordinator.togglePlayPause()
-        var waited: UInt64 = 0
-        while h.engine.loadCalls.isEmpty && waited < 5_000_000_000 {
-            try? await Task.sleep(nanoseconds: 20_000_000)
-            waited += 20_000_000
-        }
+        await waitUntil { !h.engine.loadCalls.isEmpty }
 
         #expect(h.engine.loadCalls.count == 1)
         // Regression: this used to load at startTime: 42 (chapter-relative)

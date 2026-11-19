@@ -127,10 +127,19 @@ import Testing
     }
 
     @Test func pauseCancelsPendingRecovery() async {
-        let h = await makeHarness()
+        let delay = RecoveryDelayGate()
+        let h = await makeHarness(decodeRecoveryDelay: { await delay.wait() })
         h.engine.firePlaybackIssue(.decodeFailed("Cannot Decode"))
+        // Prove recovery is genuinely in-flight (blocked at the delay) before
+        // cancelling, rather than hoping a fixed sleep raced it correctly.
+        await delay.waitUntilBlocked()
         h.coordinator.pause()
-        try? await Task.sleep(for: .milliseconds(200))
+        await delay.release()
+        // cancelDecodeRecovery() runs synchronously inside pause(), so the
+        // guard right after decodeRecoveryDelay() in the recovery task will
+        // see the bumped generation; this only waits for that already-
+        // resolved continuation to actually get scheduled and return.
+        try? await Task.sleep(for: .milliseconds(20))
         #expect(h.engine.loadCalls.count == 1)
         #expect(!h.engine.isPlaying)
         #expect(h.coordinator.decodeRecoveryAttempt == nil)
@@ -138,10 +147,13 @@ import Testing
     }
 
     @Test func seekCancelsPendingRecoveryAndKeepsUserPosition() async {
-        let h = await makeHarness()
+        let delay = RecoveryDelayGate()
+        let h = await makeHarness(decodeRecoveryDelay: { await delay.wait() })
         h.engine.firePlaybackIssue(.decodeFailed("Cannot Decode"))
+        await delay.waitUntilBlocked()
         await h.coordinator.seek(to: 200)
-        try? await Task.sleep(for: .milliseconds(200))
+        await delay.release()
+        try? await Task.sleep(for: .milliseconds(20))
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.coordinator.currentSession?.position == 200)
         #expect(h.snapshot.position(forBookID: h.book.book.id)?.position == 200)
