@@ -21,7 +21,10 @@ struct ListenView: View {
     @State private var statsTotalTime: TimeInterval = 0
     @State private var statsLast7DaysTotal: TimeInterval = 0
     @State private var statsDailyBars: [ListeningStatsView.DayBar] = []
-    @State private var selectedCatalogBookID: UUID?
+    /// A catalog result that isn't in My Books yet: its preview page opens as a
+    /// dismissable sheet instead of a pushed page (real report: tapping a
+    /// recommended title showed a back arrow it shouldn't have).
+    @State private var previewBook: BookWithChapters?
     @State private var refreshTask: Task<Void, Never>?
     @State private var refreshGeneration = 0
     private let performanceLogger = Logger(subsystem: "guru.parso.voxglass", category: "ListenPerformance")
@@ -66,9 +69,10 @@ struct ListenView: View {
                 recommended
             }
             .padding(.top, 12)
-            .navigationDestination(item: $selectedCatalogBookID) { bookID in
-                BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
-            }
+        }
+        .sheet(item: $previewBook) { book in
+            BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -386,8 +390,13 @@ struct ListenView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
                         ForEach(books) { book in
-                            NavigationLink {
-                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                            // Tapping a Jump Back In book starts/resumes it and
+                            // opens the shared Now Playing sheet (the same path
+                            // My Books rows use) instead of pushing a detail page
+                            // with a back arrow.
+                            Button {
+                                playback.selectAndPlay(book)
+                                showingNowPlaying = true
                             } label: {
                                 ListenBookCard(
                                     book: book,
@@ -395,6 +404,8 @@ struct ListenView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Continue \(book.book.title) by \(book.book.displayAuthorLine)")
+                            .accessibilityHint("Opens Now Playing")
                         }
                     }
                     .padding(.horizontal, 2)
@@ -653,7 +664,7 @@ struct ListenView: View {
                 playback.selectAndPlay(resolved)
                 showingNowPlaying = true
             } else {
-                selectedCatalogBookID = resolved.book.id
+                previewBook = resolved
             }
         }
     }
