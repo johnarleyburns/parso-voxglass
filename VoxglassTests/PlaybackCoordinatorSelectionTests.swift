@@ -64,10 +64,6 @@ import Foundation
         return BookWithChapters(book: Book(id: bookID, title: title, authors: ["A"], sourceID: UUID()), chapters: chapters)
     }
 
-    private func drainMainQueue() async {
-        try? await Task.sleep(nanoseconds: 200_000_000)
-    }
-
     @Test func pairedCheckpointPersistsAndUpdatesAPausedMatchingSession() async {
         let h = makeHarness()
         let book = makeBook(chapters: 1)
@@ -103,7 +99,7 @@ import Foundation
         let h = makeHarness()
         let book = makeBook(chapters: 1)
         h.coordinator.selectAndPlay(book)
-        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
+        await waitUntil({ h.coordinator.currentSession?.isPlaying == true }, timeoutNanoseconds: 10_000_000_000)
         let chapter = book.chapters[0]
         let checkpoint = PlaybackPosition(bookID: book.book.id, chapterID: chapter.id,
                                           position: 42, duration: 100, updatedAt: Date())
@@ -184,18 +180,8 @@ import Foundation
         let h = makeHarness()
         let book = makeBook()
         h.coordinator.selectAndPlay(book)
-        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
+        await waitUntil({ h.coordinator.currentSession?.isPlaying == true }, timeoutNanoseconds: 10_000_000_000)
         #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(watchPoint(book, 2, 5, 999), chapters: book.chapters)))
-    }
-
-    /// Polls (yielding to the main actor) so contended parallel runs cannot
-    /// outlast a fixed sleep.
-    private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 10_000_000_000) async {
-        var waited: UInt64 = 0
-        while waited < timeoutNanoseconds, !condition() {
-            try? await Task.sleep(nanoseconds: 20_000_000)
-            waited += 20_000_000
-        }
     }
 
     // MARK: - S1 tests
@@ -224,13 +210,13 @@ import Foundation
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(book)
-        await waitUntil { h.engine.loadCalls.count == 1 }
+        await waitUntil({ h.engine.loadCalls.count == 1 }, timeoutNanoseconds: 10_000_000_000)
 
         #expect(h.coordinator.playbackPhase == .preparing)
         #expect(!(h.engine.isPlaying))  // Engine must not be playing while load is suspended
 
         h.engine.resumeSuspendedLoad()
-        await waitUntil { h.coordinator.playbackPhase == .playing }
+        await waitUntil({ h.coordinator.playbackPhase == .playing }, timeoutNanoseconds: 10_000_000_000)
 
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(h.engine.isPlaying)

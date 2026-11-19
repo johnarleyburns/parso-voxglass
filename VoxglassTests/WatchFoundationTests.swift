@@ -275,8 +275,14 @@ import Testing
             try files.install(source: source, root: root, bookID: "a", filename: "c.m4a",
                 expectedBytes: Int64(payload.count), expectedSHA256: hash)
         }
-        try await Task.sleep(for: .milliseconds(150))
-        // Install must wait for the in-flight removal rather than interleave with it.
+        // `install` and `removeBook` share WatchDownloadedFiles' single private
+        // serial DispatchQueue (`queue.sync` vs `queue.async`). The removal's
+        // work item is already enqueued and confirmed blocked (`awaitEntered()`
+        // above only returns after `entered.signal()` fires inside `remove()`)
+        // before `install` is even spawned, so the serial queue structurally
+        // cannot dequeue `install`'s work item until the blocked removal item
+        // returns below — no wait is needed to prove this, unlike a race that
+        // depends on wall-clock scheduling.
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a/c.m4a").path))
         ops.release.signal()
         try await removal.value
