@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # PR lifecycle reconciler: the single owner of "what happens next" for open
-# Claude PRs. It never runs Claude and never executes PR-controlled code; it
+# automation PRs. It never runs the coding agent and never executes
+# PR-controlled code; it
 # only reads GitHub state and performs narrow API actions:
 #   mark ready, enable auto-merge, update-branch (GitHub-side non-force merge of
 #   main), re-trigger/re-run validation, dispatch the repair workflow, escalate.
@@ -140,7 +141,7 @@ escalate() { # n issue head kind detail
   gh pr edit "$n" --add-label "$label" >/dev/null 2>&1 || true
   st=$(jq -c --arg k "$key" --arg h "$head" '.escalated = ((.escalated // []) + [$k]) | .stopped_head = $h' <<<"$st")
   put_state "$n" "$st" "STOPPED ($kind) at ${head:0:8}"
-  gh issue comment "${issue:-$n}" --body "$(printf '@%s PR #%s needs your action.\n\n**Category:** %s\n**Head:** `%s`\n**Detail:** %s\n**Run:** %s\n\nAutomatic attempts have stopped for this head. Push a change, or dispatch "Claude PR Maintenance" for #%s after fixing the cause.' \
+  gh issue comment "${issue:-$n}" --body "$(printf '@%s PR #%s needs your action.\n\n**Category:** %s\n**Head:** `%s`\n**Detail:** %s\n**Run:** %s\n\nAutomatic attempts have stopped for this head. Push a change, or dispatch "OpenCode PR Maintenance" for #%s after fixing the cause.' \
     "$owner" "$n" "$kind" "$head" "$detail" "$run_url" "$n")" >/dev/null 2>&1 || true
 }
 
@@ -154,7 +155,7 @@ repair_active() {
 
 # GitHub's closing-keyword behavior handles new PRs. This sweep makes the
 # policy durable for PRs created before that body convention, and is deliberately
-# limited to the repository's own Claude issue marker and a confirmed merge.
+# limited to the repository's own automation issue marker and a confirmed merge.
 reconcile_merged_issue_closures() {
   local prs pr issue state url
   prs=$(gh pr list --repo "$repo" --state merged --base main --limit 1000 --json number,body,url) || {
@@ -200,7 +201,7 @@ process_pr() {
     # instead of leaving it permanently unmanaged.
     issue="$n"
   else
-    echo "PR #$n: not a Claude PR, ignored"
+    echo "PR #$n: not an automation PR, ignored"
     return 0
   fi
   draft=$(jq -r .draft <<<"$pr")
@@ -372,7 +373,7 @@ write_report() {
     stopped_for_human: ([$rows[]|select(.action=="stopped" or .action=="exhausted" or .action=="escalate-approval")]|length),
     prs: $rows}' >"$REPORT"
   if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
-    { echo '### Claude PR maintenance'; echo '```json'; cat "$REPORT"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
+    { echo '### Automation PR maintenance'; echo '```json'; cat "$REPORT"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
   fi
 }
 

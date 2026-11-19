@@ -32,7 +32,7 @@ bash scripts/tests/test-issue-backlog-order.sh
 bash scripts/tests/test-release-repair-policy.sh
 bash scripts/tests/test-testflight-delivery-body.sh
 bash scripts/tests/test-testflight-reconciler-discovery.sh
-bash scripts/tests/test-claude-turn-budget.sh
+bash scripts/tests/test-agent-invocation.sh
 bash scripts/tests/test-es256-jws.sh
 bash scripts/tests/test-issue-pr-candidate.sh
 bash scripts/tests/test-testflight-traceability.sh
