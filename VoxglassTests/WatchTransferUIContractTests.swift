@@ -19,13 +19,20 @@ import Testing
     @Test func playerAndLibraryDoNotOwnWatchTransport() throws {
         for path in ["Voxglass/Features/Player/BookPageView.swift",
                      "Voxglass/Features/Player/BookPageActionRow.swift",
-                     "Voxglass/Features/Player/BookPageOverflowSheet.swift",
                      "Voxglass/Features/Library/LibraryView.swift"] {
             let text = try source(path)
             #expect(!text.contains("transferBookToWatch("), "\(path)")
             #expect(!text.contains("retryStalledBookTransferToWatch("), "\(path)")
             #expect(!text.contains("Download to Apple Watch?"), "\(path)")
         }
+        // The overflow sheet owns the restored single-book quick action
+        // (alongside Settings' batch flow) — see
+        // BookPageWatchDownloadContractTests.overflowSheetOwnsTheSingleBookQuickAction.
+        // It still must not own retry or the old removed confirmation dialog.
+        let overflow = try source("Voxglass/Features/Player/BookPageOverflowSheet.swift")
+        #expect(overflow.contains("transferBookToWatch("))
+        #expect(!overflow.contains("retryStalledBookTransferToWatch("))
+        #expect(!overflow.contains("Download to Apple Watch?"))
     }
 
     @Test func aboutOwnsDiagnosticsAndRecovery() throws {

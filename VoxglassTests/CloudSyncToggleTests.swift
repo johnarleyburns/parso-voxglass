@@ -101,6 +101,18 @@ import Foundation
         #expect(cloudSync.lastSyncDate != nil)  // pushPlaybackPositions should set lastSyncDate when enabled
     }
 
+    @Test func successfulSyncClearsAPreviousError() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "sync-clears-error-\(UUID().uuidString)")
+        try await database.prepare()
+        let cloudSync = VoxglassCloudSync(database: database)
+        cloudSync.testForceAvailable = true
+        cloudSync.syncError = "A previous sync failed"
+
+        await cloudSync.sync()
+
+        #expect(cloudSync.syncError == nil)  // A later successful sync must clear a stale error, not repeat it forever
+    }
+
     private func seedTwoChapterBook(
         _ database: AppDatabase
     ) async throws -> (bookID: UUID, chapter1: UUID, chapter2: UUID) {

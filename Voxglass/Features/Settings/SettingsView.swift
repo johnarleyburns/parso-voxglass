@@ -1523,28 +1523,36 @@ private struct SyncSettingsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VoxglassGroupedSection(title: "Sync") {
-                SyncStatusSummary(isRequesting: isRunning)
+                HStack(alignment: .top) {
+                    SyncStatusSummary(isRequesting: isRunning)
+                    Spacer(minLength: 12)
+                    Button {
+                        operationError = nil
+                        if candidates.isEmpty && removals.isEmpty { startSync(allowCellular: false) }
+                        else { confirmChanges = true }
+                    } label: {
+                        Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .disabled(isRunning || isPausing || relay.isTransferringToWatch || cloudSync.isSyncing || cloudKitSync.syncState == .syncing)
+                    .accessibilityIdentifier("sync.now")
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
                 if let startedAt, isRunning {
                     LabeledContent("Started", value: startedAt.formatted(date: .omitted, time: .shortened))
                         .voxFont(.caption2)
+                        .padding(.horizontal, 14)
                 }
                 if let operationError {
                     Text(operationError).foregroundStyle(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 14)
                 }
-                Button {
-                    operationError = nil
-                    if candidates.isEmpty && removals.isEmpty { startSync(allowCellular: false) }
-                    else { confirmChanges = true }
-                } label: {
-                    Label("Sync", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .disabled(isRunning || isPausing || relay.isTransferringToWatch || cloudSync.isSyncing || cloudKitSync.syncState == .syncing)
-                .accessibilityIdentifier("sync.now")
                 if isRunning || relay.isPreparingWatchAudio || hasActiveTransfers {
                     Button("Pause") { pause() }
                         .disabled(isPausing)
                         .accessibilityIdentifier("sync.pause")
+                        .padding(.horizontal, 14)
                 }
             }
             VoxglassGroupedSection(title: "Apple Watch") {
@@ -1713,6 +1721,12 @@ struct SyncStatusSummary: View {
     private var isWorking: Bool { isRequesting || cloudSync.isSyncing || cloudKitSync.syncState == .syncing }
     private var hasCloudError: Bool { cloudEnabled && (cloudSync.syncError != nil || cloudKitSync.syncError != nil || !cloudKitSync.importErrors.isEmpty) }
 
+    /// The specific reason "Sync needs attention" is showing, so the banner
+    /// never collapses a real problem into an unexplained repeated label.
+    private var cloudErrorDetail: String? {
+        cloudSync.syncError ?? cloudKitSync.syncError ?? cloudKitSync.importErrors.first
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
@@ -1727,16 +1741,15 @@ struct SyncStatusSummary: View {
                     ? (cloudSync.isAvailable ? String(localized: "On") : String(localized: "Sign in to iCloud to sync"))
                     : String(localized: "Off"))
                     .voxFont(.caption2)
-                if !cloudKitSync.importErrors.isEmpty { Text("Sync needs attention").foregroundStyle(Palette.danger) }
+                if hasCloudError, !isWorking, let cloudErrorDetail {
+                    Text(cloudErrorDetail).voxFont(.caption2).foregroundStyle(Palette.danger)
+                }
             }
             if showsDetails, let status = relay.watchSyncStatus, relay.isPreparingWatchAudio {
                 Text(status).voxFont(.caption2)
             }
             if showsDetails, let error = relay.watchSyncError { Text(error).voxFont(.caption2).foregroundStyle(Palette.danger) }
             if showsDetails, let error = relay.watchTransferError { Text(error).voxFont(.caption2).foregroundStyle(Palette.danger) }
-            if showsDetails, cloudEnabled, let error = cloudSync.syncError ?? cloudKitSync.syncError {
-                Text(error).voxFont(.caption2).foregroundStyle(Palette.danger)
-            }
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -1761,7 +1774,10 @@ struct SyncDiagnosticsView: View {
     }
 }
 
-private extension PhoneAudioRelay {
+// Internal (not private): BookPageOverflowSheet.swift reuses watchState/
+// watchBookStatus for the single-book quick action, instead of duplicating
+// this state-to-text mapping.
+extension PhoneAudioRelay {
     func watchState(for id: UUID) -> WatchTransferState {
         WatchDisplayStateResolver.resolve(desiredState: watchDesiredStates[WatchBookID(id.uuidString)], storageState: watchStorageInfo(for: id)?.state)
     }

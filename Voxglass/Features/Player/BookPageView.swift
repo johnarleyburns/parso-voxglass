@@ -76,13 +76,17 @@ struct BookPageView: View {
                                         chipRow(resolved)
                                     }
                                     Spacer(minLength: 16)
-                                    VStack(spacing: 0) {
-                                        scrubber(resolved)
-                                        transportControls(resolved)
+                                    if !resolved.book.isPending {
+                                        VStack(spacing: 0) {
+                                            scrubber(resolved)
+                                            transportControls(resolved)
+                                        }
                                     }
                                     if presentationContext != .nowPlayingSheet {
-                                        aboutSection(resolved)
-                                        chapterList(resolved)
+                                        if !resolved.book.isPending {
+                                            aboutSection(resolved)
+                                            chapterList(resolved)
+                                        }
                                         discoveryLinks(resolved)
                                     }
                                 }
@@ -97,21 +101,27 @@ struct BookPageView: View {
                             }
                         }
                     }
-                    .navigationTitle(presentationContext == .nowPlayingSheet ? String(localized: "Book") : resolved.book.title)
+                    .navigationTitle(
+                        presentationContext == .nowPlayingSheet ? String(localized: "Book")
+                        : resolved.book.isPending ? String(localized: "Preview")
+                        : resolved.book.title
+                    )
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationBarBackButtonHidden(presentationContext == .nowPlayingSheet)
                     .toolbar {
                         ToolbarItemGroup(placement: .topBarLeading) {
-                            Button { showingBookDetails = true } label: {
-                                Image(systemName: "info")
+                            if !resolved.book.isPending {
+                                Button { showingBookDetails = true } label: {
+                                    Image(systemName: "book")
+                                }
+                                .accessibilityLabel("Book Details")
+                                .accessibilityIdentifier("nowplaying.info")
+                                Button { showingChapters = true } label: {
+                                    Image(systemName: "list.bullet")
+                                }
+                                .accessibilityLabel("Chapters")
+                                .accessibilityIdentifier("nowplaying.chapters")
                             }
-                            .accessibilityLabel("Book Details")
-                            .accessibilityIdentifier("nowplaying.info")
-                            Button { showingChapters = true } label: {
-                                Image(systemName: "list.bullet")
-                            }
-                            .accessibilityLabel("Chapters")
-                            .accessibilityIdentifier("nowplaying.chapters")
                         }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { showingOverflow = true } label: {
