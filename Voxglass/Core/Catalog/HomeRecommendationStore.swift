@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import VoxglassPortable
 
 public struct RecommendationShelfSnapshot: Codable, Equatable, Sendable {
     public var results: [InternetArchiveSearchResult]

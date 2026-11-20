@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 public enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case all

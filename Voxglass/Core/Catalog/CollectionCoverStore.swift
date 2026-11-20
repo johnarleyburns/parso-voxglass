@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import VoxglassPortable
 
 public struct CollectionBookPreview: Codable, Equatable, Sendable {
     public let title: String

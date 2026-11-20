@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 /// UserDefaults-backed position snapshots — the store with the good crash
 /// profile: `cfprefsd` survives the app being killed, whereas the SQLite write

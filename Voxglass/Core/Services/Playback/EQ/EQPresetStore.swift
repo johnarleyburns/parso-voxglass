@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 /// Stores the user's own EQ presets (JSON in UserDefaults). Built-in presets are
 /// always present via `EQPreset.builtInPresets`; `all` combines both.

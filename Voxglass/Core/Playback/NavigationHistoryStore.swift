@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 public struct NavigationHistoryStore {
     private static let key = "guru.parso.voxglass.navigationHistory"

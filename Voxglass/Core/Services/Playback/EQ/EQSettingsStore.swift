@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 /// Persists the user's EQ engaged-state and per-band gains so the equalizer
 /// survives relaunch and is re-applied when a track loads.

@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 @MainActor
 public final class VoxglassCloudSync: ObservableObject {

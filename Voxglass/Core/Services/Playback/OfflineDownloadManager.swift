@@ -1,6 +1,7 @@
 import Foundation
 import OSLog
 import ParsoAudioStreaming
+import VoxglassPortable
 
 /// Per-book offline availability state (§7).
 public enum OfflineState: Equatable {

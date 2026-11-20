@@ -1,5 +1,6 @@
 import Foundation
 import ParsoAudioStreaming
+import VoxglassPortable
 
 /// Composition root for the streaming/offline audio cache. The store itself is
 /// `ParsoAudioStreaming.SparseCacheStore` (shared with parso-tonearm, see

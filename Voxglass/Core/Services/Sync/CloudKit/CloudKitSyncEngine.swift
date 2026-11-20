@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 import os
+import VoxglassPortable
 
 @MainActor
 public final class CloudKitSyncEngine: ObservableObject {

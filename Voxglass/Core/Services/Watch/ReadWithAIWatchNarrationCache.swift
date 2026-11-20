@@ -1,5 +1,6 @@
 import Foundation
 import VoxglassWatchCore
+import VoxglassPortable
 
 /// UserDefaults-backed cache of finished Watch narration output (survives relaunch).
 /// Only validated, canonical `.m4a` files inside the managed narration directory are

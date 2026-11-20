@@ -3,6 +3,7 @@ import Foundation
 import Observation
 import ParsoAudioStreaming
 import SwiftUI
+import VoxglassPortable
 
 public extension Notification.Name {
     static let playbackAccessibilityAnnouncement = Notification.Name("VoxglassPlaybackAccessibilityAnnouncement")

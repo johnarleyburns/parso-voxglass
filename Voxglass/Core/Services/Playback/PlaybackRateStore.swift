@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 /// Pure playback-rate policy (P0-1): bounds and the allowed-rate ladders. The
 /// in-app menu spans 0.5–3.5x; only a subset is surfaced in the system UI
