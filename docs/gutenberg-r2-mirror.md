@@ -21,6 +21,8 @@ The default is deliberately smaller than a full Gutenberg mirror:
 | Medium cover (optional, default on) | `<id>/pg<id>.cover.medium.jpg` | `gutenberg/books/<id>/pg<id>.cover.medium.jpg` |
 | Full Gutenberg index | `GUTINDEX.ALL` | `gutenberg/catalog/GUTINDEX.ALL` |
 | Catalog CSV (when reachable) | `feeds/pg_catalog.csv` | `gutenberg/catalog/pg_catalog.csv` |
+| On-device search index | generated from `pg_catalog.csv` | `gutenberg/catalog/index-<sha>.json.zlib` |
+| Search index manifest | generated from `pg_catalog.csv` | `gutenberg/catalog/manifest.json` |
 | Illustrated EPUBs (opt-in) | `<id>/pg<id>-images*.epub` | `gutenberg/books/<id>/pg<id>-images*.epub` |
 
 Logs, MOBI, ZIP, HTML, audio, RDF, and QR codes are **not** mirrored by default. Illustrated EPUBs
@@ -37,7 +39,7 @@ https://<r2-custom-domain>/gutenberg/books/84/pg84.cover.medium.jpg
 ## Bucket layout
 
 ```text
-voxglass-gutenberg/                    # private bucket, public read only via custom domain
+voxglass-gutenberg/                    # public read-only bucket; Gutenberg data only
 └── gutenberg/
     ├── books/
     │   ├── 1/pg1.epub
@@ -45,7 +47,9 @@ voxglass-gutenberg/                    # private bucket, public read only via cu
     │   └── ...
     └── catalog/
         ├── GUTINDEX.ALL
-        └── pg_catalog.csv            # best-effort; gutenberg.org is often in maintenance
+        ├── pg_catalog.csv            # best-effort; rsynced when gutenberg.org is in maintenance
+        ├── index-<sha>.json.zlib       # compact on-device search index
+        └── manifest.json             # index version + sha256 + byte count
 ```
 
 Do **not** publish the bucket’s S3 endpoint. Publish only the custom domain, and only if it is mapped
@@ -172,7 +176,11 @@ keys used by another bucket.
 | `R2_ENDPOINT` | `https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com` | S3 endpoint override |
 | `GUTENBERG_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg-epub` | EPUB/covers rsync module |
 | `GUTENBERG_CATALOG_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg` | `GUTINDEX.ALL` rsync module |
-| `GUTENBERG_CATALOG_URL` | `https://www.gutenberg.org/feeds/pg_catalog.csv` | CSV source |
+| `GUTENBERG_CATALOG_URL` | `https://www.gutenberg.org/feeds/pg_catalog.csv` | CSV HTTP source |
+| `GUTENBERG_CATALOG_CSV_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv` | CSV rsync fallback |
+| `GUTENBERG_BUILD_INDEX` | `1` | Build the on-device search index |
+| `GUTENBERG_INDEX_SCRIPT` | `scripts/build-gutenberg-index.py` | Index builder |
+| `GUTENBERG_INDEX_LANGUAGE` | `en` | Index language, or `all` |
 | `GUTENBERG_STAGING_DIR` | `~/.cache/voxglass/gutenberg` | Local staging |
 | `GUTENBERG_STATE_DIR` | `~/.local/state/voxglass-gutenberg-mirror` | PID/lock/state/log |
 | `GUTENBERG_INTERVAL` | `86400` | Seconds between loop cycles |
@@ -347,6 +355,33 @@ current free-tier consumption. Full-mirror storage dominates; egress is free, an
 charges are negligible at nightly-sync volumes. If the account’s free tier is already consumed by
 other buckets, add ~$0.15 for the default corpus.
 
+## On-device search index
+
+`scripts/build-gutenberg-index.py` reads `pg_catalog.csv` and writes:
+
+```text
+catalog/manifest.json
+catalog/index-<sha>.json.zlib
+```
+
+The manifest is small and gets a short cache TTL:
+
+```json
+{"schema":1,"version":"2026-11-20T22:10:50Z","index":"index-c4493e70bfa9e5a0.json.zlib","sha256":"c4493e...","bytes":5238271,"bookCount":62161}
+```
+
+The index is a compact JSON array of English `Text` records with `id`, `title`, `authors`,
+`languages`, `subjects`, `bookshelves`, `issued`, `epub`, and `cover`. Paths are relative to
+`gutenberg/`, so the app prefixes them with its public base URL. The default index is about **5 MB
+zlib-compressed** for ~62k English books.
+
+The mirror script builds the index after fetching `pg_catalog.csv` (HTTP, then rsync fallback) and
+uploads both files with the rest of `catalog/`. Use `--no-index` to skip it.
+
+The app should keep a bundled baseline if first-launch offline search matters; otherwise download
+on launch and retain the previous index until the new one is verified. `manifest.json` can be
+refreshed weekly; the versioned index file can be cached for a year.
+
 ## Adding the mirror to the app
 
 The app currently talks to `https://www.gutenberg.org/ebooks/search/` (primary HTML search) and
@@ -358,17 +393,15 @@ not hotlink either host once the mirror is live.
 The migration is:
 
 1. **Add a mirror base URL** as build configuration (Info.plist key or generated Swift constant),
-   for example `GUTENBERG_MIRROR_BASE_URL=https://gutenberg.example.com`. Keep it optional so builds
-   without a configured mirror still fall back during the transition.
-2. **Replace search with one of:**
-   - **Shipped catalog snapshot (simplest, offline-friendly).** Download
-     `gutenberg/catalog/pg_catalog.csv` during release (or nightly CI), validate its header/size,
-     compress it into the app bundle, and search it on-device. Columns include `Text#`, `Type`,
-     `Issued`, `Title`, `Language`, `Authors`, `Subjects`, `LoCC`, and `Bookshelves`. This avoids a
-     runtime dependency on Gutenberg and keeps the existing “catalog is local/fast” behavior.
-   - **A small Cloudflare Worker** in front of R2 that indexes the CSV and returns JSON search
-     results with pagination. R2 alone cannot search object contents. Keep the Worker read-only and
-     rate-limited.
+   for example `GUTENBERG_MIRROR_BASE_URL=https://gutenberg.parso.guru`. Keep it optional so builds
+   without a configured mirror still fall back during the transition. The app should never contain
+   an R2 key; the public bucket/custom domain is the only read path.
+2. **Replace live search with the local catalog index.** The mirror builds
+   `gutenberg/catalog/index-<sha>.json.zlib` plus `manifest.json`. The app downloads the manifest,
+   compares the sha256, then downloads the versioned index and searches on-device. This avoids a
+   runtime dependency on Gutenberg/Gutendex. A small Worker search API is possible but adds a
+   service, latency, request billing, and an offline failure mode; it is not needed at this corpus
+   size.
 3. **Map download URLs** for a book:
    ```text
    EPUB:  {base}/gutenberg/books/{id}/pg{id}.epub

@@ -4,6 +4,7 @@ import VoxglassCore
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(CatalogStore.self) private var catalogStore
+    @Environment(GutenbergIndexStore.self) private var gutenbergIndex
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
@@ -66,6 +67,11 @@ struct BrowseView: View {
         }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
+            let indexStore = gutenbergIndex
+            Task { @MainActor in
+                await indexStore.load()
+                await indexStore.refreshIfNeeded()
+            }
             let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
             async let covers: Void = coverStore.resolveCovers(for: collections, languages: selectedLanguages)
             async let counts: Void = coverStore.resolveCounts(for: collections, languages: selectedLanguages)
@@ -701,6 +707,14 @@ struct BrowseView: View {
         defer {
             if gutenbergSearchID == searchID { isSearchingGutenberg = false }
         }
+
+        if gutenbergIndex.isAvailable {
+            let results = await gutenbergIndex.search(term)
+            guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
+            gutenbergResults = results
+            return
+        }
+
         do {
             // The client is nonisolated, so network and HTML/JSON parsing run
             // off the main actor; only the assignment below touches view state.

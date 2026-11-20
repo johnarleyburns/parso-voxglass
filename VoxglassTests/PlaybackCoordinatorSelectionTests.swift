@@ -5,7 +5,10 @@ import Foundation
 @testable import VoxglassCore
 
 @MainActor
-@Suite struct PlaybackCoordinatorSelectionTests {
+// Serialized: these selection-race tests still depend on main-actor scheduling
+// between fire-and-forget loads; running them alongside other suites exposes
+// timing flakes even though the defaults fixture is now isolated.
+@Suite(.serialized) struct PlaybackCoordinatorSelectionTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator

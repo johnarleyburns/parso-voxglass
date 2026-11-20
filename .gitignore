@@ -73,3 +73,6 @@ Tools/CuratedLists/__pycache__/
 /gutenberg/
 /.gutenberg-mirror/
 /.gutenberg-staging/
+
+# Python bytecode cache
+scripts/__pycache__/

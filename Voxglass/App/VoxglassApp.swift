@@ -22,6 +22,7 @@ struct VoxglassApp: App {
             RootView()
                 .environmentObject(services.libraryStore)
                 .environment(services.catalogStore)
+                .environment(services.gutenbergIndexStore)
                 .environment(services.playbackCoordinator)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
