@@ -21,7 +21,8 @@
 
 set -euo pipefail
 
-SCRIPT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+SCRIPT_PATH="$SCRIPT_DIR/$(basename -- "${BASH_SOURCE[0]}")"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
 # ---------------------------------------------------------------------------
@@ -40,6 +41,12 @@ GUTENBERG_CATALOG_RSYNC_SOURCE="${GUTENBERG_CATALOG_RSYNC_SOURCE:-aleph.gutenber
 # gutenberg.org is frequently in maintenance (HTTP 503). A failed CSV fetch is
 # a warning; GUTINDEX.ALL from the rsync mirror remains the catalog fallback.
 GUTENBERG_CATALOG_URL="${GUTENBERG_CATALOG_URL:-https://www.gutenberg.org/feeds/pg_catalog.csv}"
+# The generated rsync module carries pg_catalog.csv even when the website is
+# in maintenance. Prefer it over the HTTP feed when the website returns 503.
+GUTENBERG_CATALOG_CSV_RSYNC_SOURCE="${GUTENBERG_CATALOG_CSV_RSYNC_SOURCE:-aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv}"
+GUTENBERG_BUILD_INDEX="${GUTENBERG_BUILD_INDEX:-1}"
+GUTENBERG_INDEX_SCRIPT="${GUTENBERG_INDEX_SCRIPT:-$SCRIPT_DIR/build-gutenberg-index.py}"
+GUTENBERG_INDEX_LANGUAGE="${GUTENBERG_INDEX_LANGUAGE:-en}"
 
 GUTENBERG_STAGING_DIR="${GUTENBERG_STAGING_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/voxglass/gutenberg}"
 GUTENBERG_STATE_DIR="${GUTENBERG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/voxglass-gutenberg-mirror}"
@@ -417,29 +424,76 @@ fetch_catalog_csv() {
     return 0
   fi
   if [[ "$DRY_RUN" == "1" ]]; then
-    log "dry-run: would fetch pg_catalog.csv from $GUTENBERG_CATALOG_URL"
-    return 0
-  fi
-  if ! command -v curl >/dev/null 2>&1; then
-    warn "curl not found; skipping pg_catalog.csv (GUTINDEX.ALL is still mirrored)"
+    log "dry-run: would fetch pg_catalog.csv from $GUTENBERG_CATALOG_URL or rsync"
     return 0
   fi
 
   mkdir -p "$STAGING_CATALOG"
-  local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
-  local rc=0
-  run_child curl -fsSL --connect-timeout 10 --max-time 30 \
-    --retry 1 --retry-delay 2 -A 'voxglass-gutenberg-mirror/1.0' \
-    "$GUTENBERG_CATALOG_URL" -o "$tmp" || rc=$?
 
-  if [[ "$rc" -eq 0 && -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
-    mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
-    log "saved pg_catalog.csv"
-  else
+  if command -v curl >/dev/null 2>&1; then
+    local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
+    local rc=0
+    run_child curl -fsSL --connect-timeout 10 --max-time 30 \
+      --retry 1 --retry-delay 2 -A 'voxglass-gutenberg-mirror/1.0' \
+      "$GUTENBERG_CATALOG_URL" -o "$tmp" || rc=$?
+    if [[ "$rc" -eq 0 && -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
+      mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
+      log "saved pg_catalog.csv from HTTP"
+      return 0
+    fi
     rm -f "$tmp"
-    warn "pg_catalog.csv unavailable (HTTP 503/maintenance is common); keeping the previous copy and GUTINDEX.ALL"
   fi
+
+  # The website is frequently in maintenance. The generated rsync module keeps
+  # the same CSV available even when the HTTP feed returns 503.
+  local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
+  log "rsync pg_catalog.csv from $GUTENBERG_CATALOG_CSV_RSYNC_SOURCE"
+  if run_child rsync --no-motd -z --timeout=120 --contimeout=60 \
+      "$GUTENBERG_CATALOG_CSV_RSYNC_SOURCE" "$tmp" \
+      && [[ -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
+    mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
+    log "saved pg_catalog.csv from rsync"
+    return 0
+  fi
+  rm -f "$tmp"
+  warn "pg_catalog.csv unavailable; keeping the previous copy and GUTINDEX.ALL"
   return 0
+}
+
+build_catalog_index() {
+  if [[ "$GUTENBERG_SKIP_CATALOG" == "1" || "$GUTENBERG_BUILD_INDEX" != "1" ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log "dry-run: would build catalog index"
+    return 0
+  fi
+  if [[ ! -s "$STAGING_CATALOG/pg_catalog.csv" ]]; then
+    warn "no pg_catalog.csv available; skipping catalog index"
+    return 0
+  fi
+  if [[ ! -x "$GUTENBERG_INDEX_SCRIPT" ]]; then
+    warn "index builder not found: $GUTENBERG_INDEX_SCRIPT; skipping catalog index"
+    return 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found; skipping catalog index"
+    return 0
+  fi
+
+  local -a args=(
+    python3 "$GUTENBERG_INDEX_SCRIPT"
+    --catalog "$STAGING_CATALOG/pg_catalog.csv"
+    --output-dir "$STAGING_CATALOG"
+  )
+  if [[ "${GUTENBERG_INDEX_LANGUAGE,,}" == "all" ]]; then
+    args+=(--all-languages)
+  else
+    args+=(--language "$GUTENBERG_INDEX_LANGUAGE")
+  fi
+
+  log "building on-device catalog index"
+  run_child "${args[@]}" || return $?
 }
 
 run_rclone_copy() {
@@ -493,6 +547,9 @@ run_cycle() {
 
   STATE_PHASE="catalog-csv"; save_state
   fetch_catalog_csv
+
+  STATE_PHASE="catalog-index"; save_state
+  build_catalog_index || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }catalog index failed (exit $r)"; }
 
   STATE_PHASE="rclone"; save_state
   if [[ -z "$R2_ACCESS_KEY_ID" || -z "$R2_SECRET_ACCESS_KEY" ]]; then
@@ -737,6 +794,7 @@ Options:
   --illustrated      Also mirror illustrated EPUBs (pg<id>-images*.epub)
   --prune            Pass --delete to rsync (remove books deleted upstream)
   --no-catalog       Skip GUTINDEX.ALL / pg_catalog.csv (useful for quick tests)
+  --no-index         Skip building the on-device catalog search index
   --interval SECS    Seconds between loop cycles (default: 86400)
   --dry-run          Pass --dry-run to rsync and rclone; no data or remote changes
   -h, --help         Show this help
@@ -753,6 +811,11 @@ Environment:
   GUTENBERG_CATALOG_RSYNC_SOURCE   rsync module containing GUTINDEX.ALL
                                    (default: aleph.gutenberg.org::gutenberg)
   GUTENBERG_CATALOG_URL            pg_catalog.csv URL (default: gutenberg.org feeds)
+  GUTENBERG_CATALOG_CSV_RSYNC_SOURCE rsync source for pg_catalog.csv
+                                   (default: aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv)
+  GUTENBERG_BUILD_INDEX            0/1 (default: 1; build the on-device index)
+  GUTENBERG_INDEX_SCRIPT           index builder path (default: scripts/build-gutenberg-index.py)
+  GUTENBERG_INDEX_LANGUAGE         language code for the index, or "all" (default: en)
   GUTENBERG_STAGING_DIR            Local staging directory
   GUTENBERG_STATE_DIR              PID/lock/state/log directory
   GUTENBERG_INTERVAL               Loop interval seconds
@@ -821,6 +884,10 @@ while [[ "$#" -gt 0 ]]; do
     --no-catalog)
       GUTENBERG_SKIP_CATALOG=1
       FORWARD_ARGS+=(--no-catalog)
+      ;;
+    --no-index)
+      GUTENBERG_BUILD_INDEX=0
+      FORWARD_ARGS+=(--no-index)
       ;;
     --interval)
       [[ "$#" -ge 2 ]] || die "--interval requires a value"
