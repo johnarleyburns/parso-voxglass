@@ -130,13 +130,24 @@ public enum CarPlayDownloadState: Equatable, Sendable {
 public struct CarPlayChapterSnapshot: Equatable, Sendable, Identifiable {
     public var id: UUID
     public var title: String
+    /// Parsed, one-line title for CarPlay's single-line chapter rows. Falls
+    /// back to `title` when the chapter has no structured prefix.
+    public var compactTitle: String?
     public var index: Int
     public var duration: TimeInterval?
     public var hasPlayableURL: Bool
 
-    public init(id: UUID, title: String, index: Int, duration: TimeInterval? = nil, hasPlayableURL: Bool = true) {
+    public init(
+        id: UUID,
+        title: String,
+        compactTitle: String? = nil,
+        index: Int,
+        duration: TimeInterval? = nil,
+        hasPlayableURL: Bool = true
+    ) {
         self.id = id
         self.title = title
+        self.compactTitle = compactTitle
         self.index = index
         self.duration = duration
         self.hasPlayableURL = hasPlayableURL
