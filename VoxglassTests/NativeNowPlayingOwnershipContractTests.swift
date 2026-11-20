@@ -41,6 +41,12 @@ import Testing
         #expect(!source.contains("UIApplication.didBecomeActiveNotification"))
     }
 
+    @Test func interruptionEndForwardsSystemResumeHint() throws {
+        let source = try read("Voxglass/App/SystemPlaybackBridge.swift")
+        #expect(source.contains("AVAudioSessionInterruptionOptionKey"))
+        #expect(source.contains("handleAudioInterruptionEnded(shouldResume:"))
+    }
+
     @Test func widgetBundleDoesNotRegisterBookLiveActivity() throws {
         let source = try read("VoxglassWidgets/VoxglassWidgets.swift")
         #expect(!source.contains("BookLiveActivity()"))
