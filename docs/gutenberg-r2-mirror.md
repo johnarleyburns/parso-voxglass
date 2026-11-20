@@ -102,8 +102,34 @@ curl -sS -X POST \
   --data '{"name":"voxglass-gutenberg","locationHint":"enam"}'
 ```
 
-Then save the new bucket-scoped S3 credentials to `~/.r2-access-key-id` and
-`~/.r2-secret-access-key` (mode `600`) and run `scripts/gutenberg-mirror.sh --verify`.
+Then save the new bucket-scoped S3 credentials. Prefer a dedicated environment file
+so you do not overwrite `~/.r2-access-key-id` / `~/.r2-secret-access-key` if another
+project (for example `crm-backups`) already uses them:
+
+```sh
+install -d -m 700 ~/.config
+umask 077
+cat > ~/.config/voxglass-gutenberg.env <<'EOF'
+R2_ACCOUNT_ID=c589b687de910faa1e453b0c1afb4f8c
+R2_BUCKET=voxglass-gutenberg
+R2_PREFIX=gutenberg
+R2_ACCESS_KEY_ID=<new bucket-scoped access key id>
+R2_SECRET_ACCESS_KEY=<new bucket-scoped secret access key>
+EOF
+chmod 600 ~/.config/voxglass-gutenberg.env
+```
+
+Load it before running the mirror:
+
+```sh
+set -a
+. ~/.config/voxglass-gutenberg.env
+set +a
+scripts/gutenberg-mirror.sh --verify
+```
+
+If this host uses `~/.r2-*` only for this bucket, you may instead replace those files
+with the new key. Never commit either file.
 
 Recommended bucket settings:
 
@@ -137,8 +163,12 @@ EPUBs. It is intentionally resumable; see below.
 | `R2_ACCOUNT_ID` | `c589b687de910faa1e453b0c1afb4f8c` | Cloudflare account |
 | `R2_BUCKET` | `voxglass-gutenberg` | Target bucket |
 | `R2_PREFIX` | `gutenberg` | Object prefix |
-| `R2_ACCESS_KEY_ID` | `~/.r2-access-key-id` or env | R2 S3 access key |
-| `R2_SECRET_ACCESS_KEY` | `~/.r2-secret-access-key` or env | R2 S3 secret |
+| `R2_ACCESS_KEY_ID` | env, then `~/.r2-access-key-id` | R2 S3 access key |
+| `R2_SECRET_ACCESS_KEY` | env, then `~/.r2-secret-access-key` | R2 S3 secret |
+
+Environment variables win over the `~/.r2-*` fallback files. On a shared host, put the
+Gutenberg key in `~/.config/voxglass-gutenberg.env` and source it instead of replacing
+keys used by another bucket.
 | `R2_ENDPOINT` | `https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com` | S3 endpoint override |
 | `GUTENBERG_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg-epub` | EPUB/covers rsync module |
 | `GUTENBERG_CATALOG_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg` | `GUTINDEX.ALL` rsync module |
@@ -390,7 +420,7 @@ The migration is:
 | Symptom | Cause / fix |
 | --- | --- |
 | `10000 Authentication error` on bucket create | Token lacks Account → R2 Storage → Edit; see permissions above. |
-| `403 AccessDenied` / `is a file not a directory` from rclone | Bucket missing or key lacks access to it. Create the bucket and use a bucket-scoped Object Read & Write key. |
+| `403 AccessDenied` / `is a file not a directory` from rclone | Bucket missing, or the script is using the wrong key. Create the bucket and use a bucket-scoped Object Read & Write key; source `~/.config/voxglass-gutenberg.env` so the Gutenberg key wins over a shared `~/.r2-*`. |
 | `pg_catalog.csv unavailable` warning | gutenberg.org maintenance/503. `GUTINDEX.ALL` is still mirrored; rerun later. |
 | rsync hangs or is very slow | Mirror congestion/rate limiting. Switch `GUTENBERG_RSYNC_SOURCE` to `ftp.ibiblio.org::gutenberg-epub`, or use `--no-catalog` and retry. |
 | `--status` says `stale` | The previous process was killed hard. `--resume` clears the PID and continues. |
