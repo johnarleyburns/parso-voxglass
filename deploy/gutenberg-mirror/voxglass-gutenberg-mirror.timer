@@ -1,0 +1,13 @@
+[Unit]
+Description=Nightly Voxglass Project Gutenberg mirror
+Requires=voxglass-gutenberg-mirror.service
+
+[Timer]
+Unit=voxglass-gutenberg-mirror.service
+OnCalendar=*-*-* 04:15:00
+RandomizedDelaySec=1h
+AccuracySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

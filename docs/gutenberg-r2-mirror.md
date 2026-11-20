@@ -362,6 +362,46 @@ scripts/gutenberg-mirror.sh --stop
   ./scripts/gutenberg-mirror.sh --once >> "$HOME/.local/state/voxglass-gutenberg-mirror/cron.log" 2>&1
 ```
 
+## Deploying to the IONOS VPS
+
+The mirror can run on the existing IONOS VPS (`217.76.158.90`) without putting SSH keys or R2
+credentials in this repository. The deploy script streams the local credentials file to
+`/etc/voxglass-gutenberg.env` (mode `600`) and installs the scripts plus a systemd oneshot service
+and daily timer.
+
+From this workstation, with SSH access already configured:
+
+```sh
+scripts/deploy-gutenberg-mirror-vps.sh
+```
+
+Defaults:
+
+- host: `root@217.76.158.90` (override with `VOXGLASS_VPS_HOST`)
+- install root: `/opt/voxglass-gutenberg`
+- service user: `voxglass-gutenberg`
+- env file: `/etc/voxglass-gutenberg.env`
+- batch size: `500` books
+- initial sync starts immediately
+- timer: daily at **04:15 ± 1 hour**, `Persistent=true`
+- service runs `--once`, not `--loop`; the batch lock prevents overlap
+
+The VPS has only ~2 GB free, so batch mode is important: local staging peaks around 150–200 MB.
+The service is `Nice=10` with idle I/O priority so it does not compete with Bigcapital.
+
+Useful commands:
+
+```sh
+ssh root@217.76.158.90 'systemctl status voxglass-gutenberg-mirror.service --no-pager'
+ssh root@217.76.158.90 'systemctl list-timers voxglass-gutenberg-mirror.timer --no-pager'
+ssh root@217.76.158.90 'journalctl -u voxglass-gutenberg-mirror.service -f'
+ssh root@217.76.158.90 'sudo -u voxglass-gutenberg /opt/voxglass-gutenberg/bin/gutenberg-mirror.sh --status'
+```
+
+The deploy script copies the local `uploaded-ids` progress file if present, so moving from the
+workstation to the VPS does not redownload already-uploaded books. No credentials, SSH keys, or
+private staging data are committed to git.
+
 ## Size and cost
 
 Planning figures (Cloudflare R2 Standard, `$0.015/GB-month`, 10 GB-month free tier, free egress):
