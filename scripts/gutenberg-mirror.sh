@@ -437,12 +437,26 @@ fetch_catalog_csv() {
   fi
 
   mkdir -p "$STAGING_CATALOG"
+  local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
+
+  # Prefer the rsync mirror: www.gutenberg.org is frequently in maintenance,
+  # and its 503 path can spend a long time in retries. The generated module
+  # still has the same CSV.
+  log "rsync pg_catalog.csv from $GUTENBERG_CATALOG_CSV_RSYNC_SOURCE"
+  if run_child rsync --no-motd -z --timeout=180 --contimeout=30 \
+      "$GUTENBERG_CATALOG_CSV_RSYNC_SOURCE" "$tmp" \
+      && [[ -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
+    mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
+    log "saved pg_catalog.csv from rsync"
+    return 0
+  fi
+  rm -f "$tmp"
 
   if command -v curl >/dev/null 2>&1; then
-    local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
+    log "rsync catalog failed; trying HTTP catalog"
     local rc=0
-    run_child curl -fsSL --connect-timeout 10 --max-time 30 \
-      --retry 1 --retry-delay 2 -A 'voxglass-gutenberg-mirror/1.0' \
+    run_child curl -fsSL --connect-timeout 5 --max-time 20 \
+      -A 'voxglass-gutenberg-mirror/1.0' \
       "$GUTENBERG_CATALOG_URL" -o "$tmp" || rc=$?
     if [[ "$rc" -eq 0 && -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
       mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
@@ -452,18 +466,6 @@ fetch_catalog_csv() {
     rm -f "$tmp"
   fi
 
-  # The website is frequently in maintenance. The generated rsync module keeps
-  # the same CSV available even when the HTTP feed returns 503.
-  local tmp="$STAGING_CATALOG/.pg_catalog.csv.tmp.$$"
-  log "rsync pg_catalog.csv from $GUTENBERG_CATALOG_CSV_RSYNC_SOURCE"
-  if run_child rsync --no-motd -z --timeout=120 --contimeout=60 \
-      "$GUTENBERG_CATALOG_CSV_RSYNC_SOURCE" "$tmp" \
-      && [[ -s "$tmp" ]] && head -n 1 "$tmp" | grep -q 'Text#'; then
-    mv -f "$tmp" "$STAGING_CATALOG/pg_catalog.csv"
-    log "saved pg_catalog.csv from rsync"
-    return 0
-  fi
-  rm -f "$tmp"
   warn "pg_catalog.csv unavailable; keeping the previous copy and GUTINDEX.ALL"
   return 0
 }
