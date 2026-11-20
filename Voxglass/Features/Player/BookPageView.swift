@@ -529,7 +529,7 @@ struct BookPageView: View {
         if isActiveSession, let session = playback.currentSession {
             let display = ChapterDisplayTitles.make(for: resolved.chapters)[session.chapter.id]
             VStack(spacing: 2) {
-                Text(display?.eyebrow.map { "\($0) · \(display?.title ?? session.chapter.title)" } ?? (display?.title ?? session.chapter.title))
+                Text(display?.compactLine ?? session.chapter.title)
                     .voxFont(.caption)
                     .foregroundStyle(Color.white.opacity(0.50))
                     .contentTransition(.opacity)
@@ -870,7 +870,7 @@ struct BookPageView: View {
                     VStack(spacing: 3) {
                         HStack {
                             let display = displayTitles[chapter.id]
-                            Text(display?.eyebrow.map { "\($0) · \(display?.title ?? chapter.title)" } ?? (display?.title ?? chapter.title))
+                            Text(display?.compactLine ?? chapter.title)
                             Spacer()
                             Text(TimeFormatting.clock(chapter.duration))
                                 .voxFont(.caption2, design: .monospaced) // mono-exempt: chapter duration

@@ -24,4 +24,12 @@ import Testing
         let display = ChapterDisplayTitles.make(for: [chapter])[chapter.id]
         #expect(display == ChapterDisplayTitle(eyebrow: nil, title: "Preface"))
     }
+
+    @Test func compactLineFrontLoadsTheLocatorAndDropsEmptyParts() {
+        #expect(ChapterDisplayTitle(eyebrow: "Ch. 6", title: "The Basement").compactLine
+            == "Ch. 6 · The Basement")
+        #expect(ChapterDisplayTitle(eyebrow: "Ch. 6", title: "").compactLine == "Ch. 6")
+        #expect(ChapterDisplayTitle(eyebrow: nil, title: "Preface").compactLine == "Preface")
+        #expect(ChapterDisplayTitle(eyebrow: "  ", title: "  Preface  ").compactLine == "Preface")
+    }
 }

@@ -60,4 +60,28 @@ import Foundation
         )
         #expect(info.duration == nil)
     }
+
+    @Test func titleUsesCompactParsedChapterLine() {
+        let bookID = UUID()
+        let chapter = Chapter(
+            bookID: bookID,
+            title: "46 - Pt2 Ch6 The Basement",
+            index: 0,
+            duration: 300
+        )
+        let book = Book(title: "Long Book Title", authors: ["Author"], sourceID: UUID())
+        let session = PlaybackSession(
+            book: book,
+            chapters: [chapter],
+            chapter: chapter,
+            position: 0,
+            duration: 300,
+            isPlaying: true
+        )
+        let info = PlaybackCoordinator.nowPlayingInfo(
+            session: session, currentTime: 0, duration: 300,
+            rate: 1.0, isPlaying: true
+        )
+        #expect(info.title == "Part 2 · Ch. 6 · The Basement")
+    }
 }

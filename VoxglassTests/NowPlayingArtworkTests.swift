@@ -195,8 +195,9 @@ import Foundation
         await coordinator.play(makeBook(title: "A", cover: false))
         await coordinator.play(b)
         let info = bridge.lastNowPlaying
+        let expectedTitle = ChapterDisplayTitles.make(for: b.chapters)[b.chapters[0].id]?.compactLine
         #expect(info?.albumTitle == "B")
-        #expect(info?.title == b.chapters[0].title)
+        #expect(info?.title == expectedTitle)
         #expect(info?.artist == b.book.authorLine)
     }
 }

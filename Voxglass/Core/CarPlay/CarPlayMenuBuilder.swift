@@ -204,7 +204,7 @@ public enum CarPlayMenuBuilder {
         let items = chapters.sorted { $0.index < $1.index }.map { chapter in
             CarPlayItem(
                 id: chapter.id.uuidString,
-                title: chapter.title,
+                title: chapter.compactTitle ?? chapter.title,
                 detailText: chapter.duration.map { CarPlayTimeFormat.compact($0) },
                 artwork: .none,
                 accessory: chapter.id == nowPlayingChapterID ? .nowPlaying : .none,

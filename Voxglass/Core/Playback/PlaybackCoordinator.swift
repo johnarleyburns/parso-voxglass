@@ -2612,6 +2612,10 @@ public final class PlaybackCoordinator {
     /// directly assertable and host-testable. The app's bridge maps it to
     /// `MPNowPlayingInfoCenter`. `reportedRate` is 0 when paused so the system
     /// stops advancing the scrubber; `defaultRate` carries the book's rate.
+    ///
+    /// The title uses the same parsed, front-loaded chapter line as CarPlay so
+    /// the car's single-line Now Playing title spends its width on the chapter
+    /// locator and name instead of redundant source prefixes.
     public nonisolated static func nowPlayingInfo(
         session: PlaybackSession,
         currentTime: TimeInterval,
@@ -2619,8 +2623,9 @@ public final class PlaybackCoordinator {
         rate: Float,
         isPlaying: Bool
     ) -> NowPlayingInfo {
-        NowPlayingInfo(
-            title: session.chapter.title,
+        let chapterDisplay = ChapterDisplayTitles.make(for: session.chapters)[session.chapter.id]
+        return NowPlayingInfo(
+            title: chapterDisplay?.compactLine ?? session.chapter.title,
             albumTitle: session.book.title,
             artist: session.book.authorLine,
             elapsed: currentTime,
