@@ -134,9 +134,10 @@ The opening is: *the same catalog in a player that respects you*.
 Release and QA expectations are defined by the CI workflows and the TestFlight label contract in
 `CLAUDE.md`.
 
-Project Gutenberg content is mirrored to Cloudflare R2 for read-along use. The operator script,
+Project Gutenberg content can be mirrored to Cloudflare R2 for read-along use. The operator script,
 bucket layout, required Cloudflare permissions, cost estimates, and app-integration plan are in
-[`docs/gutenberg-r2-mirror.md`](docs/gutenberg-r2-mirror.md).
+[`docs/gutenberg-r2-mirror.md`](docs/gutenberg-r2-mirror.md). The mirror bucket is not created yet;
+the doc records the credential blocker and the exact permission needed.
 
 ## Build and verification
 
