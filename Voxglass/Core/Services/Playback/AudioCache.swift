@@ -91,22 +91,29 @@ public enum AudioCache {
 
         private static let defaultsKey = "voxglass.cachePreset"
 
-        public static var selected: CachePreset {
-            let raw = UserDefaults.standard.integer(forKey: defaultsKey)
+        public static var selected: CachePreset { selected(in: UserDefaults.standard) }
+
+        /// Reads the persisted preset through an injected defaults seam so
+        /// tests never touch the real preferences domain.
+        public static func selected(in defaults: any DefaultsStoring) -> CachePreset {
+            let raw = defaults.integer(forKey: defaultsKey)
             return CachePreset(rawValue: Int64(raw)) ?? .m500MB
         }
 
         /// Persists the choice and re-applies the budget to the live store.
-        public static func select(_ preset: CachePreset) async {
-            UserDefaults.standard.set(Int(preset.rawValue), forKey: defaultsKey)
+        public static func select(
+            _ preset: CachePreset,
+            in defaults: any DefaultsStoring = UserDefaults.standard
+        ) async {
+            defaults.set(Int(preset.rawValue), forKey: defaultsKey)
             await shared.setLimit(preset.rawValue)
         }
     }
 
     // MARK: - Maintenance (bootstrap + Settings)
 
-    public static func evictToCurrentBudget() async {
-        await shared.setLimit(CachePreset.selected.rawValue)
+    public static func evictToCurrentBudget(in defaults: any DefaultsStoring = UserDefaults.standard) async {
+        await shared.setLimit(CachePreset.selected(in: defaults).rawValue)
     }
 
     public static func storageUsage() async -> StorageUsage {

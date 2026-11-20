@@ -28,7 +28,8 @@ import Foundation
         let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(
             engine: engine,
-            positionStore: SQLitePositionStore(database: db)
+            positionStore: SQLitePositionStore(database: db),
+            defaults: InMemoryDefaultsStore()
         )
         return (coordinator, engine)
     }

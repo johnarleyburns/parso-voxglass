@@ -21,7 +21,7 @@ import Foundation
         if let book { await db.seedLibrary(for: book) }
         let engine = FakeAudioEngine()
         let store = SQLiteBookmarkStore(database: db)
-        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db))
+        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db), defaults: InMemoryDefaultsStore())
         coordinator.bookmarkStore = store
         engine.currentTime = 42
         return (coordinator, engine, store)

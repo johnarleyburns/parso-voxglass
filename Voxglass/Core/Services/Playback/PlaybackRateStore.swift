@@ -31,10 +31,10 @@ public enum PlaybackRate {
 /// Persists per-book playback rate so reopening a book restores its speed
 /// (mirrors `EQSettingsStore`). Books with no stored rate fall back to 1.0×.
 public final class PlaybackRateStore {
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let prefix = "voxglass.rate."
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
     }
 

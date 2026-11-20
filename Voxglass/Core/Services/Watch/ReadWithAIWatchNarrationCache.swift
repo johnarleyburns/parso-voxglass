@@ -11,15 +11,26 @@ public struct ReadWithAIWatchNarrationUserDefaultsCache: ReadWithAIWatchNarratio
 
     /// nil selects `UserDefaults.standard`. Stored as a name because `UserDefaults` is not `Sendable`.
     private let suiteName: String?
+    /// Test seam: a `SendableDefaultsStoring` keeps this value `Sendable`
+    /// without a suite name, so tests avoid the real preferences domain.
+    private let injectedDefaults: (any SendableDefaultsStoring)?
     private let managedRoot: URL
 
     public init(suiteName: String? = nil, managedRoot: URL) {
         self.suiteName = suiteName
+        self.injectedDefaults = nil
         self.managedRoot = managedRoot
     }
 
-    private var defaults: UserDefaults {
-        suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
+    public init(defaults: any SendableDefaultsStoring, managedRoot: URL) {
+        self.suiteName = nil
+        self.injectedDefaults = defaults
+        self.managedRoot = managedRoot
+    }
+
+    private var defaults: any DefaultsStoring {
+        if let injectedDefaults { return injectedDefaults }
+        return suiteName.flatMap { UserDefaults(suiteName: $0) } ?? UserDefaults.standard
     }
 
     private static func canonical(_ url: URL) -> URL { url.standardizedFileURL.resolvingSymlinksInPath() }

@@ -3,10 +3,10 @@ import Foundation
 /// Stores the user's own EQ presets (JSON in UserDefaults). Built-in presets are
 /// always present via `EQPreset.builtInPresets`; `all` combines both.
 public final class EQPresetStore {
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let key = "voxglass.eq.userPresets"
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
     }
 

@@ -3,7 +3,7 @@ import Foundation
 @testable import VoxglassCore
 
 @MainActor
-@Suite(.serialized) struct PlaybackCoordinatorOwnershipTests {
+@Suite struct PlaybackCoordinatorOwnershipTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -20,14 +20,15 @@ import Foundation
 
     private func makeHarness() -> Harness {
         let engine = FakeAudioEngine()
-        let defaults = UserDefaults(suiteName: "own-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: EmptyPositionStore(),
             snapshotStore: snapshotStore,
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: NoopPlaybackBridge()
+            bridge: NoopPlaybackBridge(),
+            defaults: defaults
         )
         return Harness(coordinator: coordinator, engine: engine, snapshotStore: snapshotStore)
     }

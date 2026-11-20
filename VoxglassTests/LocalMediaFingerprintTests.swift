@@ -19,7 +19,7 @@ private struct FileResolver: LocalMediaFileResolver {
     }
 }
 
-@Suite(.serialized) struct LocalMediaFingerprintTests {
+@Suite struct LocalMediaFingerprintTests {
     private struct Chapter { var file: URL; var index: Int; var start: Double; var duration: Double }
 
     private let root: URL

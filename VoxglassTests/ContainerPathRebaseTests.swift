@@ -114,7 +114,7 @@ import Foundation
 @Test func migrationRewritesStaleChapterURLOnceAndShortCircuitsAfterMarker() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "rebase-\(UUID().uuidString)")
         let repository = LibraryRepository(database: db)
-        let defaults = UserDefaults(suiteName: "rebase-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let (root, file) = try makeNewDocuments(withFile: "Import/ch1.mp3")
 
         let bookID = UUID(), chapterID = UUID(), sourceID = UUID()

@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 /// Watch redesign A2 — the "Continue listening" Smart Stack card: the book you're in, where you
 /// are, and time left. The watch app writes it to the shared App Group; the widget only reads it.
@@ -43,15 +44,21 @@ public enum WatchContinueListeningStore {
     public static let appGroup = "group.guru.parso.voxglass"
     static let key = "watch.continueListening.v1"
 
-    public static func save(_ state: WatchContinueListeningState?, defaults: UserDefaults? = nil) {
-        let store = defaults ?? UserDefaults(suiteName: appGroup)
-        guard let state else { store?.removeObject(forKey: key); return }
-        if let data = try? JSONEncoder().encode(state) { store?.set(data, forKey: key) }
+    public static func save(_ state: WatchContinueListeningState?, defaults: (any DefaultsStoring)? = nil) {
+        let store: any DefaultsStoring
+        if let defaults { store = defaults }
+        else if let suite = UserDefaults(suiteName: appGroup) { store = suite }
+        else { return }
+        guard let state else { store.removeObject(forKey: key); return }
+        if let data = try? JSONEncoder().encode(state) { store.set(data, forKey: key) }
     }
 
-    public static func load(defaults: UserDefaults? = nil) -> WatchContinueListeningState? {
-        let store = defaults ?? UserDefaults(suiteName: appGroup)
-        guard let data = store?.data(forKey: key) else { return nil }
+    public static func load(defaults: (any DefaultsStoring)? = nil) -> WatchContinueListeningState? {
+        let store: any DefaultsStoring
+        if let defaults { store = defaults }
+        else if let suite = UserDefaults(suiteName: appGroup) { store = suite }
+        else { return nil }
+        guard let data = store.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(WatchContinueListeningState.self, from: data)
     }
 }

@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import VoxglassCore
 
+// Serialized: the static `URLProtocol` mock below records process-wide state.
 @Suite(.serialized)
 struct GutenbergCatalogTests {
     final class MockGutenbergServer: URLProtocol {
@@ -91,6 +92,7 @@ struct GutenbergCatalogTests {
     }
 }
 
+// Serialized: the static `URLProtocol` recorder below is process-wide.
 @Suite(.serialized)
 struct GutenbergPrimarySearchTests {
     final class Recorder: URLProtocol {

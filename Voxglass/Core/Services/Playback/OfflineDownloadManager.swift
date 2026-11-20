@@ -45,7 +45,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
 
     private let repository: LibraryRepository
     private let cacheStore: SparseCacheStore
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let taskRegistryKey = "voxglass.offline.taskRegistry.v1"
     private let sessionFactory: SessionFactory
     private let backgroundEvents: OfflineBackgroundEventRelay
@@ -66,7 +66,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     public init(
         repository: LibraryRepository,
         cacheStore: SparseCacheStore = AudioCache.shared,
-        defaults: UserDefaults = .standard,
+        defaults: any DefaultsStoring = UserDefaults.standard,
         sessionFactory: @escaping SessionFactory = OfflineDownloadManager.backgroundSessionFactory,
         backgroundEvents: OfflineBackgroundEventRelay = .shared
     ) {

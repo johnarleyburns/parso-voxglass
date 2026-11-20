@@ -5,9 +5,7 @@ import Testing
 @MainActor
 @Suite struct CollectionCoverStoreTests {
     @Test func liveCollectionResultArtworkWinsOverStaticRemoteArtwork() async throws {
-        let defaultsName = "collection-cover-\(UUID().uuidString)"
-        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
-        defaults.removePersistentDomain(forName: defaultsName)
+        let defaults = InMemoryDefaultsStore()
 
         let liveResult = InternetArchiveSearchResult(
             identifier: "visible_collection_result",
@@ -46,9 +44,7 @@ import Testing
     }
 
     @Test func defaultLanguageUsesBundledCountsWithoutNetwork() async throws {
-        let defaultsName = "collection-bundled-count-\(UUID().uuidString)"
-        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
-        defaults.removePersistentDomain(forName: defaultsName)
+        let defaults = InMemoryDefaultsStore()
 
         let collection = IACollection(
             id: "lv-mystery-crime",
@@ -73,9 +69,7 @@ import Testing
     }
 
     @Test func nonDefaultLanguageStillQueriesNetwork() async throws {
-        let defaultsName = "collection-non-default-lang-\(UUID().uuidString)"
-        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
-        defaults.removePersistentDomain(forName: defaultsName)
+        let defaults = InMemoryDefaultsStore()
 
         let collection = IACollection(
             id: "lv-mystery-crime",
@@ -113,9 +107,7 @@ import Testing
     }
 
     @Test func resolvedArtworkIdentifierCacheSurvivesStoreRecreation() async throws {
-        let defaultsName = "collection-cover-cache-\(UUID().uuidString)"
-        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
-        defaults.removePersistentDomain(forName: defaultsName)
+        let defaults = InMemoryDefaultsStore()
 
         let liveResult = InternetArchiveSearchResult(
             identifier: "cached_collection_result",

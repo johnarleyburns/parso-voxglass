@@ -11,9 +11,9 @@ public struct LastPlaybackSnapshotStore {
     private static let mapKey = "guru.parso.voxglass.positionSnapshots"
     public static let maxSnapshots = 50
 
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
     }
 

@@ -34,7 +34,7 @@ import Foundation
     private func makeHarness() -> Harness {
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
-        let defaults = UserDefaults(suiteName: "obs-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
         let bridge = NoopPlaybackBridge()
         let coordinator = PlaybackCoordinator(
@@ -42,7 +42,8 @@ import Foundation
             positionStore: store,
             snapshotStore: snapshotStore,
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         return Harness(coordinator: coordinator, engine: engine, store: store, snapshotStore: snapshotStore, bridge: bridge)
     }

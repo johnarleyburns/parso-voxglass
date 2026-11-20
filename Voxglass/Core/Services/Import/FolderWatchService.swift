@@ -64,7 +64,7 @@ public final class FolderWatchService: ObservableObject {
     @Published public private(set) var soundIndexProgress: SoundIndexProgress?
 
     private let repository: LibraryRepository
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let bookmarksKey = "voxglass.folderWatch.bookmarks"
     private weak var libraryStore: LibraryStore?
     private var presenters: [FolderPresenter] = []
@@ -76,7 +76,7 @@ public final class FolderWatchService: ObservableObject {
 
     public init(
         repository: LibraryRepository,
-        defaults: UserDefaults = .standard,
+        defaults: any DefaultsStoring = UserDefaults.standard,
         worker: FolderIndexingWorker = FolderIndexingWorker(),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {

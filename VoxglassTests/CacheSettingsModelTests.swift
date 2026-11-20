@@ -3,7 +3,9 @@ import Testing
 import ParsoAudioStreaming
 @testable import VoxglassCore
 
-@Suite(.serialized) struct CacheSettingsModelTests {
+// Serialized: drives the process-wide `AudioCache.shared` and its on-disk roots.
+@Suite(.serialized)
+struct CacheSettingsModelTests {
 
     @Test func storageUsageSeparatesStreamingAndOfflineBytes() async {
         await AudioCache.clearCache()

@@ -517,7 +517,7 @@ import Foundation
 
     @Test func resplitBookTasteMigration() async throws {
         let flagKey = "voxglass.bookTasteSubjectResplitV1"
-        let testDefaults = UserDefaults(suiteName: "test-resplit-\(UUID().uuidString)")!
+        let testDefaults = InMemoryDefaultsStore()
         testDefaults.removeObject(forKey: flagKey)
         defer { testDefaults.removeObject(forKey: flagKey) }
 
@@ -570,7 +570,7 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "resplit-profile-rebuild")
         let repository = LibraryRepository(database: database)
         let profileStore = TasteProfileStore(database: database)
-        let testDefaults = UserDefaults(suiteName: "test-resplit-\(UUID().uuidString)")!
+        let testDefaults = InMemoryDefaultsStore()
 
         // Create a real book + source + listening event connected to split book_taste
         let sourceID = UUID()

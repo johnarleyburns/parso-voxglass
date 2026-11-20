@@ -22,7 +22,7 @@ import Testing
     }
 
     private func engine(_ db: AppDatabase) async -> CloudKitSyncEngine {
-        let defaults = UserDefaults(suiteName: "cloud-recovery-\(UUID())")!
+        let defaults = InMemoryDefaultsStore()
         defaults.set(true, forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
         let engine = CloudKitSyncEngine(database: db, defaults: defaults)
         engine.testForceAccountAvailable = true
@@ -43,7 +43,7 @@ import Testing
         try await db.execute("INSERT INTO playback_positions (book_id, chapter_id, position_seconds, updated_at) VALUES (?, ?, 7, 0)",
                              [.string(localBook.uuidString), .string(localChapter.uuidString)])
 
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/test_sync"))
         let book = Book(title: "Book 0", authors: [], sourceID: source.id)
         let chapter = Chapter(bookID: book.id, title: "Chapter", index: 0, duration: 100,
@@ -52,7 +52,7 @@ import Testing
         let bookRecord = CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter], contentKey: "ia:test_sync-0", sourceKey: "test_sync")
         for _ in 0..<3 { try await sync.applyFetchedLibraryChanges(records: [sourceRecord, bookRecord]) }
         try await sync.applyFetchedLibraryChanges(records: [sourceRecord])
-        try await CloudKitSyncEngine(database: db).applyFetchedLibraryChanges(records: [sourceRecord, bookRecord])
+        try await CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore()).applyFetchedLibraryChanges(records: [sourceRecord, bookRecord])
 
         let chapters = try await db.query("SELECT id, local_url, local_bookmark FROM chapters")
         #expect(chapters.count == 1)
@@ -69,7 +69,7 @@ import Testing
     @Test func macLibraryPullImportsBooksSourcesChaptersAndPlaybackWithoutNarration() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let sourceKey = "possessed_1404_librivox"
         let key = "ia:possessed_1404_librivox"
         let source = Source(kind: .librivox, title: "The Possessed", url: URL(string: "https://archive.org/details/possessed_1404_librivox"))
@@ -104,7 +104,7 @@ import Testing
     @Test func macPullMatchesExistingLocalChapterInsteadOfUsingPhoneUUID() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         let (localBook, localChapter) = try await seed(db)[0]
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/test_sync"))
         let phoneBook = Book(title: "Updated cloud title", authors: [], sourceID: source.id)
         let phoneChapter = Chapter(bookID: phoneBook.id, title: "Chapter", index: 0, duration: 100,
@@ -136,7 +136,7 @@ import Testing
         let (localBook, localChapter) = try await seed(db)[0]
         let localURL = "file:///tmp/kept-offline.mp3"
         try await db.execute("UPDATE chapters SET local_url=? WHERE id=?", [.string(localURL), .string(localChapter.uuidString)])
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/test_sync"))
         let book = Book(title: "Book", authors: [], sourceID: source.id)
         let first = Chapter(bookID: book.id, title: "Chapter", index: 0, duration: 100,
@@ -169,13 +169,13 @@ import Testing
             from: PlaybackPosition(bookID: book.id, chapterID: chapter.id, position: 42), bookContentKey: key)
         let bookmark = try #require(CloudKitRecordMapper.bookmarkRecord(
             from: Bookmark(id: UUID(), bookID: book.id, chapterID: chapter.id, position: 35), bookContentKey: key))
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         try await sync.applyFetchedLibraryChanges(records: [position, bookmark], tokenData: Data([7]))
         #expect(try await CloudSyncStateStore(database: db).loadEngineState() == Data([7]))
         #expect(try await db.query("SELECT id FROM playback_positions").isEmpty)
         #expect(sync.importErrors.count == 2)
 
-        let restarted = CloudKitSyncEngine(database: db)
+        let restarted = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         try await restarted.applyFetchedLibraryChanges(records: [
             CloudKitRecordMapper.sourceRecord(from: source, sourceKey: "test_sync"),
             CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter], contentKey: key, sourceKey: "test_sync")
@@ -193,7 +193,7 @@ import Testing
         try await db.prepare()
         let state = CloudSyncStateStore(database: db)
         try await state.saveEngineState(Data([1]))
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let malformed = CKRecord(recordType: "Book", recordID: .init(recordName: "book-invalid", zoneID: CloudKitRecordMapper.libraryZoneID))
         let source = Source(kind: .librivox, title: "Healthy source")
         let healthy = CloudKitRecordMapper.sourceRecord(from: source, sourceKey: "healthy")
@@ -203,7 +203,7 @@ import Testing
         #expect(sync.importErrors.count == 1)
         #expect(sync.importErrors[0].contains("book-invalid"))
         #expect(try await db.query("SELECT record_name FROM deferred_library_imports").count == 1)
-        let restarted = CloudKitSyncEngine(database: db)
+        let restarted = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         try await restarted.applyFetchedLibraryChanges(records: [])
         #expect(restarted.importErrors.count == 1)
         try await restarted.applyFetchedLibraryChanges(records: [], deletions: [malformed.recordID])
@@ -285,7 +285,7 @@ import Testing
     @Test func upsertPositionRefusesEarlierChapterThatWouldRegressBookProgress() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let sourceKey = "regress-test"
         let contentKey = "ia:regress-test"
         let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/regress-test"))
@@ -336,7 +336,7 @@ import Testing
     @Test func upsertPositionStillAcceptsGenuineForwardProgress() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()
-        let sync = CloudKitSyncEngine(database: db)
+        let sync = CloudKitSyncEngine(database: db, defaults: InMemoryDefaultsStore())
         let sourceKey = "advance-test"
         let contentKey = "ia:advance-test"
         let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/advance-test"))

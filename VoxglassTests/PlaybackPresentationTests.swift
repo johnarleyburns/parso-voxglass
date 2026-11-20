@@ -4,7 +4,7 @@ import ParsoAudioStreaming
 @testable import VoxglassCore
 
 @MainActor
-@Suite(.serialized) struct PlaybackPresentationTests {
+@Suite struct PlaybackPresentationTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -49,7 +49,7 @@ import ParsoAudioStreaming
             evictableRoot: FileManager.default.temporaryDirectory
                 .appendingPathComponent("playback-cache-\(UUID().uuidString)", isDirectory: true)
         )
-        let defaults = UserDefaults(suiteName: "presentation-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
         let bridge = NoopPlaybackBridge()
         let coordinator = PlaybackCoordinator(
@@ -58,7 +58,8 @@ import ParsoAudioStreaming
             snapshotStore: snapshotStore,
             rateStore: PlaybackRateStore(defaults: defaults),
             cacheStore: cacheStore,
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         return Harness(
             coordinator: coordinator,

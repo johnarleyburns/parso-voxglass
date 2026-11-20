@@ -105,7 +105,7 @@ public struct ReadWithAIVoicePreference: Codable, Equatable, Sendable {
 }
 
 public enum ReadWithAIVoicePreferences {
-    public static func defaultPreference(in defaults: UserDefaults = .standard) -> ReadWithAIVoicePreference {
+    public static func defaultPreference(in defaults: any DefaultsStoring = UserDefaults.standard) -> ReadWithAIVoicePreference {
         if let data = defaults.data(forKey: AppPreferencesStore.Keys.readWithAIVoiceDefault),
            let preference = try? JSONDecoder().decode(ReadWithAIVoicePreference.self, from: data) {
             return preference
@@ -117,23 +117,23 @@ public enum ReadWithAIVoicePreferences {
         )
     }
 
-    public static func preference(for bookID: UUID, in defaults: UserDefaults = .standard) -> ReadWithAIVoicePreference {
+    public static func preference(for bookID: UUID, in defaults: any DefaultsStoring = UserDefaults.standard) -> ReadWithAIVoicePreference {
         preferencesByBook(in: defaults)[bookID.uuidString] ?? defaultPreference(in: defaults)
     }
 
-    public static func setDefault(_ preference: ReadWithAIVoicePreference, in defaults: UserDefaults = .standard) {
+    public static func setDefault(_ preference: ReadWithAIVoicePreference, in defaults: any DefaultsStoring = UserDefaults.standard) {
         defaults.set(preference.identifier, forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier)
         defaults.set(try? JSONEncoder().encode(preference), forKey: AppPreferencesStore.Keys.readWithAIVoiceDefault)
     }
 
-    public static func set(_ preference: ReadWithAIVoicePreference, for bookID: UUID, alsoMakeDefault: Bool = true, in defaults: UserDefaults = .standard) {
+    public static func set(_ preference: ReadWithAIVoicePreference, for bookID: UUID, alsoMakeDefault: Bool = true, in defaults: any DefaultsStoring = UserDefaults.standard) {
         var preferences = preferencesByBook(in: defaults)
         preferences[bookID.uuidString] = preference
         defaults.set(try? JSONEncoder().encode(preferences), forKey: AppPreferencesStore.Keys.readWithAIVoiceByBook)
         if alsoMakeDefault { setDefault(preference, in: defaults) }
     }
 
-    private static func preferencesByBook(in defaults: UserDefaults) -> [String: ReadWithAIVoicePreference] {
+    private static func preferencesByBook(in defaults: any DefaultsStoring) -> [String: ReadWithAIVoicePreference] {
         guard let data = defaults.data(forKey: AppPreferencesStore.Keys.readWithAIVoiceByBook),
               let preferences = try? JSONDecoder().decode([String: ReadWithAIVoicePreference].self, from: data)
         else { return [:] }
