@@ -102,5 +102,5 @@ cat <<EOF
   ssh $VPS_HOST 'systemctl status voxglass-gutenberg-mirror.service --no-pager'
   ssh $VPS_HOST 'systemctl list-timers voxglass-gutenberg-mirror.timer --no-pager'
   ssh $VPS_HOST 'journalctl -u voxglass-gutenberg-mirror.service -f'
-  ssh $VPS_HOST 'sudo -u $SERVICE_USER $REMOTE_ROOT/bin/gutenberg-mirror.sh --status'
+  ssh $VPS_HOST 'sudo -u $SERVICE_USER env GUTENBERG_STAGING_DIR=$REMOTE_ROOT/cache GUTENBERG_STATE_DIR=$REMOTE_ROOT/state GUTENBERG_BATCH_SIZE=$BATCH_SIZE $REMOTE_ROOT/bin/gutenberg-mirror.sh --status'
 EOF

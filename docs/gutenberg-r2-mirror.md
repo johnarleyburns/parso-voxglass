@@ -395,7 +395,7 @@ Useful commands:
 ssh root@217.76.158.90 'systemctl status voxglass-gutenberg-mirror.service --no-pager'
 ssh root@217.76.158.90 'systemctl list-timers voxglass-gutenberg-mirror.timer --no-pager'
 ssh root@217.76.158.90 'journalctl -u voxglass-gutenberg-mirror.service -f'
-ssh root@217.76.158.90 'sudo -u voxglass-gutenberg /opt/voxglass-gutenberg/bin/gutenberg-mirror.sh --status'
+ssh root@217.76.158.90 'sudo -u voxglass-gutenberg env GUTENBERG_STAGING_DIR=/opt/voxglass-gutenberg/cache GUTENBERG_STATE_DIR=/opt/voxglass-gutenberg/state GUTENBERG_BATCH_SIZE=500 /opt/voxglass-gutenberg/bin/gutenberg-mirror.sh --status'
 ```
 
 The deploy script copies the local `uploaded-ids` progress file if present, so moving from the
