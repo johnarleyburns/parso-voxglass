@@ -181,6 +181,8 @@ keys used by another bucket.
 | `GUTENBERG_BUILD_INDEX` | `1` | Build the on-device search index |
 | `GUTENBERG_INDEX_SCRIPT` | `scripts/build-gutenberg-index.py` | Index builder |
 | `GUTENBERG_INDEX_LANGUAGE` | `en` | Index language, or `all` |
+| `GUTENBERG_BATCH_SIZE` | `500` | Books per local upload batch; `0` = full tree |
+| `GUTENBERG_UPLOADED_IDS_FILE` | `state/uploaded-ids` | Completed-ID progress file |
 | `GUTENBERG_STAGING_DIR` | `~/.cache/voxglass/gutenberg` | Local staging |
 | `GUTENBERG_STATE_DIR` | `~/.local/state/voxglass-gutenberg-mirror` | PID/lock/state/log |
 | `GUTENBERG_INTERVAL` | `86400` | Seconds between loop cycles |
@@ -195,6 +197,28 @@ keys used by another bucket.
 
 Secrets are written only to a mode-`600` rclone config inside the state directory and are never
 printed. Do not commit the state directory, staging directory, or rclone config.
+
+## Batching (bounded local disk)
+
+By default the mirror no longer accumulates the whole corpus on the laptop. It processes
+`GUTENBERG_BATCH_SIZE` books at a time (default **500**, roughly 150–200 MB):
+
+1. `rsync` fetches only that batch’s `pg<id>.epub` / cover files.
+2. `rclone move` uploads them and deletes the local copies after a successful transfer.
+3. The completed IDs are recorded in `$GUTENBERG_STATE_DIR/uploaded-ids`.
+4. The next batch repeats; a stopped run resumes at the next uncompleted batch.
+
+```sh
+scripts/gutenberg-mirror.sh --batch-size 300   # lower local peak
+scripts/gutenberg-mirror.sh --no-batch         # legacy full-tree mode (~20 GB local)
+```
+
+Batch mode needs `pg_catalog.csv` to enumerate IDs. If the catalog is unavailable, the script
+stops rather than silently falling back to a full local tree. `--verify` reports remote-only
+statistics in batch mode because local staging intentionally contains only the current batch.
+
+`--prune` remains a full-tree/rsync option; batch mode does not delete remote objects that
+disappeared upstream.
 
 ## Start / stop / resume semantics
 
@@ -458,7 +482,7 @@ The migration is:
 | rsync hangs or is very slow | Mirror congestion/rate limiting. Switch `GUTENBERG_RSYNC_SOURCE` to `ftp.ibiblio.org::gutenberg-epub`, or use `--no-catalog` and retry. |
 | `--status` says `stale` | The previous process was killed hard. `--resume` clears the PID and continues. |
 | Lock held but no visible process | A dead process should release `flock` automatically. `--stop` reports if the PID is not ours; remove a stale `pid` only after checking `ps`. |
-| Disk full in staging | Point `GUTENBERG_STAGING_DIR` at a disk with ~25 GB free (default corpus + headroom), or mirror `--only-ids` in batches. |
+| Disk full in staging | Default batch mode peaks at roughly 150–200 MB. If you run `--no-batch`, point `GUTENBERG_STAGING_DIR` at a disk with ~25 GB free, or lower `--batch-size`. |
 
 ## Verification performed
 

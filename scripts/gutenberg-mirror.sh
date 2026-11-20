@@ -51,6 +51,14 @@ GUTENBERG_INDEX_LANGUAGE="${GUTENBERG_INDEX_LANGUAGE:-en}"
 GUTENBERG_STAGING_DIR="${GUTENBERG_STAGING_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/voxglass/gutenberg}"
 GUTENBERG_STATE_DIR="${GUTENBERG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/voxglass-gutenberg-mirror}"
 
+# Upload at most this many books per rsync -> rclone move batch. The batch is
+# deleted locally after a successful upload, so local disk stays bounded.
+# Set to 0 for the legacy full-tree behavior (requires ~20 GB of local disk).
+GUTENBERG_BATCH_SIZE="${GUTENBERG_BATCH_SIZE:-500}"
+GUTENBERG_UPLOADED_IDS_FILE="${GUTENBERG_UPLOADED_IDS_FILE:-$GUTENBERG_STATE_DIR/uploaded-ids}"
+GUTENBERG_ALL_IDS_FILE="${GUTENBERG_ALL_IDS_FILE:-$GUTENBERG_STATE_DIR/all-ids}"
+GUTENBERG_REMAINING_IDS_FILE="${GUTENBERG_REMAINING_IDS_FILE:-$GUTENBERG_STATE_DIR/remaining-ids}"
+
 GUTENBERG_INTERVAL="${GUTENBERG_INTERVAL:-86400}"   # seconds between loop cycles
 GUTENBERG_ONLY_IDS="${GUTENBERG_ONLY_IDS:-}"
 GUTENBERG_INCLUDE_COVERS="${GUTENBERG_INCLUDE_COVERS:-1}"
@@ -496,6 +504,137 @@ build_catalog_index() {
   run_child "${args[@]}" || return $?
 }
 
+prepare_batch_ids() {
+  local catalog="$STAGING_CATALOG/pg_catalog.csv"
+  [[ -s "$catalog" ]] || return 1
+
+  python3 - "$catalog" > "$GUTENBERG_ALL_IDS_FILE" <<'PY'
+import csv
+import sys
+
+with open(sys.argv[1], newline="", encoding="utf-8-sig") as handle:
+    for row in csv.DictReader(handle):
+        if row.get("Type") != "Text":
+            continue
+        raw = (row.get("Text#") or "").strip()
+        if raw.isdigit():
+            print(int(raw))
+PY
+  LC_ALL=C sort -u -o "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_ALL_IDS_FILE"
+
+  if [[ -n "$ONLY_IDS" ]]; then
+    printf '%s\n' $ONLY_IDS | LC_ALL=C sort -u > "$GUTENBERG_STATE_DIR/only-ids"
+    LC_ALL=C comm -12 "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_STATE_DIR/only-ids" > "$GUTENBERG_ALL_IDS_FILE.filtered"
+    mv -f "$GUTENBERG_ALL_IDS_FILE.filtered" "$GUTENBERG_ALL_IDS_FILE"
+  fi
+
+  touch "$GUTENBERG_UPLOADED_IDS_FILE"
+  LC_ALL=C sort -u -o "$GUTENBERG_UPLOADED_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE"
+  LC_ALL=C comm -23 "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE" > "$GUTENBERG_REMAINING_IDS_FILE"
+}
+
+rclone_common_args() {
+  RCLONE_ARGS=(
+    --config "$RCLONE_CONFIG_FILE"
+    --transfers "$GUTENBERG_TRANSFERS"
+    --checkers "$GUTENBERG_CHECKERS"
+    --fast-list
+    --s3-no-check-bucket
+    --exclude '.rsync-partial/**'
+    --exclude '*.tmp'
+    --exclude '*.tmp.*'
+    --stats 30s
+    --stats-one-line
+  )
+}
+
+run_rclone_move_books() {
+  rclone_common_args
+  local -a args=(move "${RCLONE_ARGS[@]}" --delete-empty-src-dirs)
+  if [[ "$DRY_RUN" == "1" ]]; then args+=(--dry-run -v); fi
+  log "rclone move batch books -> $R2_REMOTE_ROOT/books"
+  if ! run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_BOOKS" "$R2_REMOTE_ROOT/books"; then
+    warn "rclone move failed; this batch remains staged for --resume"
+    return 1
+  fi
+}
+
+run_rclone_catalog() {
+  rclone_common_args
+  local -a args=(copy "${RCLONE_ARGS[@]}")
+  if [[ "$DRY_RUN" == "1" ]]; then args+=(--dry-run -v); fi
+  log "rclone copy catalog -> $R2_REMOTE_ROOT/catalog"
+  run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_CATALOG" "$R2_REMOTE_ROOT/catalog" || {
+    warn "rclone could not write catalog objects to bucket '$R2_BUCKET'."
+    return 1
+  }
+}
+
+run_batched_books() {
+  if [[ "$GUTENBERG_BATCH_SIZE" -le 0 ]]; then
+    return 1
+  fi
+  if ! prepare_batch_ids; then
+    warn "batch mode needs pg_catalog.csv; use --no-batch to explicitly allow a full local tree"
+    return 1
+  fi
+
+  local total_ids remaining
+  total_ids="$(wc -l < "$GUTENBERG_ALL_IDS_FILE" | tr -d ' ')"
+  remaining="$(wc -l < "$GUTENBERG_REMAINING_IDS_FILE" | tr -d ' ')"
+  if [[ "$remaining" -eq 0 ]]; then
+    log "all $total_ids catalog IDs are already marked uploaded"
+    return 0
+  fi
+
+  rm -f "$GUTENBERG_STATE_DIR"/batch-*
+  local prefix="$GUTENBERG_STATE_DIR/batch-"
+  split -l "$GUTENBERG_BATCH_SIZE" "$GUTENBERG_REMAINING_IDS_FILE" "$prefix"
+  local batches
+  batches=$(find "$GUTENBERG_STATE_DIR" -maxdepth 1 -type f -name 'batch-*' | wc -l | tr -d ' ')
+  local index=0
+  local batch paths id
+  for batch in "$GUTENBERG_STATE_DIR"/batch-*; do
+    index=$((index + 1))
+    paths="$GUTENBERG_STATE_DIR/batch-paths"
+    : > "$paths"
+    while IFS= read -r id; do
+      [[ -n "$id" ]] || continue
+      echo "$id/pg$id.epub" >> "$paths"
+      if [[ "$GUTENBERG_INCLUDE_COVERS" == "1" ]]; then
+        echo "$id/pg$id.cover.medium.jpg" >> "$paths"
+      fi
+      if [[ "$GUTENBERG_INCLUDE_ILLUSTRATED" == "1" ]]; then
+        echo "$id/pg$id-images.epub" >> "$paths"
+        echo "$id/pg$id-images-3.epub" >> "$paths"
+      fi
+    done < "$batch"
+
+    STATE_PHASE="batch $index/$batches"; save_state
+    local count
+    count=$(wc -l < "$batch" | tr -d ' ')
+    log "batch $index/$batches: rsync $count IDs"
+    if ! run_child rsync --no-motd -rltz --partial-dir=.rsync-partial \
+        --timeout=300 --contimeout=60 --ignore-missing-args \
+        --files-from="$paths" "${GUTENBERG_RSYNC_SOURCE%/}/" "$STAGING_BOOKS/"; then
+      warn "rsync failed for batch $index; staged files are preserved"
+      rm -f "$paths"
+      return 1
+    fi
+
+    if ! run_rclone_move_books; then
+      rm -f "$paths"
+      return 1
+    fi
+
+    cat "$batch" >> "$GUTENBERG_UPLOADED_IDS_FILE"
+    LC_ALL=C sort -u -o "$GUTENBERG_UPLOADED_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE"
+    rm -f "$batch" "$paths"
+    log "batch $index/$batches uploaded; $(wc -l < "$GUTENBERG_UPLOADED_IDS_FILE" | tr -d ' ')/$total_ids IDs complete"
+  done
+  return 0
+}
+
 run_rclone_copy() {
   local -a args=(
     copy
@@ -539,23 +678,30 @@ run_cycle() {
   STATE_LAST_ERROR=""
   save_state
 
-  STATE_PHASE="rsync-books"; save_state
-  run_rsync_books || { rc=$?; err="rsync books failed (exit $rc)"; }
-
-  STATE_PHASE="rsync-catalog"; save_state
-  run_rsync_catalog || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rsync GUTINDEX.ALL failed (exit $r)"; }
-
   STATE_PHASE="catalog-csv"; save_state
   fetch_catalog_csv
 
   STATE_PHASE="catalog-index"; save_state
   build_catalog_index || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }catalog index failed (exit $r)"; }
 
-  STATE_PHASE="rclone"; save_state
+  STATE_PHASE="rsync-catalog"; save_state
+  run_rsync_catalog || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rsync GUTINDEX.ALL failed (exit $r)"; }
+
   if [[ -z "$R2_ACCESS_KEY_ID" || -z "$R2_SECRET_ACCESS_KEY" ]]; then
     require_credentials
   fi
-  run_rclone_copy || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rclone copy failed (exit $r)"; }
+
+  if [[ "$GUTENBERG_BATCH_SIZE" -gt 0 ]]; then
+    STATE_PHASE="batched-books"; save_state
+    run_batched_books || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }batched book mirror failed (exit $r)"; }
+    STATE_PHASE="rclone-catalog"; save_state
+    run_rclone_catalog || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rclone catalog copy failed (exit $r)"; }
+  else
+    STATE_PHASE="rsync-books"; save_state
+    run_rsync_books || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rsync books failed (exit $r)"; }
+    STATE_PHASE="rclone"; save_state
+    run_rclone_copy || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rclone copy failed (exit $r)"; }
+  fi
 
   local stats files bytes
   stats="$(local_stats)"
@@ -714,6 +860,14 @@ print_status() {
   printf '  state:          %s\n' "$GUTENBERG_STATE_DIR"
   printf '  mode:           %s\n' "$(if [[ "$GUTENBERG_INCLUDE_ILLUSTRATED" == "1" ]]; then echo 'no-images + illustrated EPUBs'; else echo 'no-images EPUBs'; fi)"
   printf '  covers:         %s\n' "$(if [[ "$GUTENBERG_INCLUDE_COVERS" == "1" ]]; then echo 'yes'; else echo 'no'; fi)"
+  if [[ "$GUTENBERG_BATCH_SIZE" -gt 0 ]]; then
+    printf '  batch size:     %s books\n' "$GUTENBERG_BATCH_SIZE"
+    if [[ -f "$GUTENBERG_UPLOADED_IDS_FILE" ]]; then
+      printf '  uploaded ids:   %s\n' "$(wc -l < "$GUTENBERG_UPLOADED_IDS_FILE" | tr -d ' ')"
+    fi
+  else
+    printf '  batch size:     off (full tree)\n'
+  fi
   printf '  local objects:  %s files, %s\n' "$lf" "$(human_bytes "$lb")"
   printf '  last result:    %s (exit %s)\n' "${STATE_LAST_RESULT:-never}" "${STATE_LAST_EXIT:-n/a}"
   printf '  last phase:     %s\n' "${STATE_PHASE:-n/a}"
@@ -747,6 +901,10 @@ verify_remote() {
     STATE_REMOTE_CHECKED_AT="$(now_iso)"
     save_state
 
+    if [[ "$GUTENBERG_BATCH_SIZE" -gt 0 ]]; then
+      printf 'Result: remote-only check (batch mode keeps local staging bounded)\n'
+      return 0
+    fi
     if [[ "$REMOTE_FILES" == "$lf" && "$REMOTE_BYTES" == "$lb" ]]; then
       printf 'Result: match\n'
       return 0
@@ -795,6 +953,8 @@ Options:
   --prune            Pass --delete to rsync (remove books deleted upstream)
   --no-catalog       Skip GUTINDEX.ALL / pg_catalog.csv (useful for quick tests)
   --no-index         Skip building the on-device catalog search index
+  --batch-size N     Books per local batch (default: 500; 0 = full tree)
+  --no-batch         Disable batching and use the legacy full local tree
   --interval SECS    Seconds between loop cycles (default: 86400)
   --dry-run          Pass --dry-run to rsync and rclone; no data or remote changes
   -h, --help         Show this help
@@ -816,6 +976,8 @@ Environment:
   GUTENBERG_BUILD_INDEX            0/1 (default: 1; build the on-device index)
   GUTENBERG_INDEX_SCRIPT           index builder path (default: scripts/build-gutenberg-index.py)
   GUTENBERG_INDEX_LANGUAGE         language code for the index, or "all" (default: en)
+  GUTENBERG_BATCH_SIZE             Books per upload batch (default: 500; 0 = full tree)
+  GUTENBERG_UPLOADED_IDS_FILE      Completed-ID state (default: state/uploaded-ids)
   GUTENBERG_STAGING_DIR            Local staging directory
   GUTENBERG_STATE_DIR              PID/lock/state/log directory
   GUTENBERG_INTERVAL               Loop interval seconds
@@ -889,6 +1051,16 @@ while [[ "$#" -gt 0 ]]; do
       GUTENBERG_BUILD_INDEX=0
       FORWARD_ARGS+=(--no-index)
       ;;
+    --batch-size)
+      [[ "$#" -ge 2 ]] || die "--batch-size requires a value"
+      GUTENBERG_BATCH_SIZE="$2"
+      FORWARD_ARGS+=(--batch-size "$2")
+      shift
+      ;;
+    --no-batch)
+      GUTENBERG_BATCH_SIZE=0
+      FORWARD_ARGS+=(--no-batch)
+      ;;
     --interval)
       [[ "$#" -ge 2 ]] || die "--interval requires a value"
       GUTENBERG_INTERVAL="$2"
@@ -915,6 +1087,10 @@ validate_only_ids
 
 if [[ ! "$GUTENBERG_INTERVAL" =~ ^[0-9]+$ ]] || [[ "$GUTENBERG_INTERVAL" -lt 1 ]]; then
   die "GUTENBERG_INTERVAL/--interval must be a positive integer"
+fi
+
+if [[ ! "$GUTENBERG_BATCH_SIZE" =~ ^[0-9]+$ ]]; then
+  die "GUTENBERG_BATCH_SIZE/--batch-size must be a non-negative integer"
 fi
 
 R2_PREFIX="${R2_PREFIX#/}"
