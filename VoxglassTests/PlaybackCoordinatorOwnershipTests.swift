@@ -64,14 +64,17 @@ import Foundation
         let a = makeBook(title: "A"), b = makeBook(title: "B")
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(a)
-        await drain()
+        // Wait for A to actually reach the suspended engine load; a fixed
+        // sleep can let B overtake it on a contended runner, which would make
+        // the first resumed load B instead of the stale A.
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.engine.resumeSuspendedLoad() // A (stale)
         await drain()
         #expect(playCount(h.engine) == 0)
         h.engine.resumeSuspendedLoad() // B
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(playCount(h.engine) == 1)
@@ -83,16 +86,19 @@ import Foundation
         await presentUnloaded(h, a)
         h.engine.suspendLoads = true
         h.coordinator.togglePlayPause()
-        await drain()
+        // Wait for A's lazy load to reach the suspended engine load before
+        // selecting B; otherwise B can become the first pending load and the
+        // resume below would legitimately start B early.
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.engine.resumeSuspendedLoad() // A's lazy load
         await drain()
         #expect(playCount(h.engine) == 0)
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         #expect(h.coordinator.playbackPhase == .preparing)
         h.engine.resumeSuspendedLoad() // B
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(playCount(h.engine) == 1)
@@ -103,17 +109,17 @@ import Foundation
         let a = makeBook(title: "A"), b = makeBook(title: "B"), c = makeBook(title: "C")
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(a)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.coordinator.selectAndPlay(c)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 3 }
         h.engine.resumeSuspendedLoad() // A
         h.engine.resumeSuspendedLoad() // B
         await drain()
         #expect(playCount(h.engine) == 0)
         h.engine.resumeSuspendedLoad() // C
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == c.book.id)
         #expect(playCount(h.engine) == 1)
         #expect(h.coordinator.playbackPhase == .playing)
@@ -125,7 +131,7 @@ import Foundation
         await presentUnloaded(h, a)
         h.engine.suspendLoads = true
         h.coordinator.togglePlayPause()
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.pause()
         h.engine.resumeSuspendedLoad()
         await drain()
@@ -139,7 +145,7 @@ import Foundation
         let a = makeBook(title: "A")
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(a)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.pause()
         h.engine.resumeSuspendedLoad()
         await drain()
@@ -152,7 +158,7 @@ import Foundation
         let a = makeBook(title: "A")
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(a)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.stopPlayback(forDeletedBook: a.book.id)
         h.engine.resumeSuspendedLoad()
         await drain()
@@ -166,14 +172,14 @@ import Foundation
         let a = makeBook(title: "A"), b = makeBook(title: "B")
         h.engine.suspendLoads = true
         let legacy = Task { await h.coordinator.play(a) }
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.engine.resumeSuspendedLoad() // A
         await legacy.value
         #expect(playCount(h.engine) == 0)
         h.engine.resumeSuspendedLoad() // B
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         #expect(playCount(h.engine) == 1)
     }
@@ -197,13 +203,13 @@ import Foundation
         #expect(h.coordinator.playbackPhase == .playing)
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         // Engine reads not-playing mid-load; a stale loop tick must be inert.
         h.engine.isPlaying = false
         await h.coordinator.tickProgress(generation: 0)
         #expect(h.coordinator.playbackPhase == .preparing)
         h.engine.resumeSuspendedLoad()
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         #expect(h.coordinator.playbackPhase == .playing)
     }
@@ -215,14 +221,14 @@ import Foundation
         await drain()
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.engine.isPlaying = false
         await h.coordinator.tickProgress(generation: 0)
         h.coordinator.selectAndPlay(a)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 3 }
         h.engine.resumeSuspendedLoad() // B (superseded)
         h.engine.resumeSuspendedLoad() // A
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == a.book.id)
         #expect(h.coordinator.playbackPhase == .playing)
     }
@@ -234,12 +240,12 @@ import Foundation
         await drain()
         h.engine.suspendLoads = true
         h.coordinator.selectAndPlay(b)
-        await drain()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         h.engine.onPlaybackIssue?(.failed("stale item failure"))
         #expect(h.coordinator.playbackPhase == .preparing)
         #expect(h.coordinator.currentSession?.book.id == b.book.id)
         h.engine.resumeSuspendedLoad()
-        await drain()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.playbackPhase == .playing)
     }
 }
