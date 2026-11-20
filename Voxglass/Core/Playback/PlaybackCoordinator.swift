@@ -116,6 +116,11 @@ public final class PlaybackCoordinator {
     /// toggle before the engine has caught up. Set after `engine.play()` + `mutateSession`;
     /// cleared on the next tick when the engine confirms play state.
     @ObservationIgnored private var suppressNextIsPlayingSync = false
+    /// Whether audio was actually playing when the current audio interruption
+    /// began. CarPlay navigation prompts, calls, and Siri all arrive as
+    /// AVAudioSession interruptions; only the ones that interrupted active
+    /// playback may resume automatically when the system says to.
+    @ObservationIgnored private var wasPlayingWhenInterruptionBegan = false
     /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
     /// every caller awaits the same in-flight load instead of issuing a second.
     @ObservationIgnored private var engineLoadTask: Task<Bool, Never>?
@@ -1140,6 +1145,9 @@ public final class PlaybackCoordinator {
 
     public func pause() {
         cancelDecodeRecovery()
+        // An explicit pause supersedes any automatic resume the interruption
+        // system might request when its notification ends.
+        wasPlayingWhenInterruptionBegan = false
         invalidatePlaybackOwnership()
         guard currentSession != nil else { return }
         if let bookID = currentSession?.book.id {
@@ -2490,8 +2498,11 @@ public final class PlaybackCoordinator {
 
     // MARK: - Audio interruptions & route changes (called by the platform bridge)
 
-    /// An audio interruption began (call, Siri, another app). Pause and persist.
+    /// An audio interruption began (call, Siri, another app, or a CarPlay
+    /// navigation prompt). Pause and persist, remembering whether playback was
+    /// active so an interruption that merely paused us can be resumed.
     public func handleAudioInterruptionBegan() {
+        wasPlayingWhenInterruptionBegan = engine.isPlaying
         invalidatePlaybackOwnership()
         saveCurrentSnapshot()
         engine.pause()
@@ -2507,10 +2518,19 @@ public final class PlaybackCoordinator {
         }
     }
 
-    /// Interruption completion is informational. Only an explicit play command
-    /// may restart audio, even if playback was active before the interruption.
-    public func handleAudioInterruptionEnded() {
-        updateNowPlayingInfo()
+    /// Resumes only when the interruption actually stopped active playback and
+    /// the system's `.shouldResume` hint says it is safe to take the audio
+    /// session back. Calls, Siri, and CarPlay navigation prompts all use this
+    /// path; an interruption that arrived while already paused never starts
+    /// audio on its own.
+    public func handleAudioInterruptionEnded(shouldResume: Bool) {
+        let resume = wasPlayingWhenInterruptionBegan && shouldResume
+        wasPlayingWhenInterruptionBegan = false
+        if resume && !engine.isPlaying {
+            resumeCurrentSession()
+        } else {
+            updateNowPlayingInfo()
+        }
     }
 
     /// Preserve the playhead on route changes without restarting audio. The

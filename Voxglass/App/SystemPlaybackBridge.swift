@@ -252,10 +252,13 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         ) { [weak self] note in
             guard let typeValue = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+            let optionValue = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let shouldResume = AVAudioSession.InterruptionOptions(rawValue: optionValue)
+                .contains(.shouldResume)
             Task { @MainActor in
                 switch type {
                 case .began: self?.coordinator?.handleAudioInterruptionBegan()
-                case .ended: self?.coordinator?.handleAudioInterruptionEnded()
+                case .ended: self?.coordinator?.handleAudioInterruptionEnded(shouldResume: shouldResume)
                 @unknown default: break
                 }
             }

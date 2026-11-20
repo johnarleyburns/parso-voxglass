@@ -134,19 +134,47 @@ import Foundation
         #expect(!engine.isPlaying)
     }
 
-    @Test func interruptionEndRequiresExplicitPlay() async {
+    @Test func interruptionEndResumesWhenSystemAllowsAndPlaybackWasActive() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.handleAudioInterruptionBegan()
         engine.reset()
 
-        coordinator.handleAudioInterruptionEnded()
+        coordinator.handleAudioInterruptionEnded(shouldResume: true)
+        for _ in 0..<100 where !engine.isPlaying { await Task.yield() }
+
+        #expect(engine.calls.contains(.play))
+        #expect(engine.isPlaying)
+        #expect(coordinator.currentSession?.isPlaying == true)
+    }
+
+    @Test func interruptionEndWithoutSystemResumeHintStaysPaused() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.handleAudioInterruptionBegan()
+        engine.reset()
+
+        coordinator.handleAudioInterruptionEnded(shouldResume: false)
         coordinator.handleAudioRouteChanged()
+        for _ in 0..<20 { await Task.yield() }
 
         #expect(!engine.calls.contains(.play))
+        #expect(!engine.isPlaying)
         #expect(coordinator.currentSession?.isPlaying == false)
-        coordinator.resumeCurrentSession()
-        for _ in 0..<100 where !engine.isPlaying { await Task.yield() }
-        #expect(engine.isPlaying)
+    }
+
+    @Test func interruptionEndDoesNotStartAudioThatWasAlreadyPaused() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.pause()
+        coordinator.handleAudioInterruptionBegan()
+        engine.reset()
+
+        coordinator.handleAudioInterruptionEnded(shouldResume: true)
+        for _ in 0..<20 { await Task.yield() }
+
+        #expect(!engine.calls.contains(.play))
+        #expect(!engine.isPlaying)
+        #expect(coordinator.currentSession?.isPlaying == false)
     }
 }
