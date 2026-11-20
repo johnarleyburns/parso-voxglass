@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import VoxglassPortable
 @testable import VoxglassWatchCore
 @testable import VoxglassWatchProtocol
 
