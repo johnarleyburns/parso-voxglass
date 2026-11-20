@@ -5,9 +5,7 @@ import Testing
 @Suite
 struct ReadWithAIVoicePreferencesTests {
     @Test func aBookVoiceIsDurableAndAlsoBecomesTheDefaultForNewBooks() throws {
-        let name = "read-ai-voice-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
+        let defaults = InMemoryDefaultsStore()
         let book = UUID()
         let choice = ReadWithAIVoicePreference(identifier: "com.apple.voice.ava", name: "Ava", language: "en-US")
 
@@ -19,9 +17,7 @@ struct ReadWithAIVoicePreferencesTests {
     }
 
     @Test func eachBookKeepsItsOwnVoiceWhenTheDefaultChanges() throws {
-        let name = "read-ai-voice-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
+        let defaults = InMemoryDefaultsStore()
         let first = UUID()
         let second = UUID()
         let ava = ReadWithAIVoicePreference(identifier: "ava", name: "Ava", language: "en-US")
@@ -35,9 +31,7 @@ struct ReadWithAIVoicePreferencesTests {
     }
 
     @Test func legacySingleVoiceSettingMigratesWithoutResettingToAutomatic() throws {
-        let name = "read-ai-voice-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
+        let defaults = InMemoryDefaultsStore()
         defaults.set("com.apple.voice.ava", forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier)
 
         #expect(ReadWithAIVoicePreferences.defaultPreference(in: defaults).identifier == "com.apple.voice.ava")

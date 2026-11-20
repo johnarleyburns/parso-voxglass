@@ -10,7 +10,7 @@ private struct PlainResolver: LocalMediaFileResolver {
     }
 }
 
-@Suite(.serialized) struct PortableLocalMatchingTests {
+@Suite struct PortableLocalMatchingTests {
     private let root: URL
     private let phoneA: AppDatabase
     private let phoneB: AppDatabase

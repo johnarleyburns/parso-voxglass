@@ -30,7 +30,7 @@ private actor MemoryPositions: PositionStore {
 }
 
 @MainActor
-@Suite(.serialized) struct LocalPlaybackAccessTests {
+@Suite struct LocalPlaybackAccessTests {
     private let access = FakeScopedAccess()
     private let registry: SecurityScopedLeaseRegistry
     private let resolver: PlaybackSourceResolver
@@ -60,12 +60,13 @@ private actor MemoryPositions: PositionStore {
 
     private func harness() -> (PlaybackCoordinator, FakeAudioEngine) {
         let engine = FakeAudioEngine()
-        let defaults = UserDefaults(suiteName: "lease-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let coordinator = PlaybackCoordinator(
             engine: engine, positionStore: MemoryPositions(),
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: NoopPlaybackBridge(), sourceResolver: resolver
+            bridge: NoopPlaybackBridge(), sourceResolver: resolver,
+            defaults: defaults
         )
         return (coordinator, engine)
     }

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import VoxglassPortable
 
 public struct RecommendationShelfSnapshot: Codable, Equatable, Sendable {
     public var results: [InternetArchiveSearchResult]
@@ -21,14 +22,14 @@ public final class HomeRecommendationStore: ObservableObject {
     @Published public private(set) var isRefreshing = false
 
     private let client: InternetArchiveCatalogClient
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private var engine: RecommendationEngine?
     private var engineReady = false
     private var visibleShelfSource: RecommendationShelfSource = .popularColdStart
 
     public init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
-        defaults: UserDefaults = .standard
+        defaults: any DefaultsStoring = UserDefaults.standard
     ) {
         self.client = client
         self.defaults = defaults
@@ -84,12 +85,12 @@ public final class HomeRecommendationStore: ObservableObject {
         }
     }
 
-    public nonisolated static func loadSnapshot(from defaults: UserDefaults) -> RecommendationShelfSnapshot? {
+    public nonisolated static func loadSnapshot(from defaults: any DefaultsStoring) -> RecommendationShelfSnapshot? {
         guard let data = defaults.data(forKey: shelfSnapshotKey) else { return nil }
         return try? JSONDecoder().decode(RecommendationShelfSnapshot.self, from: data)
     }
 
-    public nonisolated static func saveSnapshot(_ snapshot: RecommendationShelfSnapshot, to defaults: UserDefaults) {
+    public nonisolated static func saveSnapshot(_ snapshot: RecommendationShelfSnapshot, to defaults: any DefaultsStoring) {
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: shelfSnapshotKey)
     }

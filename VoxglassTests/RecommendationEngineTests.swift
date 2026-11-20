@@ -479,7 +479,7 @@ import Foundation
         }
         await libraryStore.refresh()
 
-        let store = HomeRecommendationStore(client: FakeArchiveClient(responses: [[], []]))
+        let store = HomeRecommendationStore(client: FakeArchiveClient(responses: [[], []]), defaults: InMemoryDefaultsStore())
         let original = store.recommendations
         store.configure(profileStore: profileStore, libraryStore: libraryStore)
         store.markEngineReady()
@@ -510,7 +510,7 @@ import Foundation
             [],
             [],
             []
-        ]))
+        ]), defaults: InMemoryDefaultsStore())
         store.configure(profileStore: profileStore, libraryStore: libraryStore)
         store.markEngineReady()
 

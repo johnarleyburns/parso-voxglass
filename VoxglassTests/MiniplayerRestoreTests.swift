@@ -8,14 +8,14 @@ import Foundation
 /// on the first play press. Asserted against the `FakeAudioEngine` call log +
 /// a real SQLite position store, following `PlaybackResumeTests`.
 @MainActor
-@Suite(.serialized) struct MiniplayerRestoreTests {
+@Suite struct MiniplayerRestoreTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
         let engine: FakeAudioEngine
         let store: SQLitePositionStore
         let db: AppDatabase
-        let defaults: UserDefaults
+        let defaults: InMemoryDefaultsStore
         let bridge: NoopPlaybackBridge
     }
 
@@ -30,19 +30,20 @@ import Foundation
 
     private func makeHarness(
         db existingDB: AppDatabase? = nil,
-        defaults existingDefaults: UserDefaults? = nil
+        defaults existingDefaults: InMemoryDefaultsStore? = nil
     ) -> Harness {
         let db = existingDB ?? AppDatabase.makeTemporaryDatabase(named: "mini-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         let store = SQLitePositionStore(database: db)
-        let defaults = existingDefaults ?? UserDefaults(suiteName: "mini-\(UUID().uuidString)")!
+        let defaults = existingDefaults ?? InMemoryDefaultsStore()
         let bridge = NoopPlaybackBridge()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: store,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         return Harness(coordinator: coordinator, engine: engine, store: store, db: db, defaults: defaults, bridge: bridge)
     }

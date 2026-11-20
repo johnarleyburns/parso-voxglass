@@ -52,7 +52,7 @@ let package = Package(
         ),
         .target(
             name: "VoxglassWatchCore",
-            dependencies: ["VoxglassWatchProtocol"],
+            dependencies: ["VoxglassWatchProtocol", "VoxglassPortable"],
             path: "VoxglassWatchCore",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),

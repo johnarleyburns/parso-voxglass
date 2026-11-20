@@ -68,7 +68,7 @@ import Testing
             [.string(chapter.id.uuidString), .string(id.uuidString), .string(chapter.title), .string(chapter.sortKey), .int(56), .double(1232)]
         )
         let positions = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "decode-\(id)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshot = LastPlaybackSnapshotStore(defaults: defaults)
         let coordinator: PlaybackCoordinator
         if let decodeRecoveryDelay {
@@ -76,10 +76,11 @@ import Testing
                 engine: engine,
                 positionStore: positions,
                 snapshotStore: snapshot,
-                decodeRecoveryDelay: decodeRecoveryDelay
+                decodeRecoveryDelay: decodeRecoveryDelay,
+                defaults: defaults
             )
         } else {
-            coordinator = PlaybackCoordinator(engine: engine, positionStore: positions, snapshotStore: snapshot)
+            coordinator = PlaybackCoordinator(engine: engine, positionStore: positions, snapshotStore: snapshot, defaults: defaults)
         }
         let bwc = BookWithChapters(book: book, chapters: [chapter])
         await coordinator.play(bwc)

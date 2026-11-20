@@ -1,12 +1,13 @@
 import Foundation
+import VoxglassPortable
 
 public struct NavigationHistoryStore {
     private static let key = "guru.parso.voxglass.navigationHistory"
     public static let maxEntries = 20
 
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
     }
 

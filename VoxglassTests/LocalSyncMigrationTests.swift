@@ -22,7 +22,7 @@ private final class StepCounter: @unchecked Sendable {
     }
 }
 
-@Suite(.serialized) struct LocalSyncMigrationTests {
+@Suite struct LocalSyncMigrationTests {
     private let root: URL
     private let db: AppDatabase
     private let state: CloudSyncStateStore

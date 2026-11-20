@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 @MainActor
 public final class VoxglassCloudSync: ObservableObject {
@@ -7,7 +8,7 @@ public final class VoxglassCloudSync: ObservableObject {
     @Published public var syncError: String?
 
     private let store: NSUbiquitousKeyValueStore
-    private let userDefaults: UserDefaults
+    private let userDefaults: any DefaultsStoring
     private let database: AppDatabase
     private var bookmarkStore: (any BookmarkStore)?
     private var observer: ObserverToken?
@@ -39,7 +40,7 @@ public final class VoxglassCloudSync: ObservableObject {
         database: AppDatabase,
         bookmarkStore: (any BookmarkStore)? = nil,
         kvs: NSUbiquitousKeyValueStore = .default,
-        userDefaults: UserDefaults = .standard
+        userDefaults: any DefaultsStoring = UserDefaults.standard
     ) {
         self.database = database
         self.store = kvs

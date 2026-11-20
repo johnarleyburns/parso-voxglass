@@ -1,15 +1,16 @@
 import Foundation
+import VoxglassPortable
 
 /// Persists the user's EQ engaged-state and per-band gains so the equalizer
 /// survives relaunch and is re-applied when a track loads.
 public final class EQSettingsStore {
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let engagedKey = "voxglass.eq.engaged"
     private let gainsKey = "voxglass.eq.gains"
 
     public static let bandCount = 10
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
     }
 

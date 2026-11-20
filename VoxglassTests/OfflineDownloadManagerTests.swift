@@ -147,7 +147,7 @@ import ParsoAudioStreaming
         counter: FactoryCounter,
         relay: OfflineBackgroundEventRelay
     ) throws -> OfflineDownloadManager {
-        let defaults = try #require(UserDefaults(suiteName: "offline-activation-\(UUID().uuidString)"))
+        let defaults = InMemoryDefaultsStore()
         let repository = LibraryRepository(database: AppDatabase.makeTemporaryDatabase(named: "offline-activation-\(UUID().uuidString)"))
         return OfflineDownloadManager(
             repository: repository,

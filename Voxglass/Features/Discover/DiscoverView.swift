@@ -710,7 +710,21 @@ struct BrowseView: View {
         } catch {
             guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
             gutenbergResults = []
-            catalogStore.catalogError = "Project Gutenberg search failed: \(error.localizedDescription)"
+            catalogStore.catalogError = Self.gutenbergErrorMessage(for: error)
+        }
+    }
+
+    private static func gutenbergErrorMessage(for error: Error) -> String {
+        guard let error = error as? GutenbergCatalogError else {
+            return String(localized: "Project Gutenberg search failed: \(error.localizedDescription)")
+        }
+        switch error {
+        case .temporarilyUnavailable:
+            return String(localized: "Project Gutenberg is temporarily unavailable. Please try again later.")
+        case .unexpectedResponse:
+            return String(localized: "Project Gutenberg returned an unexpected response. Please try again.")
+        case .httpStatus(let status):
+            return String(localized: "Project Gutenberg search failed (HTTP \(status)).")
         }
     }
 

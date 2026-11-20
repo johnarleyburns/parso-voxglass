@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 import os
+import VoxglassPortable
 
 @MainActor
 public final class CloudKitSyncEngine: ObservableObject {
@@ -25,7 +26,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         case error
     }
 
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let database: AppDatabase
     private let stateStore: CloudSyncStateStore
     private let containerID: String
@@ -47,7 +48,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         return defaults.bool(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
     }
 
-    public init(database: AppDatabase, containerID: String = "iCloud.guru.parso.voxglass", defaults: UserDefaults = .standard) {
+    public init(database: AppDatabase, containerID: String = "iCloud.guru.parso.voxglass", defaults: any DefaultsStoring = UserDefaults.standard) {
         self.defaults = defaults
         self.database = database
         self.stateStore = CloudSyncStateStore(database: database)

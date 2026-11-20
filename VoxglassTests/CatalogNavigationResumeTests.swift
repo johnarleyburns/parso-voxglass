@@ -6,7 +6,7 @@ import Foundation
 /// ID, ownership state, resume position, and bookmarks; only a genuinely new
 /// result becomes a pending preview.
 @MainActor
-@Suite(.serialized) struct CatalogNavigationResumeTests {
+@Suite struct CatalogNavigationResumeTests {
     private final class CountingClient: InternetArchiveCatalogClient, @unchecked Sendable {
         let metadata: InternetArchiveMetadata
         private let lock = NSLock()
@@ -116,13 +116,14 @@ import Foundation
         #expect(library.book(withID: owned.book.id)?.book.isPending == false)
         #expect(CatalogResultImporter.opensNowPlayingDirectly(try #require(routed)))
 
-        let defaults = UserDefaults(suiteName: "catalog-nav-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: positions,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
-            rateStore: PlaybackRateStore(defaults: defaults)
+            rateStore: PlaybackRateStore(defaults: defaults),
+            defaults: defaults
         )
         await coordinator.play(try #require(routed))
 
@@ -250,13 +251,15 @@ import Foundation
         let bookmarks = SQLiteBookmarkStore(database: database)
         #expect(try await bookmarks.bookmarks(forBookID: legacy.bookID).count == 1)
 
-        let defaults = UserDefaults(suiteName: "catalog-nav-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: SQLitePositionStore(database: database),
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
-            rateStore: PlaybackRateStore(defaults: defaults))
+            rateStore: PlaybackRateStore(defaults: defaults),
+            defaults: defaults
+        )
         await coordinator.play(routed)
         #expect(coordinator.currentSession?.chapter.id == legacy.chapterTwo)
         #expect(abs((engine.loadCalls.last?.startTime ?? -1) - 77) <= 0.001)
@@ -358,13 +361,15 @@ import Foundation
         #expect(alias.first?.string("book_id") == legacy.bookID.uuidString)
         #expect(try await SQLiteBookmarkStore(database: database).bookmarks(forBookID: legacy.bookID).count == 1)
 
-        let defaults = UserDefaults(suiteName: "catalog-nav-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: SQLitePositionStore(database: database),
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
-            rateStore: PlaybackRateStore(defaults: defaults))
+            rateStore: PlaybackRateStore(defaults: defaults),
+            defaults: defaults
+        )
         await coordinator.play(routed)
         #expect(coordinator.currentSession?.chapter.id == legacy.chapterTwo)
         #expect(abs((engine.loadCalls.last?.startTime ?? -1) - 77) <= 0.001)

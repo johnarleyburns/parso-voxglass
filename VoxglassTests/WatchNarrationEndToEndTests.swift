@@ -195,10 +195,8 @@ private final class RealPCMRenderer: ReadWithAIWatchSpeechRendering {
 
     @Test @MainActor func legacyCacheEntryTriggersFreshAACLCRenderValidateAndInstall() async throws {
         let dir = try WatchNarrationFixtureFactory.makeDirectory()
-        let name = "rwai-e2e-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        let cache = ReadWithAIWatchNarrationUserDefaultsCache(suiteName: name, managedRoot: dir)
+        let defaults = InMemoryDefaultsStore()
+        let cache = ReadWithAIWatchNarrationUserDefaultsCache(defaults: defaults, managedRoot: dir)
         let text = try WatchNarrationFixtureFactory.makeVoxtext(in: dir)
         let pref = ReadWithAIVoicePreference(identifier: "")
         let key = try ReadWithAIWatchPreparationAdapter.cacheKey(textURL: text, preference: pref)

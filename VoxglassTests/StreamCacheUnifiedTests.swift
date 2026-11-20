@@ -12,6 +12,8 @@ import ParsoAudioStreaming
 /// The library owns the store-mechanics tests (`SparseCacheStoreTests`); these
 /// assert Voxglass's *wiring*: its key identity, the durable/offline tier, the
 /// artwork kind, the preset budget, and a real loader round-trip.
+// Serialized: tests share process-wide `AudioCache.shared` and the static
+// `URLProtocol` stub state below.
 @Suite(.serialized)
 struct StreamCacheUnifiedTests {
 
@@ -192,13 +194,15 @@ struct StreamCacheUnifiedTests {
     }
 
     @Test func presetSelectionReappliesTheBudget() async {
-        // Uses the real (shared) store; restore the previous preset afterwards.
-        let previous = AudioCache.CachePreset.selected
-        defer { Task { await AudioCache.CachePreset.select(previous) } }
+        // Uses the real (shared) store; the preset itself is written to an
+        // in-memory seam so no preferences domain is touched.
+        let defaults = InMemoryDefaultsStore()
+        let previous = AudioCache.CachePreset.selected(in: defaults)
+        defer { Task { await AudioCache.CachePreset.select(previous, in: defaults) } }
 
-        await AudioCache.CachePreset.select(.g2GB)
+        await AudioCache.CachePreset.select(.g2GB, in: defaults)
         #expect(await AudioCache.shared.currentLimit() == AudioCache.CachePreset.g2GB.rawValue)
-        #expect(AudioCache.CachePreset.selected == .g2GB)
+        #expect(AudioCache.CachePreset.selected(in: defaults) == .g2GB)
     }
 
     @Test func clearCacheEmptiesTheStore() async {

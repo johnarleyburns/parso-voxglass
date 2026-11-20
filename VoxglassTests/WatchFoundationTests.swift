@@ -173,21 +173,42 @@ import Testing
     }
 
     private final class BlockingOps: WatchFileOperations, @unchecked Sendable {
-        // Test double: state is guarded by the semaphores/lock below.
-        let entered = DispatchSemaphore(value: 0)
-        let release = DispatchSemaphore(value: 0)
-        let lock = NSLock()
+        // This fake deliberately parks the delivered synchronous `remove` call
+        // so the test can prove `removeBook` runs off-main and does not block
+        // the caller. `WatchFileOperations.remove` is synchronous by protocol,
+        // so a truly async continuation cannot be used inside it; the group
+        // wait blocks only `WatchDownloadedFiles`' private queue thread, never
+        // a cooperative/actor thread. Both handoffs are group-based and
+        // deterministic (no sleeps or semaphores). `enteredGroup` starts open
+        // and `remove` closes it, so `awaitEntered()` cannot return before the
+        // fake is actually inside `remove`. `_threadWasMain` is written before
+        // that handoff and read only after the awaited task completes, which
+        // orders the access.
+        private let enteredGroup = DispatchGroup()
+        private let releaseGroup = DispatchGroup()
         private var _threadWasMain = false
-        var threadWasMain: Bool { lock.lock(); defer { lock.unlock() }; return _threadWasMain }
+
+        init() {
+            enteredGroup.enter()
+            releaseGroup.enter()
+        }
+
+        var threadWasMain: Bool { _threadWasMain }
+
         func exists(_ url: URL) -> Bool { FileManager.default.fileExists(atPath: url.path) }
+
         func awaitEntered() async {
             await withCheckedContinuation { continuation in
-                DispatchQueue.global().async { self.entered.wait(); continuation.resume() }
+                enteredGroup.notify(queue: .global()) { continuation.resume() }
             }
         }
+
+        func release() { releaseGroup.leave() }
+
         func remove(_ url: URL) throws {
-            lock.lock(); _threadWasMain = Thread.isMainThread; lock.unlock()
-            entered.signal(); release.wait()
+            _threadWasMain = Thread.isMainThread
+            enteredGroup.leave()
+            releaseGroup.wait()
             try FileManager.default.removeItem(at: url)
         }
     }
@@ -253,7 +274,7 @@ import Testing
         let state = await MainActor.run { "interaction-updated" }
         #expect(state == "interaction-updated")
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("a").path))
-        ops.release.signal()
+        ops.release()
         try await task.value
         #expect(!ops.threadWasMain)
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a").path))
@@ -278,13 +299,13 @@ import Testing
         // `install` and `removeBook` share WatchDownloadedFiles' single private
         // serial DispatchQueue (`queue.sync` vs `queue.async`). The removal's
         // work item is already enqueued and confirmed blocked (`awaitEntered()`
-        // above only returns after `entered.signal()` fires inside `remove()`)
+        // above only returns after `remove()` enters `enteredGroup`)
         // before `install` is even spawned, so the serial queue structurally
         // cannot dequeue `install`'s work item until the blocked removal item
         // returns below — no wait is needed to prove this, unlike a race that
         // depends on wall-clock scheduling.
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("a/c.m4a").path))
-        ops.release.signal()
+        ops.release()
         try await removal.value
         _ = try await install.value
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("a/c.m4a").path))

@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import VoxglassCore
 
+// Serialized: the static `URLProtocol` mock below records process-wide state.
 @Suite(.serialized)
 struct GutenbergCatalogTests {
     final class MockGutenbergServer: URLProtocol {
@@ -25,7 +26,9 @@ struct GutenbergCatalogTests {
             let payload = Data("""
             {"results":[
               {"id":123,"title":"The Law","authors":[{"name":"Doe, Jane"}],"subjects":[],"languages":["en"],"formats":{"application/epub+zip":"https://mock.gutenberg/123.epub","image/jpeg":"https://mock.gutenberg/123.jpg"}},
-              {"id":456,"title":"No EPUB","authors":[],"subjects":[],"languages":["en"],"formats":{"text/plain":"https://mock.gutenberg/456.txt"}}
+              {"id":456,"title":"No EPUB","authors":[],"subjects":[],"languages":["en"],"formats":{"text/plain":"https://mock.gutenberg/456.txt"}},
+              {"id":789,"title":"Livre français","authors":[],"subjects":[],"languages":["fr"],"formats":{"application/epub+zip":"https://mock.gutenberg/789.epub"}},
+              {"id":999,"title":"Still Copyrighted","authors":[],"subjects":[],"languages":["en"],"copyright":true,"formats":{"application/epub+zip":"https://mock.gutenberg/999.epub"}}
             ]}
             """.utf8)
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
@@ -40,7 +43,8 @@ struct GutenbergCatalogTests {
         configuration.protocolClasses = [MockGutenbergServer.self]
         return GutenbergCatalogClient(
             session: URLSession(configuration: configuration),
-            baseURL: URL(string: "https://mock.gutenberg/books/")!
+            baseURL: URL(string: "https://mock.gutenberg/books/")!,
+            projectGutenbergSearchURL: URL(string: "https://mock.gutenberg/ebooks/search/")!
         )
     }
 
@@ -53,7 +57,13 @@ struct GutenbergCatalogTests {
         let requestURL = try #require(MockGutenbergServer.lastRequestURL)
         let components = try #require(URLComponents(url: requestURL, resolvingAgainstBaseURL: false))
         #expect(components.path == "/books/")
+        #expect(components.queryItems?.map(\.name) == ["search"])
         #expect(components.queryItems?.first(where: { $0.name == "search" })?.value == "law")
+    }
+
+    @Test func fallbackFiltersLanguagesAndCopyrightedBooksClientSide() async throws {
+        let books = try await client().search("law")
+        #expect(books.map(\.id) == [123])
     }
 
     @Test func parserNeverBorrowsAnAuthorFromTheNextResult() {
@@ -91,41 +101,72 @@ struct GutenbergCatalogTests {
     }
 }
 
+// Serialized: the static `URLProtocol` recorder below is process-wide.
 @Suite(.serialized)
 struct GutenbergPrimarySearchTests {
     final class Recorder: URLProtocol {
         private final class State: @unchecked Sendable {
             let lock = NSLock()
             var hosts: [String] = []
+            var urls: [URL] = []
             var primaryStatus = 200
+            var primaryRetryAfter: String?
+            var fallbackFailsWithTimeout = false
         }
         private static let state = State()
-        static func reset(primaryStatus: Int = 200) {
-            state.lock.lock(); state.hosts = []; state.primaryStatus = primaryStatus; state.lock.unlock()
+        static func reset(
+            primaryStatus: Int = 200,
+            primaryRetryAfter: String? = nil,
+            fallbackFailsWithTimeout: Bool = false
+        ) {
+            state.lock.lock()
+            state.hosts = []
+            state.urls = []
+            state.primaryStatus = primaryStatus
+            state.primaryRetryAfter = primaryRetryAfter
+            state.fallbackFailsWithTimeout = fallbackFailsWithTimeout
+            state.lock.unlock()
         }
         static var hosts: [String] { state.lock.lock(); defer { state.lock.unlock() }; return state.hosts }
+        static var urls: [URL] { state.lock.lock(); defer { state.lock.unlock() }; return state.urls }
 
         override class func canInit(with request: URLRequest) -> Bool { true }
         override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
         override func stopLoading() {}
         override func startLoading() {
             let host = request.url?.host ?? ""
-            Self.state.lock.lock(); Self.state.hosts.append(host); let status = Self.state.primaryStatus; Self.state.lock.unlock()
+            Self.state.lock.lock()
+            Self.state.hosts.append(host)
+            if let url = request.url { Self.state.urls.append(url) }
+            let status = Self.state.primaryStatus
+            let retryAfter = Self.state.primaryRetryAfter
+            let fallbackFails = Self.state.fallbackFailsWithTimeout
+            Self.state.lock.unlock()
             let isPrimary = host == "primary.test"
             let body: String
             let code: Int
+            var headers: [String: String]?
             if isPrimary {
                 code = status
+                headers = retryAfter.map { ["Retry-After": $0] }
                 body = (request.url?.query ?? "").contains("empty")
                     ? "<html>No records found.</html>"
                     : status == 200 && (request.url?.query ?? "").contains("garbage")
                     ? "<html><div class=\"search-results\"><li class=\"booklink\">Changed markup</li></div></html>"
                     : #"<li class="booklink"><a href="/ebooks/7"><span class="title">Law</span><span class="subtitle">by Doe</span></a></li>"#
+            } else if fallbackFails {
+                client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+                return
             } else {
                 code = 200
                 body = #"{"results":[{"id":9,"title":"Fallback","authors":[],"subjects":[],"languages":["en"],"formats":{"application/epub+zip":"https://x/9.epub"}}]}"#
             }
-            let response = HTTPURLResponse(url: request.url!, statusCode: code, httpVersion: "HTTP/1.1", headerFields: nil)!
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: code,
+                httpVersion: "HTTP/1.1",
+                headerFields: headers
+            )!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: Data(body.utf8))
             client?.urlProtocolDidFinishLoading(self)
@@ -157,10 +198,23 @@ struct GutenbergPrimarySearchTests {
     }
 
     @Test func primaryTransportFailureFallsBackToGutendex() async throws {
-        Recorder.reset(primaryStatus: 503)
+        Recorder.reset(primaryStatus: 500)
         let books = try await client().search("law")
         #expect(books.map(\.id) == [9])
         #expect(Recorder.hosts == ["primary.test", "gutendex.test"])
+    }
+
+    @Test func primaryMaintenanceFailsFastWithRetryHint() async {
+        Recorder.reset(primaryStatus: 503, primaryRetryAfter: "21600")
+        do {
+            _ = try await client().search("law")
+            Issue.record("Expected a GutenbergCatalogError")
+        } catch let error as GutenbergCatalogError {
+            #expect(error == .temporarilyUnavailable(retryAfter: 21_600))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+        #expect(Recorder.hosts == ["primary.test"])
     }
 
     @Test func primaryParseFailureFallsBackToGutendex() async throws {
@@ -170,8 +224,30 @@ struct GutenbergPrimarySearchTests {
         #expect(Recorder.hosts == ["primary.test", "gutendex.test"])
     }
 
+    @Test func fallbackConnectivityFailureBecomesFriendlyOutage() async {
+        Recorder.reset(fallbackFailsWithTimeout: true)
+        do {
+            _ = try await client().search("garbage")
+            Issue.record("Expected a GutenbergCatalogError")
+        } catch let error as GutenbergCatalogError {
+            #expect(error == .temporarilyUnavailable(retryAfter: nil))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+        #expect(Recorder.hosts == ["primary.test", "gutendex.test"])
+    }
+
+    @Test func fallbackRequestStaysCacheable() async throws {
+        Recorder.reset()
+        _ = try await client().search("garbage")
+        let fallbackURL = try #require(Recorder.urls.last)
+        let components = try #require(URLComponents(url: fallbackURL, resolvingAgainstBaseURL: false))
+        #expect(components.host == "gutendex.test")
+        #expect(components.queryItems?.map(\.name) == ["search"])
+    }
+
     @Test func callerCancellationDoesNotStartFallback() async {
-        Recorder.reset(primaryStatus: 503)
+        Recorder.reset(primaryStatus: 500)
         let task = Task { try await client().search("law") }
         task.cancel()
         _ = try? await task.value

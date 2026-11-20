@@ -21,7 +21,7 @@ private actor RepairPositions: PositionStore {
 }
 
 @MainActor
-@Suite(.serialized) struct LocalAudioRepairTests {
+@Suite struct LocalAudioRepairTests {
     private let root: URL
     private let access = RepairAccess()
     private let repository: LibraryRepository
@@ -88,11 +88,12 @@ private actor RepairPositions: PositionStore {
 
     private func harness() -> (PlaybackCoordinator, FakeAudioEngine) {
         let engine = FakeAudioEngine()
-        let defaults = UserDefaults(suiteName: "repair-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let coordinator = PlaybackCoordinator(
             engine: engine, positionStore: RepairPositions(),
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
-            rateStore: PlaybackRateStore(defaults: defaults), bridge: NoopPlaybackBridge()
+            rateStore: PlaybackRateStore(defaults: defaults), bridge: NoopPlaybackBridge(),
+            defaults: defaults
         )
         let repository = repository
         coordinator.localSourceContextProvider = { await repository.localSourceContext(bookID: $0) }

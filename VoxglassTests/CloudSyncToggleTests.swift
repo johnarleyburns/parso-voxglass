@@ -4,16 +4,15 @@ import Foundation
 
 /// Tests for the iCloud Sync enable/disable toggle added in Phase 3.
 @MainActor
-@Suite(.serialized) struct CloudSyncToggleTests {
+// Serialized: exercises `NSUbiquitousKeyValueStore.default`, a process-wide singleton.
+@Suite(.serialized)
+struct CloudSyncToggleTests {
 
-    private let enabledKey = AppPreferencesStore.Keys.iCloudSyncEnabled
-
-    init() {UserDefaults.standard.removeObject(forKey: enabledKey)
-    }
+    private let defaults = InMemoryDefaultsStore()
 
     @Test func defaultIsEnabled() {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-default-on")
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         #expect(cloudSync.isEnabled)  // iCloud sync must default to enabled for existing users
     }
 
@@ -21,7 +20,7 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-disabled")
         try await database.prepare()
 
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         cloudSync.testForceAvailable = true
         cloudSync.isEnabled = false
 
@@ -39,7 +38,7 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-reenable")
         try await database.prepare()
 
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         cloudSync.testForceAvailable = true
 
         // Seed data while sync is on.
@@ -104,7 +103,7 @@ import Foundation
     @Test func successfulSyncClearsAPreviousError() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-clears-error-\(UUID().uuidString)")
         try await database.prepare()
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         cloudSync.testForceAvailable = true
         cloudSync.syncError = "A previous sync failed"
 
@@ -140,7 +139,7 @@ import Foundation
     @Test func applyCloudPositionRefusesEarlierChapterThatWouldRegressBookProgress() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-regress-\(UUID().uuidString)")
         try await database.prepare()
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         cloudSync.testForceAvailable = true
         let (bookID, chapter1, chapter2) = try await seedTwoChapterBook(database)
 
@@ -177,7 +176,7 @@ import Foundation
     @Test func applyCloudPositionStillAcceptsGenuineForwardProgress() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-advance-\(UUID().uuidString)")
         try await database.prepare()
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, userDefaults: defaults)
         cloudSync.testForceAvailable = true
         let (bookID, chapter1, chapter2) = try await seedTwoChapterBook(database)
         try await database.execute(
