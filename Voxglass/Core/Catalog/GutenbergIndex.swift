@@ -187,7 +187,7 @@ public final class GutenbergIndexStore {
                 let compressed = try Data(contentsOf: indexURL)
                 let data = try (compressed as NSData).decompressed(using: .zlib) as Data
                 let decoded = try JSONDecoder().decode(GutenbergCatalogIndex.self, from: data)
-                let manifestURL = directory.appendingPathComponent(Self.manifestFileName)
+                let manifestURL = directory.appendingPathComponent("manifest.json")
                 let manifest = try? JSONDecoder().decode(
                     GutenbergIndexManifest.self,
                     from: Data(contentsOf: manifestURL)
