@@ -68,3 +68,8 @@ fastlane/test_output
 # Curated lists generator cache
 Tools/CuratedLists/.cache/
 Tools/CuratedLists/__pycache__/
+
+# Project Gutenberg mirror staging/data and local state (never commit book data or credentials)
+/gutenberg/
+/.gutenberg-mirror/
+/.gutenberg-staging/
