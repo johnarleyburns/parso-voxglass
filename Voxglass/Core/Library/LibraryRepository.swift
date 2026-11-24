@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassPortable
 
 public enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case all
@@ -717,7 +718,7 @@ public final class LibraryRepository: @unchecked Sendable {
         }
     }
 
-    public func resplitBookTasteSubjectsIfNeeded(defaults: UserDefaults = .standard) async -> Int {
+    public func resplitBookTasteSubjectsIfNeeded(defaults: any DefaultsStoring = UserDefaults.standard) async -> Int {
         let flagKey = "voxglass.bookTasteSubjectResplitV1"
         guard !defaults.bool(forKey: flagKey) else { return 0 }
         do {
@@ -764,7 +765,7 @@ public final class LibraryRepository: @unchecked Sendable {
     /// are injectable for tests.
     @discardableResult
     public func rebaseStaleLocalURLsIfNeeded(
-        defaults: UserDefaults = .standard,
+        defaults: any DefaultsStoring = UserDefaults.standard,
         roots: [ContainerPathRebase.Root]? = nil,
         containerMarker: String? = nil
     ) async -> Int {

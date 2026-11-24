@@ -22,11 +22,12 @@ import Foundation
     private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine) {
         let db = AppDatabase.makeTemporaryDatabase(named: "coord-rate-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
-        let rateStore = PlaybackRateStore(defaults: UserDefaults(suiteName: "cr-\(UUID().uuidString)")!)
+        let rateStore = PlaybackRateStore(defaults: InMemoryDefaultsStore())
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: SQLitePositionStore(database: db),
-            rateStore: rateStore
+            rateStore: rateStore,
+            defaults: InMemoryDefaultsStore()
         )
         return (coordinator, engine)
     }

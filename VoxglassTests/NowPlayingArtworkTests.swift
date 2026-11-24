@@ -35,7 +35,7 @@ import Foundation
 
     @Test func artworkFetchedOncePerBookNotPerTick() async {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-once-\(UUID().uuidString)")
-        let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db))
+        let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db), defaults: InMemoryDefaultsStore())
         let counter = FetchCounter()
         coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
 
@@ -54,7 +54,8 @@ import Foundation
         let coordinator = PlaybackCoordinator(
             engine: FakeAudioEngine(),
             positionStore: SQLitePositionStore(database: db),
-            bridge: bridge
+            bridge: bridge,
+            defaults: InMemoryDefaultsStore()
         )
         let counter = FetchCounter()
         coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
@@ -67,7 +68,7 @@ import Foundation
 
     @Test func artworkRefreshesOnBookChange() async {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-change-\(UUID().uuidString)")
-        let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db))
+        let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db), defaults: InMemoryDefaultsStore())
         let counter = FetchCounter()
         coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
 
@@ -92,7 +93,7 @@ import Foundation
 
     private func makeCoordinator(_ bridge: NoopPlaybackBridge) -> PlaybackCoordinator {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-stale-\(UUID().uuidString)")
-        return PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db), bridge: bridge)
+        return PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db), bridge: bridge, defaults: InMemoryDefaultsStore())
     }
 
     @Test func delayedArtworkForPreviousBookIsDiscarded() async {
@@ -195,8 +196,9 @@ import Foundation
         await coordinator.play(makeBook(title: "A", cover: false))
         await coordinator.play(b)
         let info = bridge.lastNowPlaying
+        let expectedTitle = ChapterDisplayTitles.make(for: b.chapters)[b.chapters[0].id]?.compactLine
         #expect(info?.albumTitle == "B")
-        #expect(info?.title == b.chapters[0].title)
+        #expect(info?.title == expectedTitle)
         #expect(info?.artist == b.book.authorLine)
     }
 }

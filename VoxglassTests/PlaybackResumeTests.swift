@@ -94,12 +94,13 @@ import Foundation
         let db = AppDatabase.makeTemporaryDatabase(named: "resume-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         let store = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "resume-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: store,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
-            rateStore: PlaybackRateStore(defaults: defaults)
+            rateStore: PlaybackRateStore(defaults: defaults),
+            defaults: defaults
         )
         return (coordinator, engine, store, db)
     }

@@ -269,6 +269,26 @@ import Foundation
         #expect(sections.flatMap(\.items).first?.isEnabled == false)
     }
 
+    @Test func chapterListUsesCompactTitleAndFallsBackToRawTitle() {
+        let bookID = UUID()
+        let book = makeBook(id: bookID, title: "Book")
+        let parsed = CarPlayChapterSnapshot(
+            id: UUID(),
+            title: "46 - Pt2 Ch6 The Basement",
+            compactTitle: "Part 2 · Ch. 6 · The Basement",
+            index: 0
+        )
+        let plain = CarPlayChapterSnapshot(id: UUID(), title: "Preface", index: 1)
+        let sections = CarPlayMenuBuilder.chapterList(
+            book: book,
+            chapters: [parsed, plain],
+            nowPlayingChapterID: nil
+        )
+        let items = sections.flatMap(\.items)
+        #expect(items[0].title == "Part 2 · Ch. 6 · The Basement")
+        #expect(items[1].title == "Preface")
+    }
+
     // MARK: - Tab metadata
 
     @Test func eachTabHasExpectedTitle() {

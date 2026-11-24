@@ -212,7 +212,7 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-old-marker")
         let store = TasteProfileStore(database: database)
         let oldMarker = "voxglass.tasteHistoryBackfilledV1"
-        let testDefaults = UserDefaults(suiteName: "test-taste-\(UUID().uuidString)")!
+        let testDefaults = InMemoryDefaultsStore()
         testDefaults.set(true, forKey: oldMarker)
         defer { testDefaults.removeObject(forKey: oldMarker) }
         try await seedHistoryBook(

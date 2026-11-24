@@ -3,7 +3,7 @@ import Foundation
 @testable import VoxglassCore
 
 @MainActor
-@Suite(.serialized) struct PlaybackCoordinatorSilenceTests {
+@Suite struct PlaybackCoordinatorSilenceTests {
 
     private func makeBook() -> BookWithChapters {
         let bookID = UUID()
@@ -14,15 +14,22 @@ import Foundation
         return BookWithChapters(book: Book(id: bookID, title: "Book", authors: ["A"], sourceID: UUID()), chapters: [ch])
     }
 
-    private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine) {
+    private func makeCoordinator(
+        skipSilenceEnabled: Bool = true
+    ) -> (PlaybackCoordinator, FakeAudioEngine) {
         let db = AppDatabase.makeTemporaryDatabase(named: "silence-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
-        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db))
+        let defaults = InMemoryDefaultsStore()
+        defaults.set(skipSilenceEnabled, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
+        let coordinator = PlaybackCoordinator(
+            engine: engine,
+            positionStore: SQLitePositionStore(database: db),
+            defaults: defaults
+        )
         return (coordinator, engine)
     }
 
     @Test func silenceDetectedBoostsRate() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.setPlaybackRate(1.0)
@@ -34,7 +41,6 @@ import Foundation
     }
 
     @Test func speechRestoresUserRate() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.setPlaybackRate(1.5)
@@ -49,7 +55,6 @@ import Foundation
     }
 
     @Test func pauseResetsBoost() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
@@ -65,7 +70,6 @@ import Foundation
     }
 
     @Test func manualRateChangeResetsBoost() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
@@ -81,9 +85,7 @@ import Foundation
     }
 
     @Test func skipSilenceDisabledDoesNotBoost() async {
-        UserDefaults.standard.set(false, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
-        UserDefaults.standard.synchronize()
-        let (coordinator, engine) = makeCoordinator()
+        let (coordinator, engine) = makeCoordinator(skipSilenceEnabled: false)
         await coordinator.play(makeBook())
         engine.reset()
 
@@ -97,7 +99,6 @@ import Foundation
     }
 
     @Test func maxRateDoesNotDropOnSilence() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.setPlaybackRate(3.5)
@@ -109,7 +110,6 @@ import Foundation
     }
 
     @Test func highRateClampedToMax() async {
-        UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.skipSilenceEnabled)
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.setPlaybackRate(2.5)
@@ -134,19 +134,47 @@ import Foundation
         #expect(!engine.isPlaying)
     }
 
-    @Test func interruptionEndRequiresExplicitPlay() async {
+    @Test func interruptionEndResumesWhenSystemAllowsAndPlaybackWasActive() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.handleAudioInterruptionBegan()
         engine.reset()
 
-        coordinator.handleAudioInterruptionEnded()
+        coordinator.handleAudioInterruptionEnded(shouldResume: true)
+        for _ in 0..<100 where !engine.isPlaying { await Task.yield() }
+
+        #expect(engine.calls.contains(.play))
+        #expect(engine.isPlaying)
+        #expect(coordinator.currentSession?.isPlaying == true)
+    }
+
+    @Test func interruptionEndWithoutSystemResumeHintStaysPaused() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.handleAudioInterruptionBegan()
+        engine.reset()
+
+        coordinator.handleAudioInterruptionEnded(shouldResume: false)
         coordinator.handleAudioRouteChanged()
+        for _ in 0..<20 { await Task.yield() }
 
         #expect(!engine.calls.contains(.play))
+        #expect(!engine.isPlaying)
         #expect(coordinator.currentSession?.isPlaying == false)
-        coordinator.resumeCurrentSession()
-        for _ in 0..<100 where !engine.isPlaying { await Task.yield() }
-        #expect(engine.isPlaying)
+    }
+
+    @Test func interruptionEndDoesNotStartAudioThatWasAlreadyPaused() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.pause()
+        coordinator.handleAudioInterruptionBegan()
+        engine.reset()
+
+        coordinator.handleAudioInterruptionEnded(shouldResume: true)
+        for _ in 0..<20 { await Task.yield() }
+
+        #expect(!engine.calls.contains(.play))
+        #expect(!engine.isPlaying)
+        #expect(coordinator.currentSession?.isPlaying == false)
     }
 }

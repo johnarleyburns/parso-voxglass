@@ -40,7 +40,7 @@ import Foundation
     // MARK: - PlaybackRateStore per-book isolation + default fallback
 
     private func makeStore() -> PlaybackRateStore {
-        PlaybackRateStore(defaults: UserDefaults(suiteName: "rate-\(UUID().uuidString)")!)
+        PlaybackRateStore(defaults: InMemoryDefaultsStore())
     }
 
     @Test func defaultFallbackIsNormal() {

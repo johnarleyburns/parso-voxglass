@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import VoxglassPortable
 
 public struct CollectionBookPreview: Codable, Equatable, Sendable {
     public let title: String
@@ -29,7 +30,7 @@ public final class CollectionCoverStore: ObservableObject {
 
     private let client: InternetArchiveCatalogClient
     private let artwork: CoverArtworkValidating
-    private let defaults: UserDefaults
+    private let defaults: any DefaultsStoring
     private let coverIdentifierCacheKey = "voxglass.collectionCoverIdentifierMap.v3"
     private let coverStampCacheKey = "voxglass.collectionCoverStampMap.v3"
     private let previewCacheKey = "voxglass.collectionBookPreviewMap.v1"
@@ -44,7 +45,7 @@ public final class CollectionCoverStore: ObservableObject {
     public init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
         artwork: CoverArtworkValidating,
-        defaults: UserDefaults = .standard
+        defaults: any DefaultsStoring = UserDefaults.standard
     ) {
         self.client = client
         self.artwork = artwork
@@ -232,16 +233,16 @@ public final class CollectionCoverStore: ObservableObject {
         "\(languages.sorted().joined(separator: ","))|\(query)"
     }
 
-    private static func loadStringMap(from defaults: UserDefaults, key: String) -> [String: String] {
+    private static func loadStringMap(from defaults: any DefaultsStoring, key: String) -> [String: String] {
         (defaults.dictionary(forKey: key) as? [String: String]) ?? [:]
     }
 
-    private static func loadCounts(from defaults: UserDefaults, key: String) -> [String: Int] {
+    private static func loadCounts(from defaults: any DefaultsStoring, key: String) -> [String: Int] {
         (defaults.dictionary(forKey: key) as? [String: Int]) ?? [:]
     }
 
     private static func loadPreviews(
-        from defaults: UserDefaults,
+        from defaults: any DefaultsStoring,
         key: String
     ) -> [String: [CollectionBookPreview]] {
         guard let data = defaults.data(forKey: key),

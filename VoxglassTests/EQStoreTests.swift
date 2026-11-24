@@ -4,9 +4,9 @@ import Foundation
 
 @Suite struct EQPresetStoreTests {
 
-    private func makeStore() -> (EQPresetStore, UserDefaults) {
+    private func makeStore() -> (EQPresetStore, InMemoryDefaultsStore) {
         let suite = "eq-preset-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryDefaultsStore()
         return (EQPresetStore(defaults: defaults), defaults)
     }
 
@@ -49,7 +49,7 @@ import Foundation
 
     @Test func persistenceAcrossStoreInstances() {
         let suite = "eq-preset-persist-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryDefaultsStore()
         let preset = EQPreset(name: "Persisted", gains: Array(repeating: 2, count: 10))
         EQPresetStore(defaults: defaults).save(preset)
 
@@ -61,7 +61,7 @@ import Foundation
 @Suite struct EQSettingsStoreTests {
 
     private func makeStore() -> EQSettingsStore {
-        let defaults = UserDefaults(suiteName: "eq-settings-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         return EQSettingsStore(defaults: defaults)
     }
 
@@ -73,7 +73,7 @@ import Foundation
 
     @Test func engagedAndGainsPersist() {
         let suite = "eq-settings-persist-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryDefaultsStore()
         let store = EQSettingsStore(defaults: defaults)
 
         store.isEngaged = true

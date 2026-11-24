@@ -1,5 +1,6 @@
 import Foundation
 import ParsoAudioStreaming
+import VoxglassPortable
 
 @MainActor
 public final class LibraryStore: ObservableObject {
@@ -122,7 +123,8 @@ public final class LibraryStore: ObservableObject {
     }
 
     private let repository: LibraryRepository
-    private let snapshotStore = LastPlaybackSnapshotStore()
+    private let snapshotStore: LastPlaybackSnapshotStore
+    private let defaults: any DefaultsStoring
     private weak var playback: PlaybackCoordinator?
     private weak var offlineManager: OfflineDownloadManager?
 
@@ -130,8 +132,13 @@ public final class LibraryStore: ObservableObject {
     /// stored playback position for it (the delete-and-reinstall path, Phase 3).
     public var onBookImported: ((UUID) async -> Void)?
 
-    public init(repository: LibraryRepository) {
+    public init(
+        repository: LibraryRepository,
+        defaults: any DefaultsStoring = UserDefaults.standard
+    ) {
         self.repository = repository
+        self.defaults = defaults
+        self.snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
     }
 
     /// Wires up collaborators used by `delete(book:)`. Called by `AppServices`
@@ -396,8 +403,8 @@ public final class LibraryStore: ObservableObject {
 
         // 5. Drop the recently-viewed entry.
         let key = RecentlyViewedBooksStore.key
-        let raw = UserDefaults.standard.string(forKey: key) ?? ""
-        UserDefaults.standard.set(RecentlyViewedBooksStore.removing(bookID: bookID, in: raw), forKey: key)
+        let raw = defaults.string(forKey: key) ?? ""
+        defaults.set(RecentlyViewedBooksStore.removing(bookID: bookID, in: raw), forKey: key)
 
         // 6. Stop playback / clear the restore snapshot if this was the live or
         //    last session.

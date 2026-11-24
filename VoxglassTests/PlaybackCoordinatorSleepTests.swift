@@ -21,7 +21,7 @@ import Foundation
     private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine) {
         let db = AppDatabase.makeTemporaryDatabase(named: "sleep-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
-        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db))
+        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db), defaults: InMemoryDefaultsStore())
         coordinator.fadeOutDuration = 0.005
         return (coordinator, engine)
     }
@@ -93,7 +93,8 @@ import Foundation
         var current = Date(timeIntervalSince1970: 5_000)
         let timer = SleepTimer(now: { current })
         let coordinator = PlaybackCoordinator(
-            engine: engine, positionStore: SQLitePositionStore(database: db), sleepTimer: timer
+            engine: engine, positionStore: SQLitePositionStore(database: db), sleepTimer: timer,
+            defaults: InMemoryDefaultsStore()
         )
         coordinator.fadeOutDuration = 0.005
 

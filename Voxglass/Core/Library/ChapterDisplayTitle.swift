@@ -9,6 +9,24 @@ public struct ChapterDisplayTitle: Equatable, Sendable {
         self.eyebrow = eyebrow
         self.title = title
     }
+
+    /// One-line form for surfaces with a single text line, such as CarPlay
+    /// list rows and Now Playing metadata. The locator leads so truncation
+    /// hides the descriptive tail rather than the chapter number.
+    public var compactLine: String {
+        let eyebrow = eyebrow?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch (eyebrow.isEmpty, title.isEmpty) {
+        case (false, false):
+            return "\(eyebrow) · \(title)"
+        case (false, true):
+            return eyebrow
+        case (true, false):
+            return title
+        case (true, true):
+            return title
+        }
+    }
 }
 
 /// Parses common LibriVox chapter-title prefixes without changing stored chapters.

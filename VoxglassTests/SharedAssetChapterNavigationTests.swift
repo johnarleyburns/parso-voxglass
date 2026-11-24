@@ -19,7 +19,7 @@ import ParsoAudioStreaming
 ///    corrupting the "remaining time" display and self-perpetuating via the
 ///    resume snapshot on every subsequent load.
 @MainActor
-@Suite(.serialized) struct SharedAssetChapterNavigationTests {
+@Suite struct SharedAssetChapterNavigationTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -53,7 +53,7 @@ import ParsoAudioStreaming
             evictableRoot: FileManager.default.temporaryDirectory
                 .appendingPathComponent("shared-asset-cache-\(UUID().uuidString)", isDirectory: true)
         )
-        let defaults = UserDefaults(suiteName: "shared-asset-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
         let coordinator = PlaybackCoordinator(
             engine: engine,
@@ -61,7 +61,8 @@ import ParsoAudioStreaming
             snapshotStore: snapshotStore,
             rateStore: PlaybackRateStore(defaults: defaults),
             cacheStore: cacheStore,
-            bridge: NoopPlaybackBridge()
+            bridge: NoopPlaybackBridge(),
+            defaults: defaults
         )
         return Harness(coordinator: coordinator, engine: engine, store: store, snapshotStore: snapshotStore)
     }

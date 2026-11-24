@@ -5,12 +5,7 @@ import Foundation
 @MainActor
 @Suite struct RecommendationShelfPersistenceTests {
 
-    private var suiteName: String!
-    private var defaults: UserDefaults!
-
-    init() {suiteName = "reco-shelf-persistence-\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)
-    }
+    private let defaults = InMemoryDefaultsStore()
 
     @Test func coldLaunchHydratesPersistedPersonalizedShelf() async throws {
         let personalized = [

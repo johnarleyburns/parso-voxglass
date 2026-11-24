@@ -3,7 +3,7 @@ import Foundation
 @testable import VoxglassCore
 
 @MainActor
-@Suite(.serialized) struct LockScreenAtomicUpdateTests {
+@Suite struct LockScreenAtomicUpdateTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -25,14 +25,15 @@ import Foundation
 
     private func makeHarness() -> Harness {
         let engine = FakeAudioEngine()
-        let defaults = UserDefaults(suiteName: "lock-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let bridge = NoopPlaybackBridge()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: MemoryPositionStore(),
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         return Harness(coordinator: coordinator, engine: engine, bridge: bridge)
     }

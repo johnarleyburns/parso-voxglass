@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import VoxglassPortable
 @testable import VoxglassWatchCore
 @testable import VoxglassWatchProtocol
 
@@ -112,7 +113,7 @@ struct WatchListeningTests {
 struct WatchContinueListeningStateTests {
     @Test("Round-trips, reloads only on real changes, and ranks relevance")
     func roundTrip() throws {
-        let defaults = try #require(UserDefaults(suiteName: "continue-\(UUID().uuidString)"))
+        let defaults = InMemoryDefaultsStore()
         let state = WatchContinueListeningState(bookTitle: "Moby Dick", chapterIndex: 2, chapterTitle: "Loomings",
                                                 progress: 0.12, remainingInBook: 3_600, isPlaying: false,
                                                 anchorDate: Date(timeIntervalSince1970: 0))

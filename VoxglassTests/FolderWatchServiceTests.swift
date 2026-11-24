@@ -137,9 +137,7 @@ import Foundation
             """,
             [.string(UUID().uuidString), .string(imported.book.id.uuidString), .string(chapter.id.uuidString)]
         )
-        let defaultsName = "Voxglass.FolderAccessTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: defaultsName))
-        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let defaults = InMemoryDefaultsStore()
         let service = FolderWatchService(repository: repository, defaults: defaults)
         await service.addFolder(folder)
         await service.addFolder(folder)

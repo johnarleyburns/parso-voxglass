@@ -16,7 +16,7 @@ import Foundation
     @Test func launchRepairRewritesAbsoluteApplicationSupportCoverToRelative() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "cover-repair-\(UUID().uuidString)")
         let repository = LibraryRepository(database: db)
-        let defaults = UserDefaults(suiteName: "cover-repair-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
 
         let appSupport = LocalArtworkStore.applicationSupportDirectory()
         let coverDir = appSupport.appendingPathComponent("Voxglass/LocalArtwork", isDirectory: true)

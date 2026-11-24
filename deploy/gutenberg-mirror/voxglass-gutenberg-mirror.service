@@ -1,0 +1,25 @@
+[Unit]
+Description=Voxglass Project Gutenberg mirror to Cloudflare R2
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/voxglass-gutenberg.env
+
+[Service]
+Type=oneshot
+User=voxglass-gutenberg
+Group=voxglass-gutenberg
+WorkingDirectory=/opt/voxglass-gutenberg
+EnvironmentFile=/etc/voxglass-gutenberg.env
+ExecStart=/opt/voxglass-gutenberg/bin/gutenberg-mirror.sh --once
+TimeoutStartSec=0
+Nice=10
+IOSchedulingClass=idle
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/voxglass-gutenberg
+
+[Install]
+WantedBy=multi-user.target

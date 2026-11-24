@@ -68,14 +68,15 @@ private final class RecordingBridge: PlaybackPlatformBridge {
         let db = AppDatabase.makeTemporaryDatabase(named: "pause-bg-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         let store = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "pause-bg-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let bridge = RecordingBridge()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: store,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         let bookID = UUID()
         let chapters = makeChapters(1, bookID: bookID)
@@ -98,14 +99,15 @@ private final class RecordingBridge: PlaybackPlatformBridge {
         let db = AppDatabase.makeTemporaryDatabase(named: "route-bg-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         let store = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "route-bg-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let bridge = RecordingBridge()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: store,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         let bookID = UUID()
         let chapters = makeChapters(1, bookID: bookID)
@@ -127,14 +129,15 @@ private final class RecordingBridge: PlaybackPlatformBridge {
         let db = AppDatabase.makeTemporaryDatabase(named: "carplay-handoff-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         let store = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "carplay-handoff-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let bridge = RecordingBridge()
         let coordinator = PlaybackCoordinator(
             engine: engine,
             positionStore: store,
             snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
             rateStore: PlaybackRateStore(defaults: defaults),
-            bridge: bridge
+            bridge: bridge,
+            defaults: defaults
         )
         let bookID = UUID()
         let chapters = makeChapters(1, bookID: bookID)

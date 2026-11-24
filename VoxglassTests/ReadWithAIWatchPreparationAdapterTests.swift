@@ -252,11 +252,9 @@ private func textFile(_ dir: URL) throws -> URL {
         #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("bad.m4a").path))
     }
 
-    private func isolatedCache(root: URL) -> (ReadWithAIWatchNarrationUserDefaultsCache, UserDefaults) {
-        let name = "rwai-test-\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: name)!
-        d.removePersistentDomain(forName: name)
-        return (ReadWithAIWatchNarrationUserDefaultsCache(suiteName: name, managedRoot: root), d)
+    private func isolatedCache(root: URL) -> (ReadWithAIWatchNarrationUserDefaultsCache, InMemoryDefaultsStore) {
+        let d = InMemoryDefaultsStore()
+        return (ReadWithAIWatchNarrationUserDefaultsCache(defaults: d, managedRoot: root), d)
     }
 
     @Test @MainActor func legacyEntryIsPurgedAndForcesFreshAacLCGeneration() async throws {

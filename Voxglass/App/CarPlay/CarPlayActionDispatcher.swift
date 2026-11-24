@@ -132,10 +132,12 @@ final class CarPlayActionDispatcher {
     private func pushChapterList(bookID: UUID) {
         guard let book = services.libraryStore.book(withID: bookID),
               let controller else { return }
+        let displayTitles = ChapterDisplayTitles.make(for: book.chapters)
         let chapters = book.chapters.naturallySorted().map { chapter in
             CarPlayChapterSnapshot(
                 id: chapter.id,
                 title: chapter.title,
+                compactTitle: displayTitles[chapter.id]?.compactLine,
                 index: chapter.index,
                 duration: chapter.duration,
                 hasPlayableURL: chapter.resolvedPlayableURL() != nil

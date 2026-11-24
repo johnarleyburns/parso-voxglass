@@ -8,7 +8,7 @@ import Foundation
 @Suite struct PositionDurabilityTests {
 
     private func makeSnapshotStore() -> LastPlaybackSnapshotStore {
-        LastPlaybackSnapshotStore(defaults: UserDefaults(suiteName: "durability-\(UUID().uuidString)")!)
+        LastPlaybackSnapshotStore(defaults: InMemoryDefaultsStore())
     }
 
     @Test func snapshotStoreKeepsAPositionPerBook() {
@@ -75,7 +75,7 @@ import Foundation
     @Test func reconcileReplaysSnapshotsIntoDatabaseOnLaunch() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "reconcile-\(UUID().uuidString)")
         let store = SQLitePositionStore(database: db)
-        let defaults = UserDefaults(suiteName: "reconcile-\(UUID().uuidString)")!
+        let defaults = InMemoryDefaultsStore()
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
 
         let bookID = UUID(), chapterID = UUID()
@@ -89,7 +89,8 @@ import Foundation
             engine: FakeAudioEngine(),
             positionStore: store,
             snapshotStore: snapshotStore,
-            rateStore: PlaybackRateStore(defaults: defaults)
+            rateStore: PlaybackRateStore(defaults: defaults),
+            defaults: defaults
         )
         await coordinator.reconcileSnapshots()
 

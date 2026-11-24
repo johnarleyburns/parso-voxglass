@@ -3,6 +3,7 @@ import Foundation
 import Observation
 import ParsoAudioStreaming
 import SwiftUI
+import VoxglassPortable
 
 public extension Notification.Name {
     static let playbackAccessibilityAnnouncement = Notification.Name("VoxglassPlaybackAccessibilityAnnouncement")
@@ -64,8 +65,8 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
     /// Duration of the sleep-timer fade-out; small in tests.
     @ObservationIgnored public var fadeOutDuration: TimeInterval = 5
-    @ObservationIgnored private let eqSettings = EQSettingsStore()
-    @ObservationIgnored public let eqPresets = EQPresetStore()
+    @ObservationIgnored private let eqSettings: EQSettingsStore
+    @ObservationIgnored public let eqPresets: EQPresetStore
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var lastPeriodicSave = Date.distantPast
     @ObservationIgnored private var currentSessionUpdatedAt: Date?
@@ -114,6 +115,11 @@ public final class PlaybackCoordinator {
     /// toggle before the engine has caught up. Set after `engine.play()` + `mutateSession`;
     /// cleared on the next tick when the engine confirms play state.
     @ObservationIgnored private var suppressNextIsPlayingSync = false
+    /// Whether audio was actually playing when the current audio interruption
+    /// began. CarPlay navigation prompts, calls, and Siri all arrive as
+    /// AVAudioSession interruptions; only the ones that interrupted active
+    /// playback may resume automatically when the system says to.
+    @ObservationIgnored private var wasPlayingWhenInterruptionBegan = false
     /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
     /// every caller awaits the same in-flight load instead of issuing a second.
     @ObservationIgnored private var engineLoadTask: Task<Bool, Never>?
@@ -159,6 +165,10 @@ public final class PlaybackCoordinator {
 
     @ObservationIgnored private var silenceBoosted = false
     @ObservationIgnored private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
+    /// Preference seam for skip-silence, volume normalization, prefetch, and
+    /// skip intervals. Tests inject `InMemoryDefaultsStore` so no coordinator
+    /// test touches the real preferences domain.
+    @ObservationIgnored private let defaults: any DefaultsStoring
 
     /// Tracks which book's artwork is currently published, so the cover is fetched
     /// once per session load — never per 1s tick — keyed by book id. The concrete
@@ -184,26 +194,30 @@ public final class PlaybackCoordinator {
     public init(
         engine: AudioEngine,
         positionStore: PositionStore,
-        snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
-        rateStore: PlaybackRateStore = PlaybackRateStore(),
+        snapshotStore: LastPlaybackSnapshotStore? = nil,
+        rateStore: PlaybackRateStore? = nil,
         sleepTimer: SleepTimer = SleepTimer(),
         cacheStore: SparseCacheStore = AudioCache.shared,
         bridge: PlaybackPlatformBridge? = nil,
-        navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore(),
+        navigationHistoryStore: NavigationHistoryStore? = nil,
         sourceResolver: PlaybackSourceResolver = .system,
         decodeRecoveryDelay: @escaping @Sendable () async throws -> Void = {
             try await Task.sleep(for: .milliseconds(100))
-        }
+        },
+        defaults: any DefaultsStoring = UserDefaults.standard
     ) {
         self.engine = engine
         self.sourceResolver = sourceResolver
         self.positionStore = positionStore
         self.cacheStore = cacheStore
-        self.snapshotStore = snapshotStore
-        self.navigationHistory = navigationHistoryStore
-        self.rateStore = rateStore
+        self.snapshotStore = snapshotStore ?? LastPlaybackSnapshotStore(defaults: defaults)
+        self.navigationHistory = navigationHistoryStore ?? NavigationHistoryStore(defaults: defaults)
+        self.rateStore = rateStore ?? PlaybackRateStore(defaults: defaults)
         self.sleepTimer = sleepTimer
         self.decodeRecoveryDelay = decodeRecoveryDelay
+        self.defaults = defaults
+        self.eqSettings = EQSettingsStore(defaults: defaults)
+        self.eqPresets = EQPresetStore(defaults: defaults)
         self.bridge = bridge ?? NoopPlaybackBridge()
         self.engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
@@ -1050,6 +1064,9 @@ public final class PlaybackCoordinator {
 
     public func pause() {
         cancelDecodeRecovery()
+        // An explicit pause supersedes any automatic resume the interruption
+        // system might request when its notification ends.
+        wasPlayingWhenInterruptionBegan = false
         invalidatePlaybackOwnership()
         guard currentSession != nil else { return }
         if let bookID = currentSession?.book.id {
@@ -1179,17 +1196,17 @@ public final class PlaybackCoordinator {
     // MARK: - Skip silence (P2-2, Pro)
 
     private var isSkipSilenceEnabled: Bool {
-        UserDefaults.standard.bool(forKey: isSkipSilenceEnabledKey)
+        defaults.bool(forKey: isSkipSilenceEnabledKey)
     }
 
     private var isVolumeNormalizationEnabled: Bool {
-        UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled) != nil
-            ? UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
+        defaults.object(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled) != nil
+            ? defaults.bool(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
             : true
     }
 
     public func setVolumeNormalizationEnabled(_ enabled: Bool) {
-        UserDefaults.standard.set(enabled, forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
+        defaults.set(enabled, forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
     }
 
     private func handleSilenceChanged(_ isSilent: Bool) {
@@ -1288,7 +1305,6 @@ public final class PlaybackCoordinator {
 
     /// The stored skip-backward interval (seconds), defaulting to 15.
     public var resolvedSkipBackwardInterval: Int {
-        let defaults = UserDefaults.standard
         let v = defaults.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
             : 15
@@ -1297,7 +1313,6 @@ public final class PlaybackCoordinator {
 
     /// The stored skip-forward interval (seconds), defaulting to 30.
     public var resolvedSkipForwardInterval: Int {
-        let defaults = UserDefaults.standard
         let v = defaults.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
             : 30
@@ -1539,14 +1554,14 @@ public final class PlaybackCoordinator {
     }
 
     private var storedPrefetchDepth: Int {
-        let raw = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.prefetchDepth)
+        let raw = defaults.integer(forKey: AppPreferencesStore.Keys.prefetchDepth)
         return raw <= 0 ? 1 : raw
     }
 
     private var prefetchWifiOnly: Bool {
-        UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.prefetchWifiOnly) == nil
+        defaults.object(forKey: AppPreferencesStore.Keys.prefetchWifiOnly) == nil
             ? true
-            : UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.prefetchWifiOnly)
+            : defaults.bool(forKey: AppPreferencesStore.Keys.prefetchWifiOnly)
     }
 
     private func prefetchUpcomingChapters(from book: BookWithChapters, currentChapter: Chapter) {
@@ -2399,8 +2414,11 @@ public final class PlaybackCoordinator {
 
     // MARK: - Audio interruptions & route changes (called by the platform bridge)
 
-    /// An audio interruption began (call, Siri, another app). Pause and persist.
+    /// An audio interruption began (call, Siri, another app, or a CarPlay
+    /// navigation prompt). Pause and persist, remembering whether playback was
+    /// active so an interruption that merely paused us can be resumed.
     public func handleAudioInterruptionBegan() {
+        wasPlayingWhenInterruptionBegan = engine.isPlaying
         invalidatePlaybackOwnership()
         saveCurrentSnapshot()
         engine.pause()
@@ -2416,10 +2434,19 @@ public final class PlaybackCoordinator {
         }
     }
 
-    /// Interruption completion is informational. Only an explicit play command
-    /// may restart audio, even if playback was active before the interruption.
-    public func handleAudioInterruptionEnded() {
-        updateNowPlayingInfo()
+    /// Resumes only when the interruption actually stopped active playback and
+    /// the system's `.shouldResume` hint says it is safe to take the audio
+    /// session back. Calls, Siri, and CarPlay navigation prompts all use this
+    /// path; an interruption that arrived while already paused never starts
+    /// audio on its own.
+    public func handleAudioInterruptionEnded(shouldResume: Bool) {
+        let resume = wasPlayingWhenInterruptionBegan && shouldResume
+        wasPlayingWhenInterruptionBegan = false
+        if resume && !engine.isPlaying {
+            resumeCurrentSession()
+        } else {
+            updateNowPlayingInfo()
+        }
     }
 
     /// Preserve the playhead on route changes without restarting audio. The
@@ -2501,6 +2528,10 @@ public final class PlaybackCoordinator {
     /// directly assertable and host-testable. The app's bridge maps it to
     /// `MPNowPlayingInfoCenter`. `reportedRate` is 0 when paused so the system
     /// stops advancing the scrubber; `defaultRate` carries the book's rate.
+    ///
+    /// The title uses the same parsed, front-loaded chapter line as CarPlay so
+    /// the car's single-line Now Playing title spends its width on the chapter
+    /// locator and name instead of redundant source prefixes.
     public nonisolated static func nowPlayingInfo(
         session: PlaybackSession,
         currentTime: TimeInterval,
@@ -2508,8 +2539,9 @@ public final class PlaybackCoordinator {
         rate: Float,
         isPlaying: Bool
     ) -> NowPlayingInfo {
-        NowPlayingInfo(
-            title: session.chapter.title,
+        let chapterDisplay = ChapterDisplayTitles.make(for: session.chapters)[session.chapter.id]
+        return NowPlayingInfo(
+            title: chapterDisplay?.compactLine ?? session.chapter.title,
             albumTitle: session.book.title,
             artist: session.book.authorLine,
             elapsed: currentTime,

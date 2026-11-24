@@ -9,6 +9,7 @@ final class AppServices: ObservableObject {
     let database: AppDatabase
     let libraryStore: LibraryStore
     let catalogStore: CatalogStore
+    let gutenbergIndexStore: GutenbergIndexStore
     let playbackCoordinator: PlaybackCoordinator
     /// The shared platform bridge; CarPlay review metadata routes through it.
     let playbackBridge: any PlaybackPlatformBridge
@@ -39,6 +40,9 @@ final class AppServices: ObservableObject {
         self.libraryRepository = libraryRepository
         self.libraryStore = LibraryStore(repository: libraryRepository)
         self.catalogStore = CatalogStore()
+        self.gutenbergIndexStore = GutenbergIndexStore(
+            baseURL: URL(string: "https://gutenberg.parso.guru")!
+        )
         self.playbackBridge = playbackBridge
         self.playbackCoordinator = PlaybackCoordinator(
             engine: audioEngine,
