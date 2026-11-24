@@ -70,10 +70,10 @@ specification. The Voxglass plan wins where the products differ.
 
 ## Non-negotiable contract
 
-- The iPhone is the sole CloudKit client and authoritative owner of My Books, metadata, artwork,
-  source resolution, and desired Watch downloads.
-- The Watch has no CloudKit connectivity, entitlement, container identifier, catalog search,
-  production/review, dictation, recording, or library mutation.
+- The iPhone is the authoritative owner of My Books, metadata, artwork, source resolution, and
+  desired Watch downloads. The library is local to the device; there is no cloud client.
+- The Watch has no network library service, catalog search, production/review, dictation,
+  recording, or library mutation.
 - Connected mode shows all projected My Books and permits Watch playback and download management.
 - Disconnected mode shows and plays only complete, validated local downloads.
 - WatchConnectivity is not an audio stream. Public chapters may use a phone-approved,

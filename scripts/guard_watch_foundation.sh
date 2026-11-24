@@ -32,7 +32,6 @@ for dir in VoxglassWatchProtocol VoxglassWatchCore; do
   done < <(find "$dir" -name '*.swift' -type f)
 done
 
-grep -q 'cloudKitDatabase = "none"' VoxglassWatchCore/WatchCore.swift || { echo 'watch store lacks explicit CloudKit opt-out' >&2; fail=1; }
 grep -q 'product: VoxglassWatchProtocol' project.yml || { echo 'Watch target does not link VoxglassWatchProtocol' >&2; fail=1; }
 grep -q 'product: VoxglassWatchCore' project.yml || { echo 'Watch target does not link VoxglassWatchCore' >&2; fail=1; }
 

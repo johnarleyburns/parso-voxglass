@@ -8,7 +8,6 @@
 
 import SwiftUI
 import VoxglassCore
-import CloudKit
 import os
 
 @main
@@ -25,8 +24,6 @@ struct VoxglassApp: App {
                 .environment(services.playbackCoordinator)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
-                .environmentObject(services.cloudSync)
-                .environmentObject(services.cloudKitSyncEngine)
                 .environmentObject(services.listeningStatsStore)
                 .environmentObject(services.folderWatchService)
                 .environmentObject(services.playlistStore)
@@ -136,39 +133,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         LaunchDiagnostics.shared.begin()
-        application.registerForRemoteNotifications()
         return true
-    }
-
-    func application(
-        _ application: UIApplication,
-        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-    ) {
-        // Device token delivered; CloudKit handles the rest
-    }
-
-    func application(
-        _ application: UIApplication,
-        didFailToRegisterForRemoteNotificationsWithError error: Error
-    ) {
-        // Non-fatal on simulator / missing entitlements
-    }
-
-    func application(
-        _ application: UIApplication,
-        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
-    ) {
-        Task {
-            let services = AppServices.shared
-            await services.cloudKitSyncEngine.fetchChanges()
-            await services.libraryStore.refresh()
-            await services.playbackCoordinator.adoptCloudNowPlayingIfNewer(
-                services.cloudKitSyncEngine.lastFetchedPlaybackPosition,
-                from: services.libraryStore.books
-            )
-            completionHandler(.newData)
-        }
     }
 
     func application(

@@ -2,9 +2,8 @@ import Foundation
 import VoxglassWatchProtocol
 
 /// The watch store is intentionally a local Codable store. It has no sync engine, database
-/// client, or network dependency; CloudKit is explicitly opted out by the watch product.
+/// client, or network dependency; all persistence stays on the watch.
 public struct WatchStoreConfiguration: Sendable, Equatable {
-    public static let cloudKitDatabase = "none"
     public var storeURL: URL
     public var audioDirectory: URL
     public init(storeURL: URL, audioDirectory: URL) { self.storeURL=storeURL; self.audioDirectory=audioDirectory }

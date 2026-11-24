@@ -46,11 +46,6 @@ import Foundation
 
         let live = try await store.bookmarks(forBookID: bookID)
         #expect(live.isEmpty)  // Soft-deleted bookmarks must not appear in live queries
-
-        let sync = try await store.bookmarksForSync(bookID: bookID)
-        #expect(sync.count == 1)
-        #expect(sync.first?.id == bm.id)
-        #expect(sync.first?.isDeleted ?? false)
     }
 
     @Test func updateNoteChangesTextAndBumpsUpdatedAt() async throws {
@@ -65,34 +60,6 @@ import Foundation
         let store = try await makeStore()
         let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 0))
         #expect(bm.id != nil)
-    }
-
-    @Test func syncUpsertIgnoresUnknownBookAndChapterForeignKeys() async throws {
-        let store = try await makeStore()
-        let unknownBook = UUID()
-        let unknownChapter = UUID()
-        let bookmark = Bookmark(
-            id: UUID(),
-            bookID: unknownBook,
-            chapterID: unknownChapter,
-            position: 12,
-            note: "arrived before its book",
-            updatedAt: Date(timeIntervalSince1970: 100)
-        )
-
-        try await store.upsertFromSync([bookmark], forBookID: unknownBook)
-        #expect(try await store.allBookmarks().isEmpty)
-
-        let knownBookUnknownChapter = Bookmark(
-            id: UUID(),
-            bookID: bookID,
-            chapterID: unknownChapter,
-            position: 24,
-            note: "arrived before its chapter",
-            updatedAt: Date(timeIntervalSince1970: 200)
-        )
-        try await store.upsertFromSync([knownBookUnknownChapter], forBookID: bookID)
-        #expect(try await store.allBookmarks().isEmpty)
     }
 
     @Test func migration5IsIdempotentAndBackfillsUpdatedAt() async throws {

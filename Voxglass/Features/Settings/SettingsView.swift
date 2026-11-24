@@ -820,7 +820,7 @@ struct AboutView: View {
             Text("""
             Voxglass has no app accounts, tracking, or analytics. It contacts LibriVox, Project Gutenberg, and Internet Archive only when you search their catalogs or choose audio, text, or artwork to download or play. Internet Archive serves the LibriVox audio and associated artwork.
 
-            Your library, listening history, bookmarks, and cache stay on your device. If you enable iCloud Sync, your library metadata, favorites, bookmarks, and playback position are stored only in your private iCloud account to keep your devices in sync. You can turn iCloud Sync off at any time in Settings.
+            Your library, listening history, bookmarks, playback position, and cache stay on your device. There is no app account and no server that stores your library; nothing you listen to leaves your device except requests for public catalog audio from the Internet Archive.
             """)
                 .voxFont(.footnote)
                 .foregroundStyle(Palette.ink2)
@@ -892,94 +892,6 @@ struct AboutView: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
-    }
-}
-
-private struct CloudSyncDiagnosticsCard: View {
-    @EnvironmentObject private var cloudSync: VoxglassCloudSync
-    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
-    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: "icloud.fill")
-                    .foregroundStyle(Palette.brass)
-                Text("iCloud Sync")
-                    .voxFont(.footnote, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                Spacer()
-                if cloudSync.isSyncing {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
-            }
-
-            Text("Your My Books library, playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.")
-                .voxFont(.caption2)
-                .foregroundStyle(Palette.ink3)
-
-            Toggle("Sync with iCloud", isOn: $syncEnabled)
-            .voxFont(.caption, weight: .semibold)
-            .foregroundStyle(Palette.ink)
-            .tint(Palette.brass)
-            .accessibilityIdentifier("sync.enabled")
-            .onChange(of: syncEnabled) { _, newValue in
-                if newValue { Task { await cloudSync.sync() } }
-            }
-
-            if !cloudSync.isEnabled {
-                Text("Sync is off. Your listening data stays only on this device.")
-                    .voxFont(.caption2)
-                    .foregroundStyle(Palette.ink3)
-            }
-
-            if cloudSync.isEnabled {
-                if let lastSync = cloudSync.lastSyncDate {
-                    Text("Listening library last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.ink3)
-                }
-
-                if !cloudSync.isAvailable {
-                    Text("Sign in to iCloud to sync")
-                        .voxFont(.caption2, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                } else if let error = cloudSync.syncError {
-                    Text(error)
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.danger)
-                }
-
-                if let error = cloudKitSync.syncError {
-                    Text("My Books sync failed: \(error)")
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.danger)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("sync.library.error")
-                } else if !cloudKitSync.importErrors.isEmpty {
-                    Text(String(localized: "My Books synced \(cloudKitSync.lastFetchedCount) records; \(cloudKitSync.importErrors.count) records could not be imported and will retry.\n\(cloudKitSync.importErrors.joined(separator: "\n"))"))
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.danger)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("sync.library.partial")
-                } else if cloudKitSync.syncState == .disconnected {
-                    Text("My Books sync is disconnected (\(cloudKitSync.accountStatusText)).")
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.ink3)
-                        .accessibilityIdentifier("sync.library.status")
-                } else {
-                    Text("My Books CloudKit: \(cloudKitSync.lastFetchedCount) records received, \(cloudKitSync.lastUploadedCount) sent, \(cloudKitSync.pendingCount) queued")
-                        .voxFont(.caption2)
-                        .foregroundStyle(Palette.ink3)
-                        .accessibilityIdentifier("sync.library.status")
-                }
-
-
-            }
-        }
-        .padding(15)
-        .raisedSurface()
     }
 }
 
@@ -1481,10 +1393,6 @@ private struct BackupImportSheet: View {
 private struct SyncSettingsSection: View {
     @EnvironmentObject private var relay: PhoneAudioRelay
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var cloudSync: VoxglassCloudSync
-    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
-    @Environment(PlaybackCoordinator.self) private var playback
-    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var cloudEnabled = true
     @State private var selectedIDs = Set<UUID>()
     @State private var loadedSelection = false
     @State private var baselineIDs = Set<UUID>()
@@ -1533,7 +1441,7 @@ private struct SyncSettingsSection: View {
                     } label: {
                         Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                     }
-                    .disabled(isRunning || isPausing || relay.isTransferringToWatch || cloudSync.isSyncing || cloudKitSync.syncState == .syncing)
+                    .disabled(isRunning || isPausing || relay.isTransferringToWatch)
                     .accessibilityIdentifier("sync.now")
                 }
                 .padding(.horizontal, 14)
@@ -1659,15 +1567,6 @@ private struct SyncSettingsSection: View {
         startedAt = SystemClock().now
         syncTask = Task { @MainActor in
             defer { isRunning = false; syncTask = nil }
-            if cloudEnabled {
-                await cloudSync.sync()
-                guard !Task.isCancelled else { return }
-                await cloudKitSync.start()
-                guard !Task.isCancelled else { return }
-                await libraryStore.refresh()
-                await playback.adoptCloudNowPlayingIfNewer(cloudKitSync.lastFetchedPlaybackPosition, from: libraryStore.books)
-            }
-            guard !Task.isCancelled else { return }
             for id in removed {
                 await relay.removeBookFromWatch(bookID: id)
                 guard !Task.isCancelled else { return }
@@ -1712,39 +1611,18 @@ private struct SyncSettingsSection: View {
 
 struct SyncStatusSummary: View {
     @EnvironmentObject private var relay: PhoneAudioRelay
-    @EnvironmentObject private var cloudSync: VoxglassCloudSync
-    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
     var isRequesting = false
     var showsDetails = true
-    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var cloudEnabled = true
 
-    private var isWorking: Bool { isRequesting || cloudSync.isSyncing || cloudKitSync.syncState == .syncing }
-    private var hasCloudError: Bool { cloudEnabled && (cloudSync.syncError != nil || cloudKitSync.syncError != nil || !cloudKitSync.importErrors.isEmpty) }
-
-    /// The specific reason "Sync needs attention" is showing, so the banner
-    /// never collapses a real problem into an unexplained repeated label.
-    private var cloudErrorDetail: String? {
-        cloudSync.syncError ?? cloudKitSync.syncError ?? cloudKitSync.importErrors.first
-    }
+    private var isWorking: Bool { isRequesting }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 if relay.syncPresentation(isRequesting: isWorking).showsProgress { ProgressView() }
-                Text(hasCloudError && !isWorking
-                     ? String(localized: "Sync needs attention")
-                     : relay.syncStatusText(isRequesting: isWorking))
+                Text(relay.syncStatusText(isRequesting: isWorking))
             }
             .accessibilityIdentifier("sync.status")
-            if showsDetails {
-                LabeledContent("iCloud Sync", value: cloudEnabled
-                    ? (cloudSync.isAvailable ? String(localized: "On") : String(localized: "Sign in to iCloud to sync"))
-                    : String(localized: "Off"))
-                    .voxFont(.caption2)
-                if hasCloudError, !isWorking, let cloudErrorDetail {
-                    Text(cloudErrorDetail).voxFont(.caption2).foregroundStyle(Palette.danger)
-                }
-            }
             if showsDetails, let status = relay.watchSyncStatus, relay.isPreparingWatchAudio {
                 Text(status).voxFont(.caption2)
             }
@@ -1766,7 +1644,6 @@ struct SyncDiagnosticsView: View {
                 Text("Sent does not mean installed. Apple Watch confirms each completed book.")
             }
             DisclosureGroup("Apple Watch") { WatchSyncDiagnosticsCard() }
-            DisclosureGroup("iCloud Sync") { CloudSyncDiagnosticsCard() }
         }
         .navigationTitle("Sync Details")
         .navigationBarTitleDisplayMode(.inline)

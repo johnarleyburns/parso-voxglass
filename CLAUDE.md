@@ -24,8 +24,8 @@ Always use the `gh` CLI directly for every GitHub interaction (issues, PRs, comm
 - **No GRDB.** Persistence is a hand-rolled `actor` over SQLite3 (`AppDatabase` style) with integer-numbered append-only migrations.
 - **`@Observable` only**; `ObservableObject` is banned in new code and fails a CI gate.
 - **`Date()` / `UUID()` only through the `Clock` / `IDGenerator` seams** in `Voxglass/Core/Production/Domain/`.
-- Core code lives in `Voxglass/Core/Production/<Area>/`, iPhone UI in `Voxglass/Features/Production/`, watch in `VoxglassWatch/Production/`. Core stays free of CloudKit and StoreKit; the watch never links CloudKit.
-- Never lose a take (bytes durable before metadata mutation); never evict a recording before its iCloud copy is SHA-256-verified (use `ProductionAssetRecord.isEvictable`); `LicenseGate` appears only in the export destination picker, export runner, and Settings; validation is never gated; do not regress the consumer player, downloads, CarPlay, or position sync.
+- Core code lives in `Voxglass/Core/`, iPhone UI in `Voxglass/Features/`, watch in `VoxglassWatch/`. Core stays free of StoreKit; the watch has no network-backed library service.
+- Never lose a take (bytes durable before metadata mutation); `LicenseGate` appears only in the export destination picker, export runner, and Settings; validation is never gated; do not regress the consumer player, downloads, CarPlay, or local position persistence.
 - Verification: `swift test` (what CI runs), `scripts/test_logic.sh`, `scripts/guard_production.sh`, `scripts/test_guards.sh` (every new gate needs an entry), `scripts/test.sh` (Swift Testing wrapper; CI runs no simulator).
 
 ## Physical iPhone first

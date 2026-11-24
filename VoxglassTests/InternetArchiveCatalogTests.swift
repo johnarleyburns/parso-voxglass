@@ -553,7 +553,7 @@ import Foundation
             sourceKind: .librivox, sourceURL: "https://librivox.org/some-book", name: "ia-legacy-nondetails")
     }
 
-    @Test func cloudKitRestoredBookWithNullSourceURLResolvesByChapterDownloadIdentity() async throws {
+    @Test func restoredBookWithNullSourceURLResolvesByChapterDownloadIdentity() async throws {
         try await assertLegacyResolution(sourceKind: .librivox, sourceURL: nil, name: "ia-legacy-null-url")
     }
 

@@ -119,7 +119,6 @@ public final class LibraryRepository: @unchecked Sendable {
     let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
     private let identityClient: LibriVoxRecordingIdentityClient
-    public var mutationLog: SyncMutationLog?
     /// Seams for `repairLocalAudio`; tests inject fakes, the app uses the system.
     public var localRepairEnvironment = LocalAudioRepairEnvironment.system
 
@@ -363,7 +362,6 @@ public final class LibraryRepository: @unchecked Sendable {
             "DELETE FROM books WHERE id = ?",
             [ModelMapping.databaseValue(bookID)]
         )
-        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "delete")
 
         if let sourceID {
             let remaining = try await database.query(
@@ -391,7 +389,6 @@ public final class LibraryRepository: @unchecked Sendable {
             .bool(isFavorite),
             ModelMapping.databaseValue(bookID)
         ])
-        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "update")
         return try await bookWithChapters(forBookID: bookID)
     }
 
@@ -416,7 +413,6 @@ public final class LibraryRepository: @unchecked Sendable {
             .string(ModelMapping.narratorsJSON(narrators)),
             ModelMapping.databaseValue(bookID)
         ])
-        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "update")
     }
 
     /// One-time best-effort pass over already-imported books whose narrators are
@@ -638,7 +634,7 @@ public final class LibraryRepository: @unchecked Sendable {
                 var derivedKey = ContentKey.book(forSourceURL: url, kind: kind)
                 if derivedKey == nil, kind != .localFiles {
                     // Source URL can't supply an identity (null/non-details URL,
-                    // e.g. CloudKit-restored): use consistent chapter download URLs.
+                    // e.g. restored from a backup): use consistent chapter download URLs.
                     let identifiers = try await chapterDownloadIdentifiers(forBookID: bookID)
                     if identifiers.count == 1, let only = identifiers.first {
                         derivedKey = ContentKey.book(forInternetArchiveIdentifier: only)
@@ -681,48 +677,6 @@ public final class LibraryRepository: @unchecked Sendable {
                 updated += 1
             }
             return updated
-        } catch {
-            return 0
-        }
-    }
-
-    /// Queues the current syncable library for CloudKit. This is the launch-time
-    /// bridge for books that predate the CloudKit mutation log.
-    @discardableResult
-    public func enqueueExistingLibraryForSync() async -> Int {
-        guard let mutationLog else { return 0 }
-
-        do {
-            try await database.prepare()
-            let rows = try await database.query("""
-            SELECT b.id
-            FROM books b
-            JOIN sources s ON s.id = b.source_id
-            WHERE b.content_key IS NOT NULL
-              AND (
-                (s.kind IN (?, ?, ?) AND s.url LIKE ?)
-                OR (s.kind = ? AND s.url IS NOT NULL)
-              )
-            ORDER BY b.updated_at ASC
-            """, [
-                .string(SourceKind.librivox.rawValue),
-                .string(SourceKind.internetArchive.rawValue),
-                .string(SourceKind.internetArchiveURL.rawValue),
-                .string("%/details/%"),
-                .string(SourceKind.localFiles.rawValue)
-            ])
-
-            var count = 0
-            for row in rows {
-                guard let bookID = row.string("id") else { continue }
-                try await mutationLog.enqueue(
-                    localID: bookID,
-                    recordType: CloudKitRecordMapper.RecordType.book.rawValue,
-                    changeType: "update"
-                )
-                count += 1
-            }
-            return count
         } catch {
             return 0
         }
@@ -1085,7 +1039,6 @@ public final class LibraryRepository: @unchecked Sendable {
             try await insertIdentity(bookID: book.id, scheme: RecordingIdentity.libriVox, value: id)
         }
 
-        try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
 
         // Capture taste metadata for the recommendation engine
         let bookIDString = book.id.uuidString
@@ -1176,7 +1129,6 @@ public final class LibraryRepository: @unchecked Sendable {
         if let url = request.sourceURL,
            let scheme = url.scheme?.lowercased(),
            scheme == "https" || scheme == "http" {
-            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
         return BookWithChapters(book: book, chapters: chapters)
     }
@@ -1348,7 +1300,6 @@ public final class LibraryRepository: @unchecked Sendable {
                 chapters: [],
                 bookContentKey: ContentKey.book(forLocalFolderName: folderName)
             )
-            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
 
         let knownURLs = Set((existing?.chapters ?? []).compactMap { $0.localURL?.absoluteString })
@@ -1395,7 +1346,6 @@ public final class LibraryRepository: @unchecked Sendable {
         }
 
         if !newFiles.isEmpty {
-            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
 
         return try await bookWithChapters(forSourceID: source.id)

@@ -16,37 +16,6 @@ import Foundation
         #expect(favorites.map(\.book.id) == [seeded.bookID])
     }
 
-    @Test func existingLibraryCanBeQueuedAfterContentKeyBackfill() async throws {
-        let database = AppDatabase.makeTemporaryDatabase(named: "initial-cloudkit-enqueue")
-        let stateStore = CloudSyncStateStore(database: database)
-        let repository = LibraryRepository(database: database)
-        repository.mutationLog = SyncMutationLog(stateStore: stateStore)
-
-        let seeded = try await seedBook(
-            in: database,
-            title: "Legacy LibriVox Book",
-            sourceKind: .librivox,
-            sourceURL: URL(string: "https://archive.org/details/legacy_librivox_book"),
-            contentKey: nil
-        )
-
-        let backfilled = await repository.backfillContentKeysIfNeeded()
-        #expect(backfilled == 2)
-
-        let queued = await repository.enqueueExistingLibraryForSync()
-        #expect(queued == 1)
-
-        let pending = try await stateStore.dequeuePending(limit: 10)
-        #expect(pending.count == 1)
-        #expect(pending.first?.localID == seeded.bookID.uuidString)
-        #expect(pending.first?.recordType == CloudKitRecordMapper.RecordType.book.rawValue)
-        #expect(pending.first?.changeType == "update")
-
-        _ = await repository.enqueueExistingLibraryForSync()
-        let pendingCount = try await stateStore.pendingCount()
-        #expect(pendingCount == 1)  // Queueing twice must not duplicate pending rows
-    }
-
     @Test func fetchSourcesReturnsNewestFirst() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "source-fetch")
         let repository = LibraryRepository(database: database)

@@ -20,9 +20,6 @@ public struct AppPreferencesStore: DynamicProperty {
         /// Book-specific Read with AI voice choices.  This is deliberately a
         /// local preference: it describes voices installed on this device.
         public static let readWithAIVoiceByBook = "voxglass.readWithAI.voice.byBook.v1"
-        public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
-        public static let cloudKitInitialLibraryEnqueued = "voxglass.cloudKit.initialLibraryEnqueued.v1"
-        public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
         /// Set once a "Contribute to Development" purchase succeeds. Never
         /// reset by a later purchase failing or being skipped — this is a
         /// one-way supporter badge, not a re-checked entitlement.
@@ -87,7 +84,7 @@ public struct AppPreferencesStore: DynamicProperty {
 }
 
 /// A voice choice is stored separately from the audio book so it remains a
-/// reader preference, while the book and its position can continue to sync.
+/// device-local reader preference.
 /// `identifier` is Apple's primary key; `name` and `language` allow a safe
 /// match when iOS replaces a downloaded voice package during an update.
 public struct ReadWithAIVoicePreference: Codable, Equatable, Sendable {

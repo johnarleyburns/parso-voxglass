@@ -14,8 +14,6 @@ final class AppServices: ObservableObject {
     let playbackBridge: any PlaybackPlatformBridge
     let tasteProfileStore: TasteProfileStore
     let libraryRepository: LibraryRepository
-    let cloudSync: VoxglassCloudSync
-    let cloudKitSyncEngine: CloudKitSyncEngine
     let homeRecommendationStore: HomeRecommendationStore
     let offlineDownloadManager: OfflineDownloadManager
     let listeningStatsStore: ListeningStatsStore
@@ -30,19 +28,12 @@ final class AppServices: ObservableObject {
         let database = AppDatabase.makeApplicationDatabase()
         let libraryRepository = LibraryRepository(database: database)
         let playlistRepository = PlaylistRepository(database: database)
-        var positionStore = SQLitePositionStore(database: database)
-        var bookmarkStore = SQLiteBookmarkStore(database: database)
+        let positionStore = SQLitePositionStore(database: database)
+        let bookmarkStore = SQLiteBookmarkStore(database: database)
         let audioEngine = SwitchingAudioEngine(audio: AVPlayerAudioEngine(), speech: ReadWithAISpeechAudioEngine())
         let playbackBridge = SystemPlaybackBridge()
         let tasteProfileStore = TasteProfileStore(database: database)
-        let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
-        let cloudKitSyncEngine = CloudKitSyncEngine(database: database)
         let listeningStatsStore = ListeningStatsStore(database: database)
-
-        let mutationLog = SyncMutationLog(stateStore: CloudSyncStateStore(database: database))
-        libraryRepository.mutationLog = mutationLog
-        positionStore.mutationLog = mutationLog
-        bookmarkStore.mutationLog = mutationLog
 
         self.database = database
         self.libraryRepository = libraryRepository
@@ -71,29 +62,15 @@ final class AppServices: ObservableObject {
         let playlistStore = PlaylistStore(repository: playlistRepository)
         self.playlistStore = playlistStore
         self.tasteProfileStore = tasteProfileStore
-        self.cloudSync = cloudSync
-        self.cloudKitSyncEngine = cloudKitSyncEngine
-        mutationLog.onEnqueued = { [weak cloudKitSyncEngine] in
-            Task { @MainActor in cloudKitSyncEngine?.pushAfterMutation() }
-        }
         self.homeRecommendationStore = HomeRecommendationStore()
         self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
         self.listeningStatsStore = listeningStatsStore
         self.folderWatchService = FolderWatchService(repository: libraryRepository)
         self.libraryBackupService = LibraryBackupService(database: database)
         self.playbackCoordinator.bookmarkStore = bookmarkStore
-        self.playbackCoordinator.onBookmarkAdded = { [weak self] bookmark in
-            Task { @MainActor [weak self] in
-                await self?.cloudSync.pushBookmarks()
-                self?.cloudKitSyncEngine.pushAfterMutation()
-                await self?.phoneAudioRelay.publishLibrarySnapshot()
-            }
-        }
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
         libraryStore.configure(playback: playbackCoordinator, offlineManager: offlineDownloadManager)
-        libraryStore.onBookImported = { [weak self] bookID in
-            await self?.cloudSync.adoptCloudPositions(forBookID: bookID)
-            self?.cloudKitSyncEngine.pushAfterMutation()
+        libraryStore.onBookImported = { [weak self] _ in
             await self?.phoneAudioRelay.publishLibrarySnapshot()
         }
         phoneAudioRelay.configure(
@@ -136,7 +113,7 @@ final class AppServices: ObservableObject {
         await phoneAudioRelay.publishLibrarySnapshot()
 
         // The first frame must not wait on cache eviction, migrations for
-        // legacy metadata, folder audio probing, iCloud, or archive.org. Those
+        // legacy metadata, folder audio probing, or archive.org. Those
         // operations are useful, but none is required to show the already
         // persisted library and restore the paused player.
         homeRecommendationStore.markEngineReady()
@@ -179,7 +156,6 @@ final class AppServices: ObservableObject {
         await libraryRepository.backfillContentKeysIfNeeded()
         let repairedIdentities = await libraryRepository.backfillRecordingIdentitiesIfNeeded()
         if repairedIdentities > 0 { await libraryStore.refresh() }
-        await enqueueInitialLibraryForCloudKitIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
         _ = await libraryRepository.resplitBookTasteSubjectsIfNeeded()
         await rebuildTasteHistory()
@@ -200,57 +176,7 @@ final class AppServices: ObservableObject {
         diagnostics.phase("folder-watch")
         await folderWatchService.rescanAll()
 
-        diagnostics.phase("cloud-positions")
-        await cloudSync.pullPlaybackPositions()
-        await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
-
-        #if DEBUG
-        let cloudBootstrapDisabled = ProcessInfo.processInfo.arguments.contains("-uiTestDisableCloudKit")
-        #else
-        let cloudBootstrapDisabled = false
-        #endif
-        diagnostics.phase("cloudkit")
-        // Unsigned simulator UI-test bundles do not carry the CloudKit
-        // entitlement. The smoke path is entirely local and explicitly opts
-        // out before any CKContainer-backed service is touched.
-        if !cloudBootstrapDisabled {
-            await cloudSync.sync()
-            await cloudKitSyncEngine.start()
-            // CloudKit can materialize books after the first interactive
-            // snapshot was loaded. Refresh the published library now so those
-            // records appear without requiring an app restart.
-            await libraryStore.refresh()
-            await playbackCoordinator.adoptCloudNowPlayingIfNewer(
-                cloudKitSyncEngine.lastFetchedPlaybackPosition,
-                from: libraryStore.books
-            )
-            if cloudKitSyncEngine.lastUploadedCount > 0 {
-                UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
-            }
-        }
-
         diagnostics.finishDeferredWork()
-    }
-
-
-    private func enqueueInitialLibraryForCloudKitIfNeeded() async {
-        let defaults = UserDefaults.standard
-
-        // First run of a sync-capable build: enqueue the existing backlog once.
-        if !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) {
-            await libraryRepository.enqueueExistingLibraryForSync()
-            defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
-            return
-        }
-
-        // Self-heal: the one-time enqueue already ran, but nothing is queued and
-        // no upload has ever been confirmed — the library was likely stranded
-        // (e.g. enqueue matched nothing, or every push failed). Re-enqueue.
-        let uploadConfirmed = defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
-        let pending = (try? await CloudSyncStateStore(database: database).pendingCount()) ?? 0
-        if !uploadConfirmed && pending == 0 {
-            _ = await libraryRepository.enqueueExistingLibraryForSync()
-        }
     }
 
     private func captureTasteSignal(_ signal: PlaybackTasteSignal) async {

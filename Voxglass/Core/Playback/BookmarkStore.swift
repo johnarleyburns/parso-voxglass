@@ -4,19 +4,15 @@ public protocol BookmarkStore: Sendable {
     func add(_ bookmark: Bookmark) async throws -> Bookmark
     func bookmarks(forBookID: UUID) async throws -> [Bookmark]
     func allBookmarks() async throws -> [Bookmark]
-    /// Soft-deletes by setting `is_deleted = 1` and bumping `updated_at`, so the
-    /// tombstone syncs via last-writer-wins rather than being resurrected.
+    /// Soft-deletes by setting `is_deleted = 1` and bumping `updated_at`, so a
+    /// later re-import can distinguish a deletion from a bookmark that never
+    /// existed.
     func delete(id: UUID) async throws
     func updateNote(_ note: String, id: UUID) async throws -> Bookmark?
-    /// Cloud-sync seam: all bookmarks (including tombstones) for a single book, ordered newest-first.
-    func bookmarksForSync(bookID: UUID) async throws -> [Bookmark]
-    /// Cloud-sync seam: upsert bookmarks coming from iCloud.
-    func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws
 }
 
 public struct SQLiteBookmarkStore: BookmarkStore {
     private let database: AppDatabase
-    public var mutationLog: SyncMutationLog?
 
     public init(database: AppDatabase) {
         self.database = database
@@ -42,7 +38,6 @@ public struct SQLiteBookmarkStore: BookmarkStore {
             .double(now.timeIntervalSince1970),
             .bool(false)
         ])
-        try? await mutationLog?.enqueue(localID: b.id!.uuidString, recordType: "Bookmark", changeType: "update")
         return Bookmark(id: b.id!, bookID: b.bookID, chapterID: b.chapterID,
                          position: b.position, note: b.note,
                          createdAt: b.createdAt, updatedAt: now, isDeleted: false)
@@ -69,7 +64,6 @@ public struct SQLiteBookmarkStore: BookmarkStore {
         try await database.execute("""
         UPDATE bookmarks SET is_deleted = 1, updated_at = ? WHERE id = ?
         """, [.double(Date().timeIntervalSince1970), .string(id.uuidString)])
-        try? await mutationLog?.enqueue(localID: id.uuidString, recordType: "Bookmark", changeType: "update")
     }
 
     public func updateNote(_ note: String, id: UUID) async throws -> Bookmark? {
@@ -82,57 +76,6 @@ public struct SQLiteBookmarkStore: BookmarkStore {
         FROM bookmarks WHERE id = ? LIMIT 1
         """, [.string(id.uuidString)])
         return try rows.first.map(Self.rowToBookmark)
-    }
-
-    // Cloud-sync seam: all bookmarks (including tombstones) for a single book, ordered newest-first.
-    public func bookmarksForSync(bookID: UUID) async throws -> [Bookmark] {
-        try await database.prepare()
-        return try await database.query("""
-        SELECT id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted
-        FROM bookmarks WHERE book_id = ? ORDER BY updated_at DESC
-        """, [.string(bookID.uuidString)]).map(Self.rowToBookmark)
-    }
-
-    public func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws {
-        try await database.prepare()
-
-        // A bookmark payload can arrive before its book/chapter payload on a
-        // new device, or can still contain IDs from the other device. Never
-        // pass those foreign IDs through to SQLite: the FK error used to abort
-        // the entire iCloud sync with "FOREIGN KEY constraint failed".
-        let bookRows = try await database.query(
-            "SELECT id FROM books WHERE id = ? LIMIT 1",
-            [.string(bookID.uuidString)]
-        )
-        guard !bookRows.isEmpty else { return }
-
-        let chapterRows = try await database.query(
-            "SELECT id FROM chapters WHERE book_id = ?",
-            [.string(bookID.uuidString)]
-        )
-        let localChapterIDs = Set(chapterRows.compactMap { $0.string("id") })
-
-        for b in bookmarks {
-            guard let id = b.id else { continue }
-            guard localChapterIDs.contains(b.chapterID.uuidString) else { continue }
-            try await database.execute("""
-            INSERT INTO bookmarks (id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                note = excluded.note,
-                updated_at = excluded.updated_at,
-                is_deleted = excluded.is_deleted
-            """, [
-                .string(id.uuidString),
-                .string(bookID.uuidString),
-                .string(b.chapterID.uuidString),
-                .double(b.position),
-                .string(b.note ?? ""),
-                .double(b.createdAt.timeIntervalSince1970),
-                .double(b.updatedAt.timeIntervalSince1970),
-                .bool(b.isDeleted)
-            ])
-        }
     }
 
     private static func rowToBookmark(_ row: DatabaseRow) throws -> Bookmark {

@@ -115,7 +115,6 @@ targets:
                 UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
         UIBackgroundModes:
           - audio
-          - remote-notification
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
         UISupportedInterfaceOrientations:
