@@ -44,15 +44,12 @@ import Testing
         }
     }
 
-    // MARK: Composed Watch receipts and My Books import failure (issue #255)
+    // MARK: Composed Watch receipts (issue #255)
 
     private static let composedKeys: [(catalog: String, key: String, placeholders: [String])] = [
         ("VoxglassWatch/Resources/Localizable.xcstrings", "Audio receipt: %@", ["%@"]),
         ("VoxglassWatch/Resources/Localizable.xcstrings", "Artwork receipt: %@", ["%@"]),
-        ("VoxglassWatch/Resources/Localizable.xcstrings", "Watch report: %@", ["%@"]),
-        ("Voxglass/Resources/Localizable.xcstrings",
-         "My Books synced %lld records; %lld records could not be imported and will retry.\n%@",
-         ["%1$lld", "%2$lld", "%3$@"])
+        ("VoxglassWatch/Resources/Localizable.xcstrings", "Watch report: %@", ["%@"])
     ]
 
     private static var root: URL {
@@ -98,13 +95,10 @@ import Testing
 
     @Test func composedMessagesDoNotUseStringConcatenation() throws {
         let watch = try String(contentsOf: Self.root.appendingPathComponent("VoxglassWatch/WatchListeningViews.swift"), encoding: .utf8)
-        let settings = try String(contentsOf: Self.root.appendingPathComponent("Voxglass/Features/Settings/SettingsView.swift"), encoding: .utf8)
         for forbidden in ["Text(\"Audio receipt: \" +", "Text(\"Artwork receipt: \" +", "Text(\"Watch report: \" +"] {
             #expect(!watch.contains(forbidden), "Concatenated message: \(forbidden)")
         }
-        #expect(!settings.contains("will retry.\\n\" +"), "My Books import failure must be one localized key")
         #expect(watch.contains("String(localized: \"Audio receipt: \\(services.session.audioReceipt)\")"))
-        #expect(settings.contains("String(localized: \"My Books synced"))
     }
 
     // MARK: Static Watch management UI (issue #256)
@@ -156,7 +150,6 @@ import Testing
         "Starts playback in the mini player",
         "Read with AI Voice",
         "Download more voices in iPhone Settings > Accessibility > Read & Speak > System Voice, then return here.",
-        "Your My Books library, playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.",
         "Only books you send from this iPhone appear on Apple Watch, prepared as 96 kbps AAC. Use “Download to Apple Watch” on a book page or in its My Books context menu; manage them in My Books → On My Watch.",
         "No watch report received this session.",
         "Cancel watch audio preparation",
@@ -177,7 +170,7 @@ import Testing
     ]
 
     @Test func staticPhoneLabelsAreTranslatedInEveryLocale() throws {
-        #expect(Self.staticPhoneKeys.count == 34)
+        #expect(Self.staticPhoneKeys.count == 33)
         for key in Self.staticPhoneKeys {
             let localizations = try Self.localizations(catalog: "Voxglass/Resources/Localizable.xcstrings", key: key)
             for language in supportedLanguages {

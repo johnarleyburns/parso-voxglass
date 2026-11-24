@@ -34,36 +34,26 @@ public protocol LocalPlaybackCheckpointStore: Sendable {
     func saveLocalCheckpoint(_ position: PlaybackPosition) async throws
 }
 
-public enum NowPlayingHandoffPolicy {
-    public static func shouldAdopt(
-        remoteUpdatedAt: Date,
-        localUpdatedAt: Date?,
-        localIsPlaying: Bool
-    ) -> Bool {
-        guard !localIsPlaying else { return false }
-        guard let localUpdatedAt else { return true }
-        return remoteUpdatedAt > localUpdatedAt
-    }
-}
-
 public struct SQLitePositionStore: PositionStore, LocalPlaybackCheckpointStore {
     private let database: AppDatabase
     var databaseForTests: AppDatabase { database }
-    public var mutationLog: SyncMutationLog?
 
     public init(database: AppDatabase) {
         self.database = database
     }
 
     public func save(_ position: PlaybackPosition) async throws {
-        try await persist(position, enqueueForCloudSync: true)
+        try await persist(position)
     }
 
+    /// Saves a local handoff checkpoint. Kept as a distinct entry point so
+    /// callers can express intent even though both paths now persist only to
+    /// the local database.
     public func saveLocalCheckpoint(_ position: PlaybackPosition) async throws {
-        try await persist(position, enqueueForCloudSync: false)
+        try await persist(position)
     }
 
-    private func persist(_ position: PlaybackPosition, enqueueForCloudSync: Bool) async throws {
+    private func persist(_ position: PlaybackPosition) async throws {
         let clamped = PlaybackPosition(
             id: position.id,
             bookID: position.bookID,
@@ -87,14 +77,6 @@ public struct SQLitePositionStore: PositionStore, LocalPlaybackCheckpointStore {
         } catch DatabaseError.stepFailed(let message) where message.localizedCaseInsensitiveContains("FOREIGN KEY") {
             // Row vanished between the check and the write.
             throw StalePlaybackReferenceError(bookID: clamped.bookID, chapterID: clamped.chapterID)
-        }
-        if enqueueForCloudSync, let mutationLog {
-            let storedRows = try await database.query(
-                "SELECT id FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
-                [ModelMapping.databaseValue(clamped.bookID), ModelMapping.databaseValue(clamped.chapterID)]
-            )
-            guard let storedID = storedRows.first?.string("id") else { return }
-            try await mutationLog.enqueue(localID: storedID, recordType: "PlaybackPosition", changeType: "update")
         }
     }
 

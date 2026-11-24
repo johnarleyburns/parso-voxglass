@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-// Device checklist (physical iPhone, Files-provider content such as iCloud Drive):
+// Device checklist (physical iPhone, Files-provider content):
 // 1. Import a folder, play, note position. 2. Move the folder in Files, relaunch,
 // open the book: the unavailable message and "Reselect Folder or File" appear and
 // the book stays in My Books. 3. Reselect the moved folder: playback resumes at the

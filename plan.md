@@ -11,7 +11,7 @@
 > the full suite and simulator build). The closeout also fixed a latent `upsertTerm` bug where the
 > decay-path SQL had an unbound parameter, so repeat signals silently never updated weights.
 > Remaining before marking §5 done: the manual simulator checks listed in step 4 below.
-> §6 (monetization / iCloud sync) remains as its own later phase.
+> §6 (monetization) remains as its own later phase.
 
 ## Immediate §5 closeout — coding agent instructions
 
@@ -309,9 +309,8 @@ RecommendationQueryBuilder,RecommendationEngine,WorkKey}.swift`; edits to `Datab
 
 **Current state.** The app is entirely free — no feature gates, no subscriptions, no ads, no
 accounts. All features (offline downloads, 10-band EQ, Folder Watch, listening stats, library
-backup & restore, iCloud bookmark/favorites/position sync, CarPlay, volume normalization,
-skip silence, and the full catalog) are available to everyone. iCloud sync is fully free and
-functional.
+backup & restore, CarPlay, volume normalization, skip silence, and the full catalog) are
+available to everyone.
 
 **Direction.** Monetization is deferred to a future phase and will happen through:
 - **Audiobook sales** — curated public-domain recordings with premium production quality.
@@ -360,8 +359,7 @@ Per-item checks:
    → after refresh, "Recommended for You" skews to that author/adjacent subjects and excludes already-heard
    titles. Add unit tests for the decay upsert, subject damping, scorer, and MMR diversification (port the
    parso-radio test shapes).
-6. **Monetization.** All features remain free; iCloud sync round-trips position between two
-   simulators signed into the same iCloud. Future monetization via audiobook sales / library
+6. **Monetization.** All features remain free. Future monetization via audiobook sales / library
    partnerships (not feature gates).
 
 ---
@@ -372,14 +370,14 @@ For the engineer/agent executing this plan:
 
 **Ground rules**
 - **No third-party dependencies.** SwiftPM config is intentionally empty; use only Apple frameworks
-   (Foundation, SwiftUI, AVFoundation, CloudKit, libsqlite3). Do not add SPM packages.
+   (Foundation, SwiftUI, AVFoundation, libsqlite3). Do not add SPM packages.
 - **Never edit `Voxglass.xcodeproj` by hand.** Add/rename files, then edit `project.yml` if needed and run
   `xcodegen generate`. New Swift files under `Voxglass/` are picked up by the existing source globs.
 - **Persistence conventions:** SQLite via `actor AppDatabase`; schema changes go through the next numbered
   migration in `DatabaseMigrations.swift` after the current max ID. Light prefs via `@AppStorage` in
   `AppPreferencesStore`. Stores that publish to SwiftUI are `@MainActor ObservableObject`.
 - **Privacy is a hard constraint.** No analytics, logging SDKs, `print`/`os_log`, accounts, or outbound
-  traffic except to `archive.org` (and the user's own iCloud for §6). Keep it that way.
+  traffic except to `archive.org`. Keep it that way.
 - Match surrounding style: value types for models, small focused files, existing naming
   (`lv-*` collection IDs, `voxglass.*` UserDefaults keys, `Palette`/`glassSurface` design system).
 
@@ -389,7 +387,7 @@ For the engineer/agent executing this plan:
 3. §2 pagination.
 4. §3 collection artwork resolution.
 5. §5 recommendation engine (largest; depends on §1's language clause and the metadata capture).
-6. §6 monetization — bundle wiring first, then the iCloud sync phase.
+6. §6 monetization — bundle wiring first.
 7. README roadmap (docs; already written — keep it current as items ship).
 
 **Reuse, don't reinvent** — the code these build on already exists:

@@ -8,7 +8,7 @@ Read by AI books can no longer be downloaded to Apple Watch. Their Watch info ac
 
 - Now Playing uses Book as its title, a native glass info action for metadata/chapters and an ellipsis action for audio controls. Continue Listening adds the narrator below the author. My Books removes Created by me and the search scope picker, always searching title/author/narrator together. Settings uses its presenting navigation stack.
 
-- Listen has a Sync entry with the shared summary; Settings links to the same screen. The former iCloud and watch manual actions are consolidated there. iCloud preferences and diagnostic counts move into About → Sync Details rather than crowding Settings.
+- Listen has a Sync entry with the shared summary; Settings links to the same screen. The former watch manual actions are consolidated there. Watch preferences and diagnostic counts move into About → Sync Details rather than crowding Settings.
 - Sync explicitly applies book selections. It prepares recorded audio serially, preserves cellular consent and storage estimates, exposes pause/resume/retry through the same screen, and confirms removals. Turning a book off affects only its watch copy. No automatic whole-library audio download is introduced.
 - Sending a catalog or handing files to Apple does not count as installed audio. The summary distinguishes preparation, an active request, transfer, waiting, paused work, failures and confirmed installed books. Waiting/failed/paused states do not animate an indefinite progress indicator. The current request's start time and per-book progress/reason remain inspectable in Sync.
 - Fresh inventory merges with staged choices so a delayed report cannot silently deselect books or discard edits. Books whose phone originals were deleted remain removable.
@@ -38,7 +38,7 @@ Reviewed the adjacent `parso-workout-ios-app` phone Settings, watch Settings, wa
 - Confirm a late inventory report preserves staged additions/removals. Confirm an orphaned watch book can still be removed and an unselected book is never downloaded.
 - On a Read by AI book, open the audio sheet and tap Watch info. In Sync, tap that book's info button. Confirm the same short explanation, no new transfer selection, and continued iPhone speech playback. Check source-identified AI, `.voxtext`, mixed chapters and a legacy queued AI request. Confirm existing installed copies can be removed without deleting phone originals.
 - On Watch, check one Sync action, readable disconnected/waiting/error status, and About → Sync Details receipts/inventory. Start two sequential sync requests around the timeout window and verify an old callback cannot change the newer result.
-- Inspect About → Sync Details → Connection / Apple Watch / iCloud Sync. Check timestamps, errors, counts and the existing iCloud preference without exposing transport jargon on the main Sync surface.
+- Inspect About → Sync Details → Connection / Apple Watch. Check timestamps, errors and counts without exposing transport jargon on the main Sync surface.
 
 ## Release scope
 

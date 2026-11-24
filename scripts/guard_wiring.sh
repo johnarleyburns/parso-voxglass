@@ -435,7 +435,7 @@ check_no_new_kvs_writes() {
     | grep '\.set(' | grep -v 'VoxglassCloudSync.swift' | grep -v 'KVSMigration' || true)
 
   if [ -n "$matches" ]; then
-    echo "::error title=No-new-KVS-writes guard::New NSUbiquitousKeyValueStore writes found outside migration shim. Use CloudKit sync instead."
+    echo "::error title=No-new-KVS-writes guard::New NSUbiquitousKeyValueStore writes found. Cross-device sync has been removed; keep library data local."
     had_failure=1
   fi
 

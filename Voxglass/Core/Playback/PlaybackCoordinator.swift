@@ -38,8 +38,6 @@ public final class PlaybackCoordinator {
     /// finished save — never a bare seek/skip). The recommendation layer uses
     /// the completion context to apply thresholded, delta-based profile updates.
     @ObservationIgnored public var onTasteSignal: ((PlaybackTasteSignal) -> Void)?
-    /// Called when a bookmark is added, so the cloud sync layer can push it.
-    @ObservationIgnored public var onBookmarkAdded: ((Bookmark) -> Void)?
 
     @ObservationIgnored public var bookmarkStore: BookmarkStore?
 
@@ -281,94 +279,6 @@ public final class PlaybackCoordinator {
             isPlaying: false
         )
         currentSessionUpdatedAt = latest.updatedAt
-        if let currentSession { resetConfirmedPosition(for: currentSession) }
-        isEngineLoaded = false
-        updateNowPlayingInfo()
-    }
-
-    /// After the iCloud position pull lands, adopt a newer cloud position into
-    /// the presented (still-unplayed) session. Local activity always wins: once
-    /// the engine is loaded or playing, the pull is presentation-irrelevant this
-    /// launch. Also makes the miniplayer appear on a fresh install once the
-    /// pull delivers positions for a book already in the library.
-    public func refreshPresentedSessionAfterCloudPull(from books: [BookWithChapters]) async {
-        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
-        let row = try? await positionStore.latestPosition()
-        let latest = Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.latest())
-        await adoptCloudNowPlayingIfNewer(latest, from: books)
-    }
-
-    /// Adopts a newer position received from another device as Now Playing.
-    /// The local paused point is durably saved first, so switching the presented
-    /// session never discards the place this device was showing.
-    public func adoptCloudNowPlayingIfNewer(
-        _ remote: PlaybackPosition?,
-        from books: [BookWithChapters]
-    ) async {
-        guard let remote,
-              let book = books.first(where: { $0.book.id == remote.bookID }),
-              let target = Self.resolveResume(chapters: book.chapters, saved: remote) else { return }
-        if let session = currentSession {
-            guard !session.isPlaying,
-                  playbackPhase == .paused,
-                  NowPlayingHandoffPolicy.shouldAdopt(
-                    remoteUpdatedAt: remote.updatedAt,
-                    localUpdatedAt: currentSessionUpdatedAt,
-                    localIsPlaying: session.isPlaying
-                  ) else { return }
-
-            let localPoint = PlaybackPosition(
-                bookID: session.book.id,
-                chapterID: session.chapter.id,
-                position: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
-                duration: session.duration,
-                updatedAt: Date(),
-                isFinished: false
-            )
-            guard Self.hasProgressAtLeast(remote, asFarAs: localPoint, chapters: session.chapters) else { return }
-            snapshotStore.save(localPoint)
-            do {
-                if session.book.id == remote.bookID,
-                   session.chapter.id == remote.chapterID,
-                   let checkpointStore = positionStore as? any LocalPlaybackCheckpointStore {
-                    try await checkpointStore.saveLocalCheckpoint(localPoint)
-                } else {
-                    try await positionStore.save(localPoint)
-                }
-                currentSessionUpdatedAt = localPoint.updatedAt
-            } catch {
-                if !handleStalePositionWrite(error, localPoint) {
-                    playbackError = error.localizedDescription
-                    return
-                }
-            }
-        }
-
-        engine.pause()
-        progressTask?.cancel()
-        progressTask = nil
-        applyStoredRate(forBookID: book.book.id)
-        updateArtwork(for: book.book)
-        playbackPhase = .paused
-        currentSession = PlaybackSession(
-            book: book.book,
-            chapters: book.chapters,
-            chapter: target.chapter,
-            position: target.startTime,
-            duration: (remote.chapterID == target.chapter.id ? remote.duration : nil)
-                ?? target.chapter.duration,
-            isPlaying: false
-        )
-        let adoptedSnapshot = PlaybackPosition(
-            bookID: remote.bookID,
-            chapterID: target.chapter.id,
-            position: target.startTime,
-            duration: remote.duration,
-            updatedAt: Date(),
-            isFinished: remote.isFinished
-        )
-        snapshotStore.save(adoptedSnapshot)
-        currentSessionUpdatedAt = adoptedSnapshot.updatedAt
         if let currentSession { resetConfirmedPosition(for: currentSession) }
         isEngineLoaded = false
         updateNowPlayingInfo()
@@ -1552,7 +1462,7 @@ public final class PlaybackCoordinator {
         engine.preloadNext(url: source.url, lease: source.lease)
     }
 
-    // MARK: - Bookmarks (P0-3, FREE; bookmark sync = Pro iCloud gate)
+    // MARK: - Bookmarks
 
     /// The chapter id of the current session, or `nil`.
     public var currentChapterID: UUID? { currentSession?.chapter.id }
@@ -1569,7 +1479,6 @@ public final class PlaybackCoordinator {
             let saved = try? await store.add(bookmark)
             if let saved {
                 await refreshBookmarkCount(for: session.book.id)
-                onBookmarkAdded?(saved)
             }
         }
     }

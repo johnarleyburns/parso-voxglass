@@ -239,6 +239,10 @@ private struct DatabaseMigration {
                 """
             ]
         ),
+        // Migration 9 created the tables for a removed cross-device sync
+        // feature. The identifier and tables are retained so stores that
+        // already applied this migration keep a valid migration history; no
+        // runtime code reads or writes them.
         DatabaseMigration(
             id: 9,
             name: "cloudkit_sync",
