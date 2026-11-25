@@ -1,3 +1,9 @@
+## Release readiness — 2026-11-24
+
+- CloudKit/iCloud sync is removed; the app entitlements no longer request iCloud or push.
+- App Store distribution profiles were regenerated with the existing Apple Distribution certificate and refreshed in GitHub Actions.
+- The next TestFlight build is the clean submission candidate.
+
 # Voxglass — current status
 
 **Updated:** 2026-09-09

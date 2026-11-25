@@ -213,15 +213,18 @@ jobs:
         id: build_number
         run: |
           set -euo pipefail
-          # Marketing version mirrors the build number (1.1.<commit count>) so
-          # TestFlight shows the same number GitHub does, and a push is
-          # identifiable at a glance. The .githooks/commit-msg hook stamps the
-          # commit count into every commit message ("Build <n>") for GitHub ↔
-          # TestFlight correlation.
+          # The build number stays the commit count, but the marketing version
+          # must match the App Store Connect version being submitted. The
+          # repository variable makes that explicit; the default remains 1.0,
+          # the current App Store version record.
           build_number="$(git rev-list --count HEAD)"
+          marketing_version="${{ vars.VOXGLASS_MARKETING_VERSION }}"
+          if [ -z "$marketing_version" ]; then
+            marketing_version="1.0"
+          fi
           echo "value=$build_number" >> "$GITHUB_OUTPUT"
-          echo "version=1.1.$build_number" >> "$GITHUB_OUTPUT"
-          echo "Using build number $build_number (marketing version 1.1.$build_number)"
+          echo "version=$marketing_version" >> "$GITHUB_OUTPUT"
+          echo "Using build number $build_number (marketing version $marketing_version)"
 
       - name: Select Xcode 26.3 (iOS 26 SDK)
         run: |
