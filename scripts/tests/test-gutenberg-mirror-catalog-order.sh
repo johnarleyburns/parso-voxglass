@@ -38,7 +38,10 @@ source "$ROOT/scripts/gutenberg-mirror.sh"
 
 run_rclone_catalog
 
-mapfile -t lines < "$LOG"
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < "$LOG"
 [[ "${#lines[@]}" -eq 3 ]]
 [[ "${lines[0]}" == *"copy"* ]]
 [[ "${lines[0]}" == *"--exclude manifest.json"* ]]

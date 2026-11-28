@@ -417,12 +417,12 @@ run_rsync_books() {
     for id in $ONLY_IDS; do
       log "rsync book $id from $src/$id/"
       mkdir -p "$STAGING_BOOKS/$id"
-      run_child "${args[@]}" "${extra[@]}" "${RSYNC_FILTERS[@]}" \
+      run_child "${args[@]}" "${extra[@]+"${extra[@]}"}" "${RSYNC_FILTERS[@]}" \
         "$src/$id/" "$STAGING_BOOKS/$id/" || return $?
     done
   else
     log "rsync full no-images EPUB subset from $src (this lists every book directory)"
-    run_child "${args[@]}" "${extra[@]}" "${RSYNC_FILTERS[@]}" \
+    run_child "${args[@]}" "${extra[@]+"${extra[@]}"}" "${RSYNC_FILTERS[@]}" \
       "$src/" "$STAGING_BOOKS/" || return $?
   fi
 }
@@ -674,7 +674,7 @@ run_rclone_catalog() {
   # always last. A client can therefore only observe (old manifest, old index)
   # or (new manifest, fully uploaded new index), never a dangling pointer.
   local -a base=(
-    copy "${RCLONE_ARGS[@]}" "${extra[@]}"
+    copy "${RCLONE_ARGS[@]}" "${extra[@]+"${extra[@]}"}"
     --exclude 'manifest.json'
     --exclude 'index-*.json.zlib'
   )
@@ -690,7 +690,7 @@ run_rclone_catalog() {
       [[ -f "$index" ]] || continue
       name="$(basename "$index")"
       log "rclone copy index $name -> $R2_REMOTE_ROOT/catalog/$name"
-      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]}" \
+      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]+"${extra[@]}"}" \
           "$index" "$R2_REMOTE_ROOT/catalog/$name"; then
         warn "rclone could not upload index object '$name'; leaving the previous manifest in place"
         return 1
@@ -699,7 +699,7 @@ run_rclone_catalog() {
 
     if [[ -f "$STAGING_CATALOG/manifest.json" ]]; then
       log "rclone copy manifest last -> $R2_REMOTE_ROOT/catalog/manifest.json"
-      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]}" \
+      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]+"${extra[@]}"}" \
           "$STAGING_CATALOG/manifest.json" "$R2_REMOTE_ROOT/catalog/manifest.json"; then
         warn "rclone could not upload the search-index manifest; the previous manifest remains active"
         return 1

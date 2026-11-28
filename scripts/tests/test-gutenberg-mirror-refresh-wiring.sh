@@ -50,8 +50,8 @@ export PATH="$TMP:$PATH"
 source "$ROOT/scripts/gutenberg-mirror.sh"
 
 prepare_batch_ids
-mapfile -t queued < "$GUTENBERG_REMAINING_IDS_FILE"
-[[ "${queued[*]}" == "1 3" ]]
+queued="$(tr '\n' ' ' < "$GUTENBERG_REMAINING_IDS_FILE" | sed 's/ $//')"
+[[ "$queued" == "1 3" ]]
 [[ -f "$GUTENBERG_UPSTREAM_PENDING" ]]
 
 # The old baseline stays in place until commit_refresh_plan runs after every
