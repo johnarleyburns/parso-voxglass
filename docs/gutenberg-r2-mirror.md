@@ -5,15 +5,17 @@ plan for mirroring the useful Project Gutenberg subset to Cloudflare R2.
 
 The implementation lives in [`scripts/gutenberg-mirror.sh`](../scripts/gutenberg-mirror.sh).
 
-> **Current blocker (2026-11-20):** the available Cloudflare API token cannot create or list R2
-> buckets. Bucket creation returns `10000 Authentication error`, and the available R2 S3 key is
-> scoped to the existing `crm-backups` bucket (`403 AccessDenied`). All tooling is ready and has
-> been dry-run tested, but **no objects have been uploaded** and the `voxglass-gutenberg` bucket
-> does not exist yet.
+> **Current state:** the `voxglass-gutenberg` bucket is live at `https://gutenberg.parso.guru`.
+> A nightly systemd timer (`04:15` local, randomized ±1h) runs `--once` on the VPS. The mirror
+> contains all catalogued no-images EPUBs and medium covers, and the app searches the mirror index
+> locally. See [Upstream revisions and refresh](#upstream-revisions-and-refresh) and
+> [Update integrity](#update-integrity) for the guarantees added in this revision.
 
 ## What is mirrored
 
-The default is deliberately smaller than a full Gutenberg mirror:
+The default mirrors every `Text` record in `pg_catalog.csv`, in every language, using the
+no-images EPUB plus its medium cover. It is deliberately smaller than an all-format Gutenberg
+mirror because audio, MOBI, HTML, RDF, and illustrated EPUB variants are excluded.
 
 | Content | Source path | R2 object |
 | --- | --- | --- |
@@ -150,6 +152,7 @@ Recommended bucket settings:
 # From the repository root.
 scripts/gutenberg-mirror.sh --dry-run --only-ids 84 --no-catalog   # safe smoke test
 scripts/gutenberg-mirror.sh --once                                  # one full cycle, foreground
+scripts/gutenberg-mirror.sh --once --refresh-all                    # one-time full-corpus audit
 scripts/gutenberg-mirror.sh                                         # start background daily loop
 scripts/gutenberg-mirror.sh --status
 scripts/gutenberg-mirror.sh --verify
@@ -180,9 +183,15 @@ keys used by another bucket.
 | `GUTENBERG_CATALOG_CSV_RSYNC_SOURCE` | `aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv` | CSV rsync fallback |
 | `GUTENBERG_BUILD_INDEX` | `1` | Build the on-device search index |
 | `GUTENBERG_INDEX_SCRIPT` | `scripts/build-gutenberg-index.py` | Index builder |
-| `GUTENBERG_INDEX_LANGUAGE` | `en` | Index language, or `all` |
+| `GUTENBERG_INDEX_LANGUAGE` | `all` | Index language, or `all` for every Gutenberg language |
+| `GUTENBERG_REFRESH_SCRIPT` | `scripts/gutenberg-refresh-plan.py` | New/changed/rotating-refresh planner |
+| `GUTENBERG_REFRESH_BATCH_SIZE` | `500` | Already-mirrored IDs re-fetched per cycle; `0` disables rotation |
+| `GUTENBERG_REFRESH_ALL` | `0` | Queue every catalog ID once (migration/audit) |
+| `GUTENBERG_UPSTREAM_CHECK` | `1` | Compare an upstream `rsync --list-only` snapshot each cycle |
 | `GUTENBERG_BATCH_SIZE` | `500` | Books per local upload batch; `0` = full tree |
 | `GUTENBERG_UPLOADED_IDS_FILE` | `state/uploaded-ids` | Completed-ID progress file |
+| `GUTENBERG_UPSTREAM_SNAPSHOT` | `state/upstream-files` | Last committed upstream size/mtime snapshot |
+| `GUTENBERG_REFRESH_CURSOR` | `state/refresh-cursor` | Rotating-refresh cursor |
 | `GUTENBERG_STAGING_DIR` | `~/.cache/voxglass/gutenberg` | Local staging |
 | `GUTENBERG_STATE_DIR` | `~/.local/state/voxglass-gutenberg-mirror` | PID/lock/state/log |
 | `GUTENBERG_INTERVAL` | `86400` | Seconds between loop cycles |
@@ -220,6 +229,46 @@ statistics in batch mode because local staging intentionally contains only the c
 `--prune` remains a full-tree/rsync option; batch mode does not delete remote objects that
 disappeared upstream.
 
+## Upstream revisions and refresh
+
+Batch mode used to treat `uploaded-ids` as permanent, so a revised EPUB or cover for an existing ID
+was never re-fetched. Each batch cycle now does three things:
+
+1. **New IDs:** every catalog `Text#` missing from `uploaded-ids` is queued.
+2. **Changed IDs:** one read-only `rsync --list-only -r` listing captures upstream size and mtime
+   for every selected EPUB/cover (~18 MB and about 90 seconds for the full catalog; no book data
+   is downloaded). `gutenberg-refresh-plan.py` compares it with the previous snapshot and queues
+   any ID whose file signature changed. The snapshot is committed only after the queue uploads
+   successfully, so a crash re-plans the same work.
+3. **Rotating audit:** `GUTENBERG_REFRESH_BATCH_SIZE` (default `500`) already-mirrored IDs are
+   re-fetched each cycle, wrapping at the end of the catalog. At the default rate the complete
+   corpus is audited roughly twice a year. This catches the rare revision that preserves both size
+   and mtime.
+
+The first run with no prior snapshot establishes a baseline without re-downloading the corpus.
+For a one-time migration/audit of an existing mirror, run `--refresh-all`; that queues every
+catalog ID once. Use `--no-refresh` to disable both change detection and the rotating audit.
+
+Batch mode still does not delete remote objects that disappeared upstream. `--status` reports the
+number of removed IDs found during the latest snapshot comparison, but pruning remains an explicit
+full-tree operation.
+
+## Update integrity
+
+Publishing a catalog is ordered so the app can never observe a torn update:
+
+1. Books upload through `rclone move`; S3 PUTs are atomic, so a concurrent reader gets either the
+   old complete EPUB/cover or the new complete object.
+2. If any book batch or index build fails, the cycle does **not** publish a new catalog manifest.
+   The previous manifest/index pair stays live.
+3. The immutable, content-addressed `index-<sha>.json.zlib` uploads first. The small
+   `manifest.json` uploads last, after every index object exists. A client therefore sees either
+   the old pair or the new pair, never a manifest pointing at a missing index.
+4. The app verifies the downloaded index's byte count and SHA-256 before replacing its in-memory
+   snapshot, writes the index and manifest with atomic renames, and re-verifies the pair when
+   loading from disk. A corrupt or mismatched local pair is discarded and repaired on the next
+   refresh; search never uses a partially written index.
+
 ## Start / stop / resume semantics
 
 - `start` (or no arguments) launches `nohup … --loop` in the background and writes its PID to
@@ -237,6 +286,9 @@ disappeared upstream.
   rclone’s dry-run, so it fails loudly when the bucket/key is not available.
 - `--only-ids 84,1342` restricts the run to specific books. `--no-catalog` skips the index for
   quick tests.
+- `--refresh-all` queues every catalog ID once. Use it for the initial migration to snapshot-based
+  revision detection or as a full-corpus audit; subsequent cycles return to the rotating batch.
+- `--no-refresh` disables upstream change detection and the rotating audit for one run.
 - `--prune` adds rsync `--delete` (prunes books removed upstream). It is off by default.
 - `--cleanup` removes empty `.rsync-partial` directories and stale catalog temp files.
 
@@ -431,57 +483,48 @@ catalog/index-<sha>.json.zlib
 The manifest is small and gets a short cache TTL:
 
 ```json
-{"schema":1,"version":"2026-11-20T22:10:50Z","index":"index-c4493e70bfa9e5a0.json.zlib","sha256":"c4493e...","bytes":5238271,"bookCount":62161}
+{"schema":1,"version":"2026-11-28T01:25:27Z","index":"index-9012491c19dc85b7.json.zlib","sha256":"901249...","bytes":6763085,"bookCount":78518}
 ```
 
-The index is a compact JSON array of English `Text` records with `id`, `title`, `authors`,
-`languages`, `subjects`, `bookshelves`, `issued`, `epub`, and `cover`. Paths are relative to
-`gutenberg/`, so the app prefixes them with its public base URL. The default index is about **5 MB
-zlib-compressed** for ~62k English books.
+The index is a compact JSON array of every `Text` record in the catalog — all Gutenberg languages,
+not just English — with `id`, `title`, `authors`, `languages`, `subjects`, `bookshelves`, `issued`,
+`epub`, and `cover`. Paths are relative to `gutenberg/`, so the app prefixes them with its public
+base URL. The default index is roughly **6–7 MB zlib-compressed** for ~78k books.
 
 The mirror script builds the index after fetching `pg_catalog.csv` (HTTP, then rsync fallback) and
-uploads both files with the rest of `catalog/`. Use `--no-index` to skip it.
+uploads the versioned index before the manifest that references it. Use `--no-index` to skip it.
+`GUTENBERG_INDEX_LANGUAGE` still accepts a single language code; the default is `all`.
 
-The app should keep a bundled baseline if first-launch offline search matters; otherwise download
-on launch and retain the previous index until the new one is verified. `manifest.json` can be
-refreshed weekly; the versioned index file can be cached for a year.
+The app downloads the index on first search/launch and retains the previous verified index until the
+new one passes its size and SHA-256 checks. `manifest.json` is revalidated on each Discover load;
+the versioned index object is immutable and can be cached for a year.
 
 ## Adding the mirror to the app
 
-The app currently talks to `https://www.gutenberg.org/ebooks/search/` (primary HTML search) and
-`https://gutendex.com/books/` (fallback), and builds illustrated EPUB URLs
-(`https://www.gutenberg.org/ebooks/<id>.epub.images`) and gutenberg.org cover URLs. Production should
-not hotlink either host once the mirror is live.
+The app is wired to the mirror as its primary Gutenberg source:
 
-`GutenbergCatalogClient` already accepts injectable `baseURL` and `projectGutenbergSearchURL` values.
-The migration is:
-
-1. **Add a mirror base URL** as build configuration (Info.plist key or generated Swift constant),
-   for example `GUTENBERG_MIRROR_BASE_URL=https://gutenberg.parso.guru`. Keep it optional so builds
-   without a configured mirror still fall back during the transition. The app should never contain
-   an R2 key; the public bucket/custom domain is the only read path.
-2. **Replace live search with the local catalog index.** The mirror builds
-   `gutenberg/catalog/index-<sha>.json.zlib` plus `manifest.json`. The app downloads the manifest,
-   compares the sha256, then downloads the versioned index and searches on-device. This avoids a
-   runtime dependency on Gutenberg/Gutendex. A small Worker search API is possible but adds a
-   service, latency, request billing, and an offline failure mode; it is not needed at this corpus
-   size.
-3. **Map download URLs** for a book:
+1. **Base URL:** `AppServices` constructs `GutenbergIndexStore` with
+   `https://gutenberg.parso.guru`. No R2 key or S3 endpoint exists in the app.
+2. **Local search:** `DiscoverView` calls `gutenbergIndex.prepareForSearch()` before searching.
+   That loads the cached index, then joins or starts one mirror refresh if no verified snapshot is
+   available. Only after the mirror is genuinely unavailable does it construct
+   `GutenbergCatalogClient`, whose order is gutenberg.org HTML and then Gutendex.
+3. **Book URLs:** index results map to the mirror:
    ```text
    EPUB:  {base}/gutenberg/books/{id}/pg{id}.epub
    Cover: {base}/gutenberg/books/{id}/pg{id}.cover.medium.jpg
    ```
-   Only use `pg{id}-images.epub` if the illustrated subset is enabled. Remove the fabricated
-   `/ebooks/{id}.epub.images` URL from `parseGutenbergSearchHTML`.
-4. **Keep the old client as a fallback only during rollout.** Once the snapshot/Worker is shipped,
-   remove gutenberg.org and Gutendex network calls from the production path so an upstream
-   maintenance window cannot break Find.
-5. **Configure public access correctly.** Map an R2 custom domain to the `voxglass-gutenberg` bucket
-   and serve only the `gutenberg/` prefix. Do not expose the S3 endpoint or `crm-backups`. If a web
-   client is ever added, set CORS in a Worker, not by making the bucket public.
-6. **Cache sensibly.** EPUBs and covers are keyed by Gutenberg ID. Use a long but not infinite cache
-   because Gutenberg revises files; a Worker can invalidate by catalog version. R2 supports Range
-   requests, so resumable downloads work.
+   `GutenbergBookPreview` passes that EPUB URL to `ReadWithAIImporter`, so text downloads come from
+   the mirror as well. `detailsURL` remains a gutenberg.org attribution link only.
+4. **Index integrity:** the app verifies the manifest byte count and SHA-256 before publishing a
+   new snapshot in memory, writes both files atomically, and re-verifies the pair when loading from
+   disk.
+5. **Public access:** the R2 custom domain maps to the `voxglass-gutenberg` bucket and serves the
+   `gutenberg/` prefix. The S3 endpoint and other buckets are never exposed. CORS is unnecessary for
+   the native client; add it in a Worker if a web client is introduced.
+6. **Caching:** EPUBs and covers are keyed by Gutenberg ID and served atomically from S3. The
+   versioned index object is immutable; `manifest.json` is revalidated rather than cached
+   indefinitely.
 
 ### License, attribution, and trademark
 

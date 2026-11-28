@@ -708,6 +708,13 @@ struct BrowseView: View {
             if gutenbergSearchID == searchID { isSearchingGutenberg = false }
         }
 
+        // A first search can race the Discover `.task` that downloads the
+        // mirror index. Load the cached snapshot and join/start one refresh
+        // before deciding the mirror is unavailable, so a healthy mirror stays
+        // the primary source and gutenberg.org is only a real fallback.
+        await gutenbergIndex.prepareForSearch()
+        guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
+
         if gutenbergIndex.isAvailable {
             let results = await gutenbergIndex.search(term)
             guard gutenbergSearchID == searchID, !Task.isCancelled else { return }

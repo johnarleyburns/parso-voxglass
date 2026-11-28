@@ -42,6 +42,14 @@ if [[ -f scripts/tests/test-pr-maintenance.sh && -f .github/scripts/pr-maintenan
 fi
 endstep
 
+step "Gutenberg mirror tooling"
+python3 scripts/tests/test-build-gutenberg-index.py
+python3 scripts/tests/test-gutenberg-refresh-plan.py
+bash scripts/tests/test-gutenberg-mirror-catalog-order.sh
+bash scripts/tests/test-gutenberg-mirror-publication-gate.sh
+bash scripts/tests/test-gutenberg-mirror-refresh-wiring.sh
+endstep
+
 step "Source-level wiring guards"
 bash scripts/guard_wiring.sh
 bash scripts/guard_watch_foundation.sh
