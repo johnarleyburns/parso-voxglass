@@ -56,17 +56,21 @@ public struct FindSearchLifecycle: Equatable, Sendable {
     }
 }
 
-/// Each Find source selects exactly one catalog. Collections never fall back
-/// to a broad search when no collection is selected.
+/// The Find source menu. `all` combines LibriVox and Gutenberg results through
+/// the relevance ranker; the remaining sources stay exclusive. Collections never
+/// fall back to a broad search when no collection is selected.
 public enum FindSourceFilter: CaseIterable, Hashable, Sendable {
+    /// Combined relevance search across LibriVox and Gutenberg Read with AI.
+    case all
     case librivox, collections, gutenberg
 
     public enum SearchDestination: Equatable, Sendable {
-        case librivox, collection, gutenberg, none
+        case combined, librivox, collection, gutenberg, none
     }
 
     public func searchDestination(hasSelectedCollection: Bool) -> SearchDestination {
         switch self {
+        case .all: .combined
         case .librivox: .librivox
         case .collections: hasSelectedCollection ? .collection : .none
         case .gutenberg: .gutenberg

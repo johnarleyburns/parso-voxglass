@@ -449,6 +449,27 @@ public enum WatchDisplayStateResolver {
     }
 }
 
+/// Resolves which stalled cached transfers still deserve “Sync needs attention”.
+/// A stale storage snapshot must not keep a book looking stalled after it was
+/// downloaded, removed, or is no longer in the authoritative desired state.
+public enum WatchStalledBookResolver {
+    public static func stalledBookIDs(
+        desiredStates: [WatchBookID: WatchDownloadState],
+        storageStates: [UUID: WatchTransferState]
+    ) -> [UUID] {
+        desiredStates.compactMap { key, desired in
+            guard let id = UUID(uuidString: key.rawValue),
+                  let storage = storageStates[id] else { return nil }
+            guard case .stalled = WatchDisplayStateResolver.resolve(
+                desiredState: desired,
+                storageState: storage
+            ) else { return nil }
+            return id
+        }
+        .sorted { $0.uuidString < $1.uuidString }
+    }
+}
+
 /// Persistent global-chrome status: how many books are authoritatively downloaded on the watch
 /// and how many have failed.
 public struct WatchTransferStatusBanner: Equatable, Sendable {

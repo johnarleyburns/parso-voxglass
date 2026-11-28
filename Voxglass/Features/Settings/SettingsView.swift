@@ -913,7 +913,12 @@ private struct WatchSyncDiagnosticsCard: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Sync needs attention").foregroundStyle(Palette.danger)
                     ForEach(phoneAudioRelay.watchStalledBookTitles, id: \.self) { Text($0) }
-                    Text("Open Sync to retry")
+                    Button("Retry Sync") {
+                        Task { await phoneAudioRelay.syncWatchNow() }
+                    }
+                    .voxFont(.caption2, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier("watchsync.stalled.retry")
                 }
                 .voxFont(.caption2)
                 .accessibilityIdentifier("watchsync.stalled")
@@ -1563,7 +1568,7 @@ private struct SyncSettingsSection: View {
         let books = candidates
         let removed = removals
         isRunning = true
-        relay.watchTransferError = nil
+        relay.beginSyncAttempt()
         startedAt = SystemClock().now
         syncTask = Task { @MainActor in
             defer { isRunning = false; syncTask = nil }

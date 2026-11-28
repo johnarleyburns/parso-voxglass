@@ -27,6 +27,30 @@ import Testing
         #expect(!text.contains("title: \"Discover\""))
     }
 
+    @Test func sourcePickerIsAHeaderMenuLeftOfFilterWithAllFirst() throws {
+        let text = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        #expect(text.contains("sourceFilter: FindSourceFilter = .all"))
+        #expect(!text.contains("BookScopeBar("))
+        #expect(text.contains("discover.sourceMenu"))
+        #expect(text.contains("Image(systemName: \"books.vertical\")"))
+        #expect(text.contains("Text(\"All\").tag(FindSourceFilter.all)"))
+        #expect(text.contains("Text(\"LibriVox Collections\").tag(FindSourceFilter.collections)"))
+
+        let header = try #require(text.range(of: "private var discoverHeaderActions"))
+        let rest = String(text[header.lowerBound...])
+        let sourceMenu = try #require(rest.range(of: "discover.sourceMenu"))
+        let filter = try #require(rest.range(of: "discover.filterButton"))
+        #expect(sourceMenu.lowerBound < filter.lowerBound)
+    }
+
+    @Test func allSourceUsesTheMergedRanker() throws {
+        let text = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        #expect(text.contains("case .combined:"))
+        #expect(text.contains("MergedSearchRanker().rank("))
+        #expect(text.contains("await store.searchLibriVox(term)"))
+        #expect(text.contains("await searchGutenberg(term, searchID: searchID)"))
+    }
+
     private func source(_ relativePath: String) throws -> String {
         var url = URL(fileURLWithPath: #filePath)
         while !FileManager.default.fileExists(atPath: url.appendingPathComponent("Package.swift").path) {

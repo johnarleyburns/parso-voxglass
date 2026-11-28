@@ -742,6 +742,56 @@ import VoxglassWatchProtocol
     @Test func displayState_noDesiredStateTrustsCache() { #expect(r(nil, .available) == .available) }
 }
 
+@Suite struct WatchStalledBookResolverTests {
+    private func id(_ n: Int) -> WatchBookID { WatchBookID("00000000-0000-0000-0000-\(String(format: "%012d", n))") }
+
+    @Test func inFlightBookWithStalledStorageIsReported() {
+        let book = id(1)
+        let uuid = UUID(uuidString: book.rawValue)!
+        #expect(WatchStalledBookResolver.stalledBookIDs(
+            desiredStates: [book: .transferring],
+            storageStates: [uuid: .stalled(progress: 0.4)]
+        ) == [uuid])
+    }
+
+    @Test func downloadedBookNeverLooksStalledFromAStaleSnapshot() {
+        let book = id(1)
+        let uuid = UUID(uuidString: book.rawValue)!
+        #expect(WatchStalledBookResolver.stalledBookIDs(
+            desiredStates: [book: .downloaded],
+            storageStates: [uuid: .stalled(progress: 0.4)]
+        ).isEmpty)
+    }
+
+    @Test func removedOrUnrequestedBookNeverLooksStalled() {
+        for desired in [WatchDownloadState.removing, .notRequested] {
+            let book = id(1)
+            let uuid = UUID(uuidString: book.rawValue)!
+            #expect(WatchStalledBookResolver.stalledBookIDs(
+                desiredStates: [book: desired],
+                storageStates: [uuid: .stalled(progress: 0.4)]
+            ).isEmpty)
+        }
+    }
+
+    @Test func failedBookUsesFailureStatusNotStalledAttention() {
+        let book = id(1)
+        let uuid = UUID(uuidString: book.rawValue)!
+        #expect(WatchStalledBookResolver.stalledBookIDs(
+            desiredStates: [book: .failed("x")],
+            storageStates: [uuid: .stalled(progress: 0.4)]
+        ).isEmpty)
+    }
+
+    @Test func orphanedStalledStorageWithoutADesiredStateIsIgnored() {
+        let uuid = UUID(uuidString: id(1).rawValue)!
+        #expect(WatchStalledBookResolver.stalledBookIDs(
+            desiredStates: [:],
+            storageStates: [uuid: .stalled(progress: 0.4)]
+        ).isEmpty)
+    }
+}
+
 @Suite struct WatchTransferStatusBannerTests {
     private func id(_ n: Int) -> WatchBookID { WatchBookID("book-\(n)") }
     private func r(_ d: [WatchBookID: WatchDownloadState], _ s: [WatchBookID: WatchTransferState] = [:]) -> WatchTransferStatusBanner? {
