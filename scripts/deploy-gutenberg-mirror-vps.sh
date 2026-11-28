@@ -74,15 +74,26 @@ log "installing environment file (secrets are streamed, never printed)"
   chmod 600 $(printf '%q' "$ENV_FILE")
 "
 
+MERGED_IDS="$(mktemp "${TMPDIR:-/tmp}/voxglass-gutenberg-ids.XXXXXX")"
+trap 'rm -f "$MERGED_IDS"' EXIT
+
 if [[ -s "$LOCAL_STATE/uploaded-ids" ]]; then
-  log "seeding completed IDs from this workstation"
+  cat "$LOCAL_STATE/uploaded-ids" >> "$MERGED_IDS"
+fi
+ssh "${SSH_OPTS[@]}" "$VPS_HOST" \
+  "cat $(printf '%q' "$REMOTE_ROOT")/state/uploaded-ids 2>/dev/null || true" >> "$MERGED_IDS"
+if [[ -s "$MERGED_IDS" ]]; then
+  # Union the workstation and VPS state. A stale local copy must never shrink
+  # the remote progress file and trigger a full re-download.
+  LC_ALL=C sort -u -o "$MERGED_IDS" "$MERGED_IDS"
+  log "seeding completed IDs (merged $(wc -l < "$MERGED_IDS" | tr -d ' ') IDs)"
   ssh "${SSH_OPTS[@]}" "$VPS_HOST" "
     cat > $(printf '%q' "$REMOTE_ROOT")/state/uploaded-ids
     chown $(printf '%q' "$SERVICE_USER"):$(printf '%q' "$SERVICE_USER") $(printf '%q' "$REMOTE_ROOT")/state/uploaded-ids
     chmod 600 $(printf '%q' "$REMOTE_ROOT")/state/uploaded-ids
-  " < "$LOCAL_STATE/uploaded-ids"
+  " < "$MERGED_IDS"
 else
-  log "no local uploaded-ids state; the VPS will start from the beginning"
+  log "no local or remote uploaded-ids state; the VPS will start from the beginning"
 fi
 
 log "installing systemd units"
