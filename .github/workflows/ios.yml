@@ -213,18 +213,28 @@ jobs:
         id: build_number
         run: |
           set -euo pipefail
-          # The build number stays the commit count, but the marketing version
-          # must match the App Store Connect version being submitted. The
-          # repository variable makes that explicit; the default remains 1.0,
-          # the current App Store version record.
+          # The build number stays the commit count. The marketing version must
+          # match the App Store Connect/TestFlight version being submitted.
+          # project.yml is the source of truth; the repository variable may
+          # override it, but a mismatch fails instead of silently uploading a
+          # build under a version TestFlight is not showing.
           build_number="$(git rev-list --count HEAD)"
+          project_version="$(ruby -ryaml -e 'puts YAML.load_file("project.yml").dig("settings", "base", "MARKETING_VERSION").to_s')"
           marketing_version="${{ vars.VOXGLASS_MARKETING_VERSION }}"
           if [ -z "$marketing_version" ]; then
-            marketing_version="1.0"
+            marketing_version="$project_version"
+          fi
+          if [ -z "$marketing_version" ]; then
+            echo "::error title=Missing marketing version::Set project.yml MARKETING_VERSION or the VOXGLASS_MARKETING_VERSION repository variable."
+            exit 1
+          fi
+          if [ -n "$project_version" ] && [ "$marketing_version" != "$project_version" ]; then
+            echo "::error title=Marketing version mismatch::Workflow would upload '$marketing_version' but project.yml says '$project_version'. Align them before uploading."
+            exit 1
           fi
           echo "value=$build_number" >> "$GITHUB_OUTPUT"
           echo "version=$marketing_version" >> "$GITHUB_OUTPUT"
-          echo "Using build number $build_number (marketing version $marketing_version)"
+          echo "Using build number $build_number (marketing version $marketing_version, project.yml $project_version)"
 
       - name: Select Xcode 26.3 (iOS 26 SDK)
         run: |
