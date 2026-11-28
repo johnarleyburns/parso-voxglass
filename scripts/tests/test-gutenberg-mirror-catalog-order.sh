@@ -49,6 +49,11 @@ done < "$LOG"
 [[ "${lines[1]}" == *"copyto"*"index-0123456789abcdef.json.zlib"* ]]
 [[ "${lines[2]}" == *"copyto"*"manifest.json"* ]]
 [[ "${lines[2]}" != *"index-"* ]]
+# rclone copyto rejects filtered argument sets.
+[[ "${lines[1]}" != *"--include"* ]]
+[[ "${lines[1]}" != *"--exclude"* ]]
+[[ "${lines[2]}" != *"--include"* ]]
+[[ "${lines[2]}" != *"--exclude"* ]]
 
 : > "$LOG"
 export FAKE_RCLONE_FAIL_ON="index-0123456789abcdef.json.zlib"
