@@ -14,59 +14,162 @@ public struct GutenbergCatalogIndex: Codable, Equatable, Sendable {
         self.books = books
     }
 
-    /// On-device search over the complete catalog. The index is intentionally
-    /// small enough for a linear pass (tens of thousands of records).
-    public func search(_ query: String, baseURL: URL, limit: Int = 50) -> [GutenbergBook] {
-        let foldedQuery = Self.fold(query.trimmingCharacters(in: .whitespacesAndNewlines))
+    /// On-device search over the complete catalog. Direct callers pay the
+    /// preparation cost on every query; the app caches `preparedForSearch()`.
+    public func search(
+        _ query: String,
+        baseURL: URL,
+        limit: Int = 50,
+        preferredLanguages: Set<String> = []
+    ) -> [GutenbergBook] {
+        preparedForSearch().search(
+            query,
+            baseURL: baseURL,
+            limit: limit,
+            preferredLanguages: preferredLanguages
+        )
+    }
+
+    /// Folds every searchable field exactly once. `GutenbergIndexStore` builds
+    /// this off the main actor after loading or refreshing the mirror index.
+    func preparedForSearch() -> GutenbergPreparedSearchIndex {
+        GutenbergPreparedSearchIndex(index: self)
+    }
+
+    static func fold(_ value: String) -> String {
+        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .lowercased()
+    }
+}
+
+/// Maps the user's LibriVox language selection (e.g. `eng`) onto the language
+/// codes used by `pg_catalog.csv` (e.g. `en`) and accepts either form when the
+/// caller already has an ISO code.
+enum GutenbergLanguagePreference {
+    /// Enough to lift a preferred-language edition over an equally relevant
+    /// foreign edition without overriding a materially tighter match.
+    static let bonus = 500
+
+    static func codes(for selection: Set<String>) -> Set<String> {
+        guard !selection.isEmpty else { return [] }
+        var codes: Set<String> = []
+        for rawValue in selection {
+            let key = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !key.isEmpty else { continue }
+            if let language = LibriVoxLanguage.all.first(where: { $0.id == key }) {
+                codes.insert(normalize(language.id))
+                codes.insert(normalize(language.languageCode))
+                for token in language.tokens { codes.insert(normalize(token)) }
+            } else {
+                codes.insert(normalize(key))
+            }
+        }
+        return codes
+    }
+
+    static func normalize(_ value: String) -> String {
+        let lowered = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return lowered
+            .split(whereSeparator: { $0 == "-" || $0 == "_" })
+            .first
+            .map(String.init) ?? lowered
+    }
+}
+
+struct GutenbergPreparedSearchIndex: Sendable {
+    struct Record: Sendable {
+        let book: GutenbergCatalogIndexBook
+        let title: String
+        let authors: String
+        let subjects: String
+        let shelves: String
+        let haystack: String
+        let languageCodes: Set<String>
+    }
+
+    let records: [Record]
+
+    init(index: GutenbergCatalogIndex) {
+        records = index.books.map { book in
+            let title = GutenbergCatalogIndex.fold(book.title)
+            let authors = GutenbergCatalogIndex.fold(book.authors.joined(separator: " "))
+            let subjects = GutenbergCatalogIndex.fold(book.subjects.joined(separator: " "))
+            let shelves = GutenbergCatalogIndex.fold(book.bookshelves.joined(separator: " "))
+            return Record(
+                book: book,
+                title: title,
+                authors: authors,
+                subjects: subjects,
+                shelves: shelves,
+                haystack: [title, authors, subjects, shelves].joined(separator: " "),
+                languageCodes: Set(book.languages.map(GutenbergLanguagePreference.normalize))
+            )
+        }
+    }
+
+    func search(
+        _ query: String,
+        baseURL: URL,
+        limit: Int = 50,
+        preferredLanguages: Set<String> = []
+    ) -> [GutenbergBook] {
+        let foldedQuery = GutenbergCatalogIndex.fold(
+            query.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
         guard !foldedQuery.isEmpty else { return [] }
         let tokens = foldedQuery.split(whereSeparator: \.isWhitespace).map(String.init)
         guard !tokens.isEmpty else { return [] }
 
-        let scored: [(score: Int, book: GutenbergCatalogIndexBook)] = books.compactMap { book in
-            let title = Self.fold(book.title)
-            let authors = Self.fold(book.authors.joined(separator: " "))
-            let subjects = Self.fold(book.subjects.joined(separator: " "))
-            let shelves = Self.fold(book.bookshelves.joined(separator: " "))
-            let haystack = [title, authors, subjects, shelves].joined(separator: " ")
-            guard tokens.allSatisfy({ haystack.contains($0) }) else { return nil }
+        let preferredCodes = GutenbergLanguagePreference.codes(for: preferredLanguages)
+        let languageBonus = preferredCodes.isEmpty ? 0 : GutenbergLanguagePreference.bonus
+
+        var scored: [(score: Int, record: Record)] = []
+        for record in records {
+            guard tokens.allSatisfy({ record.haystack.contains($0) }) else { continue }
 
             var score = 0
-            if title == foldedQuery {
+            if record.title == foldedQuery {
                 score += 2_000
-            } else if title.hasPrefix(foldedQuery) {
+            } else if record.title.hasPrefix(foldedQuery) {
                 score += 1_600
-            } else if title.contains(foldedQuery) {
+            } else if record.title.contains(foldedQuery) {
                 score += 1_200
             }
-            if authors.contains(foldedQuery) { score += 800 }
-            if subjects.contains(foldedQuery) || shelves.contains(foldedQuery) { score += 400 }
+            if record.authors.contains(foldedQuery) { score += 800 }
+            if record.subjects.contains(foldedQuery) || record.shelves.contains(foldedQuery) {
+                score += 400
+            }
 
             for token in tokens {
-                if title == token {
+                if record.title == token {
                     score += 500
-                } else if title.hasPrefix(token) {
+                } else if record.title.hasPrefix(token) {
                     score += 300
-                } else if title.contains(token) {
+                } else if record.title.contains(token) {
                     score += 200
                 }
-                if authors.contains(token) { score += 100 }
-                if subjects.contains(token) || shelves.contains(token) { score += 50 }
+                if record.authors.contains(token) { score += 100 }
+                if record.subjects.contains(token) || record.shelves.contains(token) {
+                    score += 50
+                }
             }
-            return (score, book)
+
+            if languageBonus != 0,
+               !record.languageCodes.isDisjoint(with: preferredCodes) {
+                score += languageBonus
+            }
+            scored.append((score, record))
+        }
+
+        scored.sort {
+            if $0.score != $1.score { return $0.score > $1.score }
+            if $0.record.title != $1.record.title { return $0.record.title < $1.record.title }
+            return $0.record.book.id < $1.record.book.id
         }
 
         return scored
-            .sorted {
-                if $0.score != $1.score { return $0.score > $1.score }
-                return $0.book.title.localizedCaseInsensitiveCompare($1.book.title) == .orderedAscending
-            }
             .prefix(limit)
-            .map { $0.book.asGutenbergBook(baseURL: baseURL) }
-    }
-
-    private static func fold(_ value: String) -> String {
-        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            .lowercased()
+            .map { $0.record.book.asGutenbergBook(baseURL: baseURL) }
     }
 }
 
@@ -157,6 +260,9 @@ public final class GutenbergIndexStore {
     @ObservationIgnored private let session: URLSession
     @ObservationIgnored private let fileManager: FileManager
     @ObservationIgnored private let storageDirectory: URL
+    /// Folded titles/authors/subjects/shelves, built once per loaded snapshot.
+    /// Rebuilding this on every query dominated interactive search latency.
+    @ObservationIgnored private var preparedSearchIndex: GutenbergPreparedSearchIndex?
     /// Coalesces overlapping cold-start/search refreshes so only one manifest
     /// and index download can be in flight at a time.
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
@@ -204,10 +310,11 @@ public final class GutenbergIndexStore {
                 }
                 let data = try (compressed as NSData).decompressed(using: .zlib) as Data
                 let decoded = try JSONDecoder().decode(GutenbergCatalogIndex.self, from: data)
-                return (decoded, manifest)
+                return (decoded, manifest, decoded.preparedForSearch())
             }.value
             index = loaded.0
             manifest = loaded.1
+            preparedSearchIndex = loaded.2
         } catch {
             // Never publish a corrupt or mismatched snapshot. Keep any older
             // in-memory index that a concurrent refresh may have installed;
@@ -277,6 +384,9 @@ public final class GutenbergIndexStore {
             guard let decoded = try await Self.decodeIndex(compressed) else {
                 throw GutenbergIndexError.invalidIndex
             }
+            let prepared = await Task.detached(priority: .utility) {
+                decoded.preparedForSearch()
+            }.value
 
             try fileManager.createDirectory(at: storageDirectory, withIntermediateDirectories: true)
             // Data.write(.atomic) replaces each file with a single rename.
@@ -293,17 +403,28 @@ public final class GutenbergIndexStore {
 
             index = decoded
             manifest = remoteManifest
+            preparedSearchIndex = prepared
             lastRefreshError = nil
         } catch {
             lastRefreshError = error.localizedDescription
         }
     }
 
-    public func search(_ query: String, limit: Int = 50) async -> [GutenbergBook] {
+    public func search(
+        _ query: String,
+        limit: Int = 50,
+        preferredLanguages: Set<String> = []
+    ) async -> [GutenbergBook] {
         guard let index else { return [] }
         let baseURL = self.baseURL
+        let prepared = preparedSearchIndex
         return await Task.detached(priority: .userInitiated) {
-            index.search(query, baseURL: baseURL, limit: limit)
+            (prepared ?? index.preparedForSearch()).search(
+                query,
+                baseURL: baseURL,
+                limit: limit,
+                preferredLanguages: preferredLanguages
+            )
         }.value
     }
 

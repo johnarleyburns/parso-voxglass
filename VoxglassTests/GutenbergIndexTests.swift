@@ -45,6 +45,70 @@ import Foundation
         )
     }
 
+    private func makeLanguageIndex() -> GutenbergCatalogIndex {
+        GutenbergCatalogIndex(
+            schema: 1,
+            generatedAt: "2026-11-20T00:00:00Z",
+            books: [
+                GutenbergCatalogIndexBook(
+                    id: 1,
+                    title: "Frankenstein; or, The modern Prometheus",
+                    authors: ["Shelley, Mary Wollstonecraft"],
+                    languages: ["en"],
+                    subjects: [],
+                    bookshelves: [],
+                    issued: "1993-10-01",
+                    epub: "books/1/pg1.epub",
+                    cover: "books/1/pg1.cover.medium.jpg"
+                ),
+                GutenbergCatalogIndexBook(
+                    id: 2,
+                    title: "Frankenstein, ou le Prométhée moderne",
+                    authors: ["Shelley, Mary Wollstonecraft"],
+                    languages: ["fr"],
+                    subjects: [],
+                    bookshelves: [],
+                    issued: "1993-10-01",
+                    epub: "books/2/pg2.epub",
+                    cover: "books/2/pg2.cover.medium.jpg"
+                ),
+                GutenbergCatalogIndexBook(
+                    id: 3,
+                    title: "Kalevala",
+                    authors: ["Lönnrot, Elias"],
+                    languages: ["fi"],
+                    subjects: [],
+                    bookshelves: [],
+                    issued: "1993-10-01",
+                    epub: "books/3/pg3.epub",
+                    cover: "books/3/pg3.cover.medium.jpg"
+                ),
+                GutenbergCatalogIndexBook(
+                    id: 4,
+                    title: "Kalevala : the Epic Poem of Finland — Complete",
+                    authors: ["Lönnrot, Elias"],
+                    languages: ["en"],
+                    subjects: [],
+                    bookshelves: [],
+                    issued: "1993-10-01",
+                    epub: "books/4/pg4.epub",
+                    cover: "books/4/pg4.cover.medium.jpg"
+                ),
+                GutenbergCatalogIndexBook(
+                    id: 5,
+                    title: "Les Misérables",
+                    authors: ["Hugo, Victor"],
+                    languages: ["fr"],
+                    subjects: [],
+                    bookshelves: [],
+                    issued: "1993-10-01",
+                    epub: "books/5/pg5.epub",
+                    cover: "books/5/pg5.cover.medium.jpg"
+                )
+            ]
+        )
+    }
+
     private let baseURL = URL(string: "https://gutenberg.parso.guru")!
 
     @Test func searchRanksTitleAndAuthorMatches() {
@@ -70,6 +134,46 @@ import Foundation
 
     @Test func blankQueryReturnsNothing() {
         #expect(makeIndex().search("   ", baseURL: baseURL).isEmpty)
+    }
+
+    @Test func preferredLanguageMovesATiedEditionFirst() {
+        let index = makeLanguageIndex()
+        #expect(index.search("frankenstein", baseURL: baseURL).map(\.id) == [2, 1])
+        #expect(index.search("frankenstein", baseURL: baseURL, preferredLanguages: ["eng"]).map(\.id) == [1, 2])
+        #expect(index.search("frankenstein", baseURL: baseURL, preferredLanguages: ["en"]).map(\.id) == [1, 2])
+    }
+
+    @Test func languagePreferenceNeverHidesForeignOnlyResults() {
+        let results = makeLanguageIndex().search(
+            "miserables",
+            baseURL: baseURL,
+            preferredLanguages: ["eng"]
+        )
+        #expect(results.map(\.id) == [5])
+    }
+
+    @Test func tightForeignResultStillBeatsAPreferredLanguagePartialMatch() {
+        let results = makeLanguageIndex().search(
+            "kalevala",
+            baseURL: baseURL,
+            preferredLanguages: ["eng"]
+        )
+        // Exact Finnish title scores higher than the preferred English
+        // translation's prefix match, so preference must not override a
+        // materially tighter result.
+        #expect(results.map(\.id) == [3, 4])
+    }
+
+    @Test func preparedIndexProducesTheSameRankingWithLanguagePreference() {
+        let index = makeLanguageIndex()
+        let direct = index.search("frankenstein", baseURL: baseURL, preferredLanguages: ["eng"])
+        let prepared = index.preparedForSearch().search(
+            "frankenstein",
+            baseURL: baseURL,
+            preferredLanguages: ["eng"]
+        )
+        #expect(direct.map(\.id) == prepared.map(\.id))
+        #expect(direct.map(\.id) == [1, 2])
     }
 
     @Test @MainActor func storeLoadsACompressedIndexFromDisk() async throws {
@@ -99,6 +203,33 @@ import Foundation
         #expect(store.manifest?.bookCount == 3)
         let results = await store.search("law")
         #expect(results.map(\.id) == [2, 1])
+    }
+
+    @Test @MainActor func storeSearchAppliesPreferredLanguages() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gutenberg-index-language-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let encoded = try JSONEncoder().encode(makeLanguageIndex())
+        let compressed = try (encoded as NSData).compressed(using: .zlib) as Data
+        try compressed.write(to: directory.appendingPathComponent("index.json.zlib"))
+        let manifest = GutenbergIndexManifest(
+            schema: 1,
+            version: "2026-11-20T00:00:00Z",
+            index: "index.json.zlib",
+            sha256: SHA256Hex.hex(compressed),
+            bytes: compressed.count,
+            bookCount: 5
+        )
+        try JSONEncoder().encode(manifest)
+            .write(to: directory.appendingPathComponent("manifest.json"))
+
+        let store = GutenbergIndexStore(baseURL: baseURL, storageDirectory: directory)
+        await store.load()
+
+        let preferred = await store.search("frankenstein", preferredLanguages: ["eng"])
+        #expect(preferred.map(\.id) == [1, 2])
     }
 }
 

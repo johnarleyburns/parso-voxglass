@@ -716,7 +716,7 @@ struct BrowseView: View {
         guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
 
         if gutenbergIndex.isAvailable {
-            let results = await gutenbergIndex.search(term)
+            let results = await gutenbergIndex.search(term, preferredLanguages: selectedLanguages)
             guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
             gutenbergResults = results
             return
