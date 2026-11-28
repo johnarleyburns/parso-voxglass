@@ -94,7 +94,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     }
 
     var watchStalledBookIDs: [UUID] {
-        watchStorageSnapshot?.books.filter { if case .stalled = $0.value.state { return true } else { return false } }.map(\.key) ?? []
+        let storage = watchStorageSnapshot?.books.mapValues { $0.state } ?? [:]
+        return WatchStalledBookResolver.stalledBookIDs(
+            desiredStates: watchDesiredStates,
+            storageStates: storage
+        )
     }
 
     var watchStalledBookTitles: [String] {
@@ -195,8 +199,17 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         }
     }
 
+    /// Clears stale failure chrome when the user explicitly starts a new sync.
+    /// A new failure re-populates these fields from the fresh attempt.
+    func beginSyncAttempt() {
+        watchSyncError = nil
+        watchTransferError = nil
+        watchSyncStatus = nil
+    }
+
     func syncWatchNow() async {
         refreshConnectionState()
+        beginSyncAttempt()
         guard isPaired else { watchSyncStatus = String(localized: "No Apple Watch is paired."); return }
         guard isWatchAppInstalled else {
             watchSyncStatus = String(localized: "Install Voxglass on the paired Apple Watch first.")

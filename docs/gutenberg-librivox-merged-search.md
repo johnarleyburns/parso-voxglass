@@ -15,6 +15,19 @@ The ranking contract is therefore:
 3. Always keep a Gutenberg result when no credible LibriVox equivalent exists.
 4. Group duplicate recordings/editions instead of showing every volume as a separate search hit.
 
+## Current implementation
+
+- The source control is now a catalog-style menu (`books.vertical`) in the Find header, left of the
+  filter button. Its four choices are **All**, **LibriVox**, **LibriVox Collections**, and
+  **Gutenberg Read with AI**; **All** is the default.
+- **All** runs both sources concurrently and feeds them to `MergedSearchRanker`: human narration
+  wins within the 10-point relevance window, a materially tighter Gutenberg result wins, and
+  Gutenberg-only works remain visible.
+- **LibriVox Collections** remains a browse surface; it is not part of the combined text/audio
+  relevance list because a collection is a curated query, not a work-level match.
+- Results from the same work cluster into one primary row with up to two alternates (another
+  recording or the Read with AI edition).
+
 ## Current building blocks
 
 - `FindSourceFilter` is exclusive today: `.librivox`, `.collections`, `.gutenberg`.

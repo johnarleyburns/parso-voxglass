@@ -54,6 +54,21 @@ import Testing
         #expect(!home.contains("path.append(.syncStatus)"))
     }
 
+    @Test func explicitSyncClearsAStaleAttentionErrorBeforeGuards() throws {
+        let relay = try source("Voxglass/App/PhoneAudioRelay.swift")
+        #expect(relay.contains("func beginSyncAttempt()"))
+        #expect(relay.contains("watchSyncError = nil\n        watchTransferError = nil\n        watchSyncStatus = nil"))
+        let start = try #require(relay.range(of: "func syncWatchNow() async {"))
+        let body = String(relay[start.lowerBound...])
+        let clear = try #require(body.range(of: "beginSyncAttempt()"))
+        let pairingGuard = try #require(body.range(of: "guard isPaired"))
+        #expect(clear.lowerBound < pairingGuard.lowerBound)
+
+        let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(settings.contains("relay.beginSyncAttempt()"))
+        #expect(settings.contains("watchsync.stalled.retry"))
+    }
+
     @Test func sentCatalogIsNeverConfirmedAudio() {
         let state = WatchSyncPresentation(isReachable: true, selectedCount: 1,
                                           pendingCount: 1, installedCount: 0)

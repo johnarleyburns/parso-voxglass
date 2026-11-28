@@ -3,11 +3,13 @@ import Foundation
 @testable import VoxglassPortable
 
 @Suite struct FindSearchLifecycleTests {
-    @Test func sourcesHaveNoCombinedSearchOption() {
-        #expect(FindSourceFilter.allCases == [.librivox, .collections, .gutenberg])
+    @Test func allIsFirstAndRoutesToCombinedSearch() {
+        #expect(FindSourceFilter.allCases == [.all, .librivox, .collections, .gutenberg])
+        #expect(FindSourceFilter.all.searchDestination(hasSelectedCollection: false) == .combined)
+        #expect(FindSourceFilter.all.searchDestination(hasSelectedCollection: true) == .combined)
     }
 
-    @Test func eachSourceRoutesExclusivelyEvenWithAStaleCollectionSelection() {
+    @Test func specificSourcesStayExclusiveEvenWithAStaleCollectionSelection() {
         for hasCollection in [false, true] {
             #expect(FindSourceFilter.librivox.searchDestination(hasSelectedCollection: hasCollection) == .librivox)
             #expect(FindSourceFilter.gutenberg.searchDestination(hasSelectedCollection: hasCollection) == .gutenberg)

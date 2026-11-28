@@ -19,10 +19,12 @@ struct BrowseView: View {
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
-    @State private var sourceFilter: FindSourceFilter = .librivox
+    @State private var sourceFilter: FindSourceFilter = .all
     @State private var gutenbergResults: [GutenbergBook] = []
+    @State private var combinedResults: [MergedSearchResult] = []
     @State private var isSearchingGutenberg = false
     @State private var gutenbergSearchID = UUID()
+    @State private var combinedSearchID = UUID()
     @State private var gutenbergTask: Task<Void, Never>?
     @State private var librivoxTask: Task<Void, Never>?
     @State private var collectionLoadTask: Task<Void, Never>?
@@ -171,6 +173,23 @@ struct BrowseView: View {
     private var discoverHeaderActions: some View {
         HStack(spacing: 2) {
             Menu {
+                Picker("Search source", selection: $sourceFilter) {
+                    Text("All").tag(FindSourceFilter.all)
+                    Text("LibriVox").tag(FindSourceFilter.librivox)
+                    Text("LibriVox Collections").tag(FindSourceFilter.collections)
+                    Text("Gutenberg Read by AI").tag(FindSourceFilter.gutenberg)
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Image(systemName: "books.vertical")
+                    .voxFont(LibraryScreenTypography.controls, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("Search source")
+            .accessibilityIdentifier("discover.sourceMenu")
+
+            Menu {
                 Picker("Search in", selection: $searchScope) {
                     Text("All").tag(DiscoverSearchScope.all)
                     Text("Title").tag(DiscoverSearchScope.title)
@@ -241,7 +260,7 @@ struct BrowseView: View {
                     .accessibilityLabel("Clear catalog search")
                 }
 
-                if (sourceFilter == .gutenberg ? isSearchingGutenberg : catalogStore.isSearching) {
+                if isSearchingCurrentSource {
                     ProgressView()
                         .frame(width: 20, height: 20)
                 }
@@ -250,11 +269,6 @@ struct BrowseView: View {
             .padding(.horizontal, 14)
             .frame(minHeight: 46)
             .raisedSurface()
-
-            BookScopeBar(title: "Find source", selection: $sourceFilter, options: [
-                (.librivox, "LibriVox"), (.collections, "LibriVox Collections"), (.gutenberg, "Gutenberg Read by AI")
-            ])
-            .accessibilityIdentifier("discover.sourceFilter")
         }
     }
 
@@ -353,7 +367,15 @@ struct BrowseView: View {
                     }
                 }
 
-                if sourceFilter == .gutenberg {
+                if sourceFilter == .all {
+                    if !combinedResults.isEmpty {
+                        combinedResultSection
+                    } else if isSearchingCurrentSource {
+                        combinedLoadingSection
+                    } else if searchLifecycle.isCurrent(draft: catalogStore.query) {
+                        EmptyStatePanel(title: "No Results Yet", message: "Try a different title, author, or narrator.", systemImage: "magnifyingglass", usesThreeSizeTypography: true)
+                    }
+                } else if sourceFilter == .gutenberg {
                     if !gutenbergResults.isEmpty {
                         gutenbergResultSection
                     } else if isSearchingGutenberg {
@@ -445,12 +467,26 @@ struct BrowseView: View {
         }
     }
 
+    private var isSearchingCurrentSource: Bool {
+        switch sourceFilter {
+        case .all: catalogStore.isSearching || isSearchingGutenberg
+        case .gutenberg: isSearchingGutenberg
+        case .librivox, .collections: catalogStore.isSearching
+        }
+    }
+
     private var hasActiveCatalogResultsSurface: Bool {
         searchLifecycle.showsResultsSurface(
             draft: catalogStore.query,
             hasSelectedCollection: selectedCollection != nil,
-            isSearching: sourceFilter == .gutenberg ? isSearchingGutenberg : catalogStore.isSearching,
-            hasResults: sourceFilter == .gutenberg ? !gutenbergResults.isEmpty : !catalogStore.results.isEmpty
+            isSearching: isSearchingCurrentSource,
+            hasResults: {
+                switch sourceFilter {
+                case .all: !combinedResults.isEmpty
+                case .gutenberg: !gutenbergResults.isEmpty
+                case .librivox, .collections: !catalogStore.results.isEmpty
+                }
+            }()
         )
     }
 
@@ -648,6 +684,22 @@ struct BrowseView: View {
         searchLifecycle.submit(draft: term)
 
         switch destination {
+        case .combined:
+            let searchID = gutenbergSearchID
+            let combinedID = UUID()
+            combinedSearchID = combinedID
+            combinedResults = []
+            let store = catalogStore
+            librivoxTask = Task {
+                guard !Task.isCancelled else { return }
+                await store.searchLibriVox(term)
+                await refreshCombinedResults(term: term, searchID: combinedID)
+            }
+            gutenbergTask = Task {
+                guard !Task.isCancelled else { return }
+                await searchGutenberg(term, searchID: searchID)
+                await refreshCombinedResults(term: term, searchID: combinedID)
+            }
         case .collection:
             guard let selectedCollection else { return }
             let collectionQuery = term.isEmpty
@@ -676,13 +728,37 @@ struct BrowseView: View {
         case .none:
             return
         }
-        // Only one of these tasks can be created by the exclusive switch.
-        let request = gutenbergTask ?? librivoxTask
-        await withTaskCancellationHandler {
-            await request?.value
-        } onCancel: {
-            request?.cancel()
+        if destination == .combined {
+            let libriVox = librivoxTask
+            let gutenberg = gutenbergTask
+            await withTaskCancellationHandler {
+                await libriVox?.value
+                await gutenberg?.value
+            } onCancel: {
+                libriVox?.cancel()
+                gutenberg?.cancel()
+            }
+        } else {
+            // Only one of these tasks can be created by the exclusive switch.
+            let request = gutenbergTask ?? librivoxTask
+            await withTaskCancellationHandler {
+                await request?.value
+            } onCancel: {
+                request?.cancel()
+            }
         }
+    }
+
+    private func refreshCombinedResults(term: String, searchID: UUID) async {
+        guard sourceFilter == .all,
+              combinedSearchID == searchID,
+              !Task.isCancelled else { return }
+        combinedResults = MergedSearchRanker().rank(
+            query: term,
+            libriVox: catalogStore.results,
+            gutenberg: gutenbergResults,
+            preferredLanguages: selectedLanguages
+        )
     }
 
     private func cancelSearchRequests() {
@@ -694,11 +770,14 @@ struct BrowseView: View {
         librivoxTask = nil
         gutenbergTask?.cancel()
         gutenbergTask = nil
+        combinedSearchID = UUID()
+        combinedResults = []
         invalidateGutenbergSearch()
     }
 
     private func searchGutenberg(_ term: String, searchID: UUID) async {
-        guard sourceFilter == .gutenberg, gutenbergSearchID == searchID, !term.isEmpty, !Task.isCancelled else {
+        guard sourceFilter == .gutenberg || sourceFilter == .all,
+              gutenbergSearchID == searchID, !term.isEmpty, !Task.isCancelled else {
             return
         }
         gutenbergSearchID = searchID
@@ -759,10 +838,127 @@ struct BrowseView: View {
 
     private var searchProgressLabel: String {
         switch sourceFilter {
+        case .all: "Searching all sources"
         case .gutenberg: "Searching Project Gutenberg"
         case .librivox: "Searching LibriVox"
         case .collections: "Loading collection"
         }
+    }
+
+    private var combinedResultSection: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(Array(combinedResults.enumerated()), id: \.element.id) { index, result in
+                combinedResultRow(result)
+                if index < combinedResults.count - 1 {
+                    VoxglassListDivider()
+                }
+            }
+        }
+        .padding(.top, 4)
+        .raisedSurface()
+    }
+
+    @ViewBuilder
+    private func combinedResultRow(_ result: MergedSearchResult) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                openCombinedCandidate(result.primary)
+            } label: {
+                combinedCandidateLabel(result.primary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("discover.combined.\(result.id)")
+
+            if !result.alternates.isEmpty {
+                HStack(spacing: 8) {
+                    Text("Also available")
+                        .voxFont(LibraryScreenTypography.card, weight: .semibold)
+                        .foregroundStyle(Palette.ink3)
+                    ForEach(Array(result.alternates.prefix(2).enumerated()), id: \.element.id) { _, alternate in
+                        Button {
+                            openCombinedCandidate(alternate)
+                        } label: {
+                            Text(combinedAlternateLabel(alternate))
+                                .voxFont(LibraryScreenTypography.card, weight: .semibold)
+                                .foregroundStyle(Palette.brass)
+                                .padding(.horizontal, 8)
+                                .frame(minHeight: 28)
+                                .raisedSurface()
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("discover.combined.alternate.\(alternate.id)")
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 12)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func combinedCandidateLabel(_ candidate: MergedSearchCandidate) -> some View {
+        switch candidate {
+        case .libriVox(let result):
+            InternetArchiveResultRow(
+                result: result,
+                style: .grouped,
+                isLoading: false,
+                isInMyBooks: libraryStore.cachedOwnedBook(for: result) != nil,
+                usesThreeSizeTypography: true
+            )
+        case .readByAI(let book):
+            HStack(spacing: 12) {
+                CoverPlate(
+                    title: book.title,
+                    author: book.authorLine,
+                    coverURL: book.coverURL,
+                    size: 48,
+                    shape: .portrait
+                )
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(book.title).voxFont(LibraryScreenTypography.card, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(book.authorLine).voxFont(LibraryScreenTypography.card).foregroundStyle(Palette.ink2)
+                    Text("READ WITH AI · PROJECT GUTENBERG")
+                        .voxFont(LibraryScreenTypography.card, weight: .bold)
+                        .foregroundStyle(Palette.brass)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(Palette.ink3)
+            }
+            .padding(14)
+        }
+    }
+
+    private func combinedAlternateLabel(_ candidate: MergedSearchCandidate) -> String {
+        switch candidate {
+        case .libriVox:
+            String(localized: "LibriVox")
+        case .readByAI:
+            String(localized: "Read with AI")
+        }
+    }
+
+    private func openCombinedCandidate(_ candidate: MergedSearchCandidate) {
+        switch candidate {
+        case .libriVox(let result):
+            Task { await presentResult(result) }
+        case .readByAI(let book):
+            selectedGutenbergBook = book
+        }
+    }
+
+    private var combinedLoadingSection: some View {
+        HStack(spacing: 12) {
+            ProgressView()
+            Text(searchProgressLabel)
+                .voxFont(LibraryScreenTypography.controls)
+                .foregroundStyle(Palette.ink2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .raisedSurface()
+        .accessibilityIdentifier("discover.combined.loading")
     }
 
     private var gutenbergResultSection: some View {
