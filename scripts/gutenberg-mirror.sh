@@ -46,7 +46,14 @@ GUTENBERG_CATALOG_URL="${GUTENBERG_CATALOG_URL:-https://www.gutenberg.org/feeds/
 GUTENBERG_CATALOG_CSV_RSYNC_SOURCE="${GUTENBERG_CATALOG_CSV_RSYNC_SOURCE:-aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv}"
 GUTENBERG_BUILD_INDEX="${GUTENBERG_BUILD_INDEX:-1}"
 GUTENBERG_INDEX_SCRIPT="${GUTENBERG_INDEX_SCRIPT:-$SCRIPT_DIR/build-gutenberg-index.py}"
-GUTENBERG_INDEX_LANGUAGE="${GUTENBERG_INDEX_LANGUAGE:-en}"
+GUTENBERG_INDEX_LANGUAGE="${GUTENBERG_INDEX_LANGUAGE:-all}"
+GUTENBERG_REFRESH_SCRIPT="${GUTENBERG_REFRESH_SCRIPT:-$SCRIPT_DIR/gutenberg-refresh-plan.py}"
+# Already-mirrored IDs re-fetched each cycle. At 500/day the whole corpus is
+# audited roughly twice a year; upstream changes are normally caught on the
+# next cycle by the snapshot comparison instead of waiting for the rotation.
+GUTENBERG_REFRESH_BATCH_SIZE="${GUTENBERG_REFRESH_BATCH_SIZE:-500}"
+GUTENBERG_REFRESH_ALL="${GUTENBERG_REFRESH_ALL:-0}"
+GUTENBERG_UPSTREAM_CHECK="${GUTENBERG_UPSTREAM_CHECK:-1}"
 
 GUTENBERG_STAGING_DIR="${GUTENBERG_STAGING_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/voxglass/gutenberg}"
 GUTENBERG_STATE_DIR="${GUTENBERG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/voxglass-gutenberg-mirror}"
@@ -58,6 +65,13 @@ GUTENBERG_BATCH_SIZE="${GUTENBERG_BATCH_SIZE:-500}"
 GUTENBERG_UPLOADED_IDS_FILE="${GUTENBERG_UPLOADED_IDS_FILE:-$GUTENBERG_STATE_DIR/uploaded-ids}"
 GUTENBERG_ALL_IDS_FILE="${GUTENBERG_ALL_IDS_FILE:-$GUTENBERG_STATE_DIR/all-ids}"
 GUTENBERG_REMAINING_IDS_FILE="${GUTENBERG_REMAINING_IDS_FILE:-$GUTENBERG_STATE_DIR/remaining-ids}"
+GUTENBERG_REFRESH_IDS_FILE="${GUTENBERG_REFRESH_IDS_FILE:-$GUTENBERG_STATE_DIR/refresh-ids}"
+GUTENBERG_UPSTREAM_LISTING="${GUTENBERG_UPSTREAM_LISTING:-$GUTENBERG_STATE_DIR/upstream-listing}"
+GUTENBERG_UPSTREAM_SNAPSHOT="${GUTENBERG_UPSTREAM_SNAPSHOT:-$GUTENBERG_STATE_DIR/upstream-files}"
+GUTENBERG_UPSTREAM_PENDING="${GUTENBERG_UPSTREAM_PENDING:-$GUTENBERG_STATE_DIR/upstream-files.pending}"
+GUTENBERG_REFRESH_CURSOR="${GUTENBERG_REFRESH_CURSOR:-$GUTENBERG_STATE_DIR/refresh-cursor}"
+GUTENBERG_REFRESH_CURSOR_PENDING="${GUTENBERG_REFRESH_CURSOR_PENDING:-$GUTENBERG_STATE_DIR/refresh-cursor.pending}"
+GUTENBERG_REFRESH_REMOVED_FILE="${GUTENBERG_REFRESH_REMOVED_FILE:-$GUTENBERG_STATE_DIR/refresh-removed}"
 
 GUTENBERG_INTERVAL="${GUTENBERG_INTERVAL:-86400}"   # seconds between loop cycles
 GUTENBERG_ONLY_IDS="${GUTENBERG_ONLY_IDS:-}"
@@ -506,6 +520,84 @@ build_catalog_index() {
   run_child "${args[@]}" || return $?
 }
 
+fetch_upstream_listing() {
+  if [[ "$GUTENBERG_UPSTREAM_CHECK" != "1" || -n "$ONLY_IDS" || "$DRY_RUN" == "1" ]]; then
+    return 1
+  fi
+
+  build_rsync_filters
+  local tmp="$GUTENBERG_UPSTREAM_LISTING.tmp.$$"
+  log "listing upstream files from ${GUTENBERG_RSYNC_SOURCE%/}"
+  if ! run_child rsync --no-motd --list-only -r --no-human-readable \
+      --timeout=300 --contimeout=60 "${RSYNC_FILTERS[@]}" \
+      "${GUTENBERG_RSYNC_SOURCE%/}/" > "$tmp"; then
+    rm -f "$tmp"
+    warn "upstream listing failed; keeping the previous snapshot and syncing new IDs only"
+    return 1
+  fi
+  mv -f "$tmp" "$GUTENBERG_UPSTREAM_LISTING"
+  return 0
+}
+
+fallback_batch_ids() {
+  LC_ALL=C comm -23 "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE" \
+    > "$GUTENBERG_REMAINING_IDS_FILE"
+}
+
+plan_refresh_ids() {
+  if [[ ! -s "$GUTENBERG_UPSTREAM_LISTING" ]]; then
+    fallback_batch_ids
+    return 0
+  fi
+  if [[ ! -x "$GUTENBERG_REFRESH_SCRIPT" ]]; then
+    warn "refresh planner not found: $GUTENBERG_REFRESH_SCRIPT; syncing new IDs only"
+    fallback_batch_ids
+    return 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found; syncing new IDs only"
+    fallback_batch_ids
+    return 0
+  fi
+
+  local -a args=(
+    python3 "$GUTENBERG_REFRESH_SCRIPT"
+    --rsync-listing "$GUTENBERG_UPSTREAM_LISTING"
+    --snapshot-out "$GUTENBERG_UPSTREAM_PENDING"
+    --previous-snapshot "$GUTENBERG_UPSTREAM_SNAPSHOT"
+    --all-ids "$GUTENBERG_ALL_IDS_FILE"
+    --uploaded-ids "$GUTENBERG_UPLOADED_IDS_FILE"
+    --cursor-file "$GUTENBERG_REFRESH_CURSOR"
+    --cursor-out "$GUTENBERG_REFRESH_CURSOR_PENDING"
+    --refresh-batch-size "$GUTENBERG_REFRESH_BATCH_SIZE"
+    --queue "$GUTENBERG_REFRESH_IDS_FILE"
+    --removed-out "$GUTENBERG_REFRESH_REMOVED_FILE"
+  )
+  if [[ "$GUTENBERG_REFRESH_ALL" == "1" ]]; then
+    args+=(--refresh-all)
+  fi
+  log "planning new/changed/rotating refresh work"
+  if ! run_child "${args[@]}"; then
+    warn "refresh planner failed; syncing new IDs only"
+    fallback_batch_ids
+    return 0
+  fi
+  cp -f "$GUTENBERG_REFRESH_IDS_FILE" "$GUTENBERG_REMAINING_IDS_FILE"
+}
+
+commit_refresh_plan() {
+  if [[ "$DRY_RUN" == "1" ]]; then
+    return 0
+  fi
+  if [[ -f "$GUTENBERG_UPSTREAM_PENDING" ]]; then
+    mv -f "$GUTENBERG_UPSTREAM_PENDING" "$GUTENBERG_UPSTREAM_SNAPSHOT"
+  fi
+  if [[ -f "$GUTENBERG_REFRESH_CURSOR_PENDING" ]]; then
+    mv -f "$GUTENBERG_REFRESH_CURSOR_PENDING" "$GUTENBERG_REFRESH_CURSOR"
+  fi
+  rm -f "$GUTENBERG_UPSTREAM_LISTING"
+}
+
 prepare_batch_ids() {
   local catalog="$STAGING_CATALOG/pg_catalog.csv"
   [[ -s "$catalog" ]] || return 1
@@ -532,7 +624,18 @@ PY
 
   touch "$GUTENBERG_UPLOADED_IDS_FILE"
   LC_ALL=C sort -u -o "$GUTENBERG_UPLOADED_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE"
-  LC_ALL=C comm -23 "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE" > "$GUTENBERG_REMAINING_IDS_FILE"
+
+  if [[ -n "$ONLY_IDS" ]]; then
+    LC_ALL=C comm -23 "$GUTENBERG_ALL_IDS_FILE" "$GUTENBERG_UPLOADED_IDS_FILE" \
+      > "$GUTENBERG_REMAINING_IDS_FILE"
+    return 0
+  fi
+
+  if fetch_upstream_listing; then
+    plan_refresh_ids || fallback_batch_ids
+  else
+    fallback_batch_ids
+  fi
 }
 
 rclone_common_args() {
@@ -563,13 +666,58 @@ run_rclone_move_books() {
 
 run_rclone_catalog() {
   rclone_common_args
-  local -a args=(copy "${RCLONE_ARGS[@]}")
-  if [[ "$DRY_RUN" == "1" ]]; then args+=(--dry-run -v); fi
-  log "rclone copy catalog -> $R2_REMOTE_ROOT/catalog"
-  run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_CATALOG" "$R2_REMOTE_ROOT/catalog" || {
+  local -a extra=()
+  if [[ "$DRY_RUN" == "1" ]]; then extra+=(--dry-run -v); fi
+
+  # Publish non-index catalog files first. The content-addressed index object is
+  # then uploaded before the manifest that references it, and the manifest is
+  # always last. A client can therefore only observe (old manifest, old index)
+  # or (new manifest, fully uploaded new index), never a dangling pointer.
+  local -a base=(
+    copy "${RCLONE_ARGS[@]}" "${extra[@]}"
+    --exclude 'manifest.json'
+    --exclude 'index-*.json.zlib'
+  )
+  log "rclone copy catalog (excluding search index) -> $R2_REMOTE_ROOT/catalog"
+  run_child "$RCLONE_BIN" "${base[@]}" "$STAGING_CATALOG" "$R2_REMOTE_ROOT/catalog" || {
     warn "rclone could not write catalog objects to bucket '$R2_BUCKET'."
     return 1
   }
+
+  if [[ "$GUTENBERG_BUILD_INDEX" == "1" && "$GUTENBERG_SKIP_CATALOG" != "1" ]]; then
+    local index name
+    for index in "$STAGING_CATALOG"/index-*.json.zlib; do
+      [[ -f "$index" ]] || continue
+      name="$(basename "$index")"
+      log "rclone copy index $name -> $R2_REMOTE_ROOT/catalog/$name"
+      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]}" \
+          "$index" "$R2_REMOTE_ROOT/catalog/$name"; then
+        warn "rclone could not upload index object '$name'; leaving the previous manifest in place"
+        return 1
+      fi
+    done
+
+    if [[ -f "$STAGING_CATALOG/manifest.json" ]]; then
+      log "rclone copy manifest last -> $R2_REMOTE_ROOT/catalog/manifest.json"
+      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]}" \
+          "$STAGING_CATALOG/manifest.json" "$R2_REMOTE_ROOT/catalog/manifest.json"; then
+        warn "rclone could not upload the search-index manifest; the previous manifest remains active"
+        return 1
+      fi
+    fi
+  fi
+}
+
+run_rclone_copy_books() {
+  rclone_common_args
+  local -a args=(copy "${RCLONE_ARGS[@]}")
+  if [[ "$DRY_RUN" == "1" ]]; then args+=(--dry-run -v); fi
+
+  log "rclone copy books -> $R2_REMOTE_ROOT/books"
+  if ! run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_BOOKS" "$R2_REMOTE_ROOT/books"; then
+    warn "rclone could not write to bucket '$R2_BUCKET'. Confirm the bucket exists and the key has Object Read & Write for it (403/NoSuchBucket looks like 'is a file not a directory' here)."
+    return 1
+  fi
 }
 
 run_batched_books() {
@@ -585,7 +733,8 @@ run_batched_books() {
   total_ids="$(wc -l < "$GUTENBERG_ALL_IDS_FILE" | tr -d ' ')"
   remaining="$(wc -l < "$GUTENBERG_REMAINING_IDS_FILE" | tr -d ' ')"
   if [[ "$remaining" -eq 0 ]]; then
-    log "all $total_ids catalog IDs are already marked uploaded"
+    log "no new, changed, or rotating-refresh IDs to mirror ($total_ids catalog IDs)"
+    commit_refresh_plan
     return 0
   fi
 
@@ -634,36 +783,10 @@ run_batched_books() {
     rm -f "$batch" "$paths"
     log "batch $index/$batches uploaded; $(wc -l < "$GUTENBERG_UPLOADED_IDS_FILE" | tr -d ' ')/$total_ids IDs complete"
   done
+  # Commit the upstream baseline and rotation cursor only after every queued
+  # book uploaded, so an interrupted run re-plans rather than losing revisions.
+  commit_refresh_plan
   return 0
-}
-
-run_rclone_copy() {
-  local -a args=(
-    copy
-    --config "$RCLONE_CONFIG_FILE"
-    --transfers "$GUTENBERG_TRANSFERS"
-    --checkers "$GUTENBERG_CHECKERS"
-    --fast-list
-    --s3-no-check-bucket
-    --exclude '.rsync-partial/**'
-    --exclude '*.tmp'
-    --exclude '*.tmp.*'
-    --stats 60s
-    --stats-one-line
-  )
-  if [[ "$DRY_RUN" == "1" ]]; then args+=(--dry-run -v); fi
-
-  log "rclone copy books -> $R2_REMOTE_ROOT/books"
-  if ! run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_BOOKS" "$R2_REMOTE_ROOT/books"; then
-    warn "rclone could not write to bucket '$R2_BUCKET'. Confirm the bucket exists and the key has Object Read & Write for it (403/NoSuchBucket looks like 'is a file not a directory' here)."
-    return 1
-  fi
-
-  log "rclone copy catalog -> $R2_REMOTE_ROOT/catalog"
-  if ! run_child "$RCLONE_BIN" "${args[@]}" "$STAGING_CATALOG" "$R2_REMOTE_ROOT/catalog"; then
-    warn "rclone could not write catalog objects to bucket '$R2_BUCKET'."
-    return 1
-  fi
 }
 
 run_cycle() {
@@ -683,11 +806,22 @@ run_cycle() {
   STATE_PHASE="catalog-csv"; save_state
   fetch_catalog_csv
 
+  local index_ok=1 books_ok=1 r=0
+
   STATE_PHASE="catalog-index"; save_state
-  build_catalog_index || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }catalog index failed (exit $r)"; }
+  if build_catalog_index; then :; else
+    r=$?
+    index_ok=0
+    [[ $rc -eq 0 ]] && rc=$r
+    err="${err:+$err; }catalog index failed (exit $r)"
+  fi
 
   STATE_PHASE="rsync-catalog"; save_state
-  run_rsync_catalog || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rsync GUTINDEX.ALL failed (exit $r)"; }
+  if run_rsync_catalog; then :; else
+    r=$?
+    [[ $rc -eq 0 ]] && rc=$r
+    err="${err:+$err; }rsync GUTINDEX.ALL failed (exit $r)"
+  fi
 
   if [[ -z "$R2_ACCESS_KEY_ID" || -z "$R2_SECRET_ACCESS_KEY" ]]; then
     require_credentials
@@ -695,14 +829,45 @@ run_cycle() {
 
   if [[ "$GUTENBERG_BATCH_SIZE" -gt 0 ]]; then
     STATE_PHASE="batched-books"; save_state
-    run_batched_books || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }batched book mirror failed (exit $r)"; }
-    STATE_PHASE="rclone-catalog"; save_state
-    run_rclone_catalog || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rclone catalog copy failed (exit $r)"; }
+    if run_batched_books; then :; else
+      r=$?
+      books_ok=0
+      [[ $rc -eq 0 ]] && rc=$r
+      err="${err:+$err; }batched book mirror failed (exit $r)"
+    fi
   else
     STATE_PHASE="rsync-books"; save_state
-    run_rsync_books || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rsync books failed (exit $r)"; }
-    STATE_PHASE="rclone"; save_state
-    run_rclone_copy || { local r=$?; [[ $rc -eq 0 ]] && rc=$r; err="${err:+$err; }rclone copy failed (exit $r)"; }
+    if run_rsync_books; then :; else
+      r=$?
+      books_ok=0
+      [[ $rc -eq 0 ]] && rc=$r
+      err="${err:+$err; }rsync books failed (exit $r)"
+    fi
+    if [[ "$books_ok" -eq 1 ]]; then
+      STATE_PHASE="rclone-books"; save_state
+      if run_rclone_copy_books; then :; else
+        r=$?
+        books_ok=0
+        [[ $rc -eq 0 ]] && rc=$r
+        err="${err:+$err; }rclone book copy failed (exit $r)"
+      fi
+    fi
+  fi
+
+  # Never publish a manifest that can point at books this cycle failed to
+  # upload, and never publish an index we failed to build. The previous
+  # manifest/index pair stays live and clients keep using it.
+  if [[ "$books_ok" -eq 1 && "$index_ok" -eq 1 ]]; then
+    STATE_PHASE="rclone-catalog"; save_state
+    if run_rclone_catalog; then :; else
+      r=$?
+      [[ $rc -eq 0 ]] && rc=$r
+      err="${err:+$err; }rclone catalog copy failed (exit $r)"
+    fi
+  else
+    warn "book or index publication failed; keeping the previous catalog manifest live"
+    [[ $rc -eq 0 ]] && rc=1
+    err="${err:+$err; }catalog publication skipped"
   fi
 
   local stats files bytes
@@ -867,6 +1032,14 @@ print_status() {
     if [[ -f "$GUTENBERG_UPLOADED_IDS_FILE" ]]; then
       printf '  uploaded ids:   %s\n' "$(wc -l < "$GUTENBERG_UPLOADED_IDS_FILE" | tr -d ' ')"
     fi
+    printf '  upstream check: %s\n' "$(if [[ "$GUTENBERG_UPSTREAM_CHECK" == "1" ]]; then echo 'yes (new + changed IDs)'; else echo 'no'; fi)"
+    printf '  refresh batch:  %s existing IDs/cycle\n' "$GUTENBERG_REFRESH_BATCH_SIZE"
+    if [[ -f "$GUTENBERG_REFRESH_CURSOR" ]]; then
+      printf '  refresh cursor: %s\n' "$(tr -d '\r\n' < "$GUTENBERG_REFRESH_CURSOR")"
+    fi
+    if [[ -s "$GUTENBERG_REFRESH_REMOVED_FILE" ]]; then
+      printf '  removed ids:    %s (not pruned in batch mode)\n' "$(wc -l < "$GUTENBERG_REFRESH_REMOVED_FILE" | tr -d ' ')"
+    fi
   else
     printf '  batch size:     off (full tree)\n'
   fi
@@ -934,6 +1107,12 @@ cleanup_local() {
 # Argument parsing
 # ---------------------------------------------------------------------------
 
+# Tests source this file to exercise individual helpers without running a real
+# cycle. Keep this guard below every function definition and above any parsing.
+if [[ "${GUTENBERG_MIRROR_LIB_ONLY:-0}" == "1" ]]; then
+  return 0 2>/dev/null || exit 0
+fi
+
 usage() {
   cat <<'EOF'
 Usage: gutenberg-mirror.sh [command] [options]
@@ -957,6 +1136,9 @@ Options:
   --no-index         Skip building the on-device catalog search index
   --batch-size N     Books per local batch (default: 500; 0 = full tree)
   --no-batch         Disable batching and use the legacy full local tree
+  --refresh-batch-size N  Existing IDs to re-fetch per cycle (default: 500)
+  --refresh-all      Queue every existing catalog ID once (migration/audit)
+  --no-refresh       Disable upstream change detection and rotating refresh
   --interval SECS    Seconds between loop cycles (default: 86400)
   --dry-run          Pass --dry-run to rsync and rclone; no data or remote changes
   -h, --help         Show this help
@@ -977,9 +1159,13 @@ Environment:
                                    (default: aleph.gutenberg.org::gutenberg-epub/feeds/pg_catalog.csv)
   GUTENBERG_BUILD_INDEX            0/1 (default: 1; build the on-device index)
   GUTENBERG_INDEX_SCRIPT           index builder path (default: scripts/build-gutenberg-index.py)
-  GUTENBERG_INDEX_LANGUAGE         language code for the index, or "all" (default: en)
+  GUTENBERG_INDEX_LANGUAGE         language code for the index, or "all" (default: all)
   GUTENBERG_BATCH_SIZE             Books per upload batch (default: 500; 0 = full tree)
   GUTENBERG_UPLOADED_IDS_FILE      Completed-ID state (default: state/uploaded-ids)
+  GUTENBERG_REFRESH_SCRIPT         refresh planner path (default: scripts/gutenberg-refresh-plan.py)
+  GUTENBERG_REFRESH_BATCH_SIZE     Existing IDs re-fetched per cycle (default: 500)
+  GUTENBERG_REFRESH_ALL            0/1 (default: 0; queue the whole corpus once)
+  GUTENBERG_UPSTREAM_CHECK         0/1 (default: 1; detect new/changed upstream files)
   GUTENBERG_STAGING_DIR            Local staging directory
   GUTENBERG_STATE_DIR              PID/lock/state/log directory
   GUTENBERG_INTERVAL               Loop interval seconds
@@ -1063,6 +1249,22 @@ while [[ "$#" -gt 0 ]]; do
       GUTENBERG_BATCH_SIZE=0
       FORWARD_ARGS+=(--no-batch)
       ;;
+    --refresh-batch-size)
+      [[ "$#" -ge 2 ]] || die "--refresh-batch-size requires a value"
+      GUTENBERG_REFRESH_BATCH_SIZE="$2"
+      FORWARD_ARGS+=(--refresh-batch-size "$2")
+      shift
+      ;;
+    --refresh-all)
+      GUTENBERG_REFRESH_ALL=1
+      FORWARD_ARGS+=(--refresh-all)
+      ;;
+    --no-refresh)
+      GUTENBERG_REFRESH_ALL=0
+      GUTENBERG_REFRESH_BATCH_SIZE=0
+      GUTENBERG_UPSTREAM_CHECK=0
+      FORWARD_ARGS+=(--no-refresh)
+      ;;
     --interval)
       [[ "$#" -ge 2 ]] || die "--interval requires a value"
       GUTENBERG_INTERVAL="$2"
@@ -1094,6 +1296,16 @@ fi
 if [[ ! "$GUTENBERG_BATCH_SIZE" =~ ^[0-9]+$ ]]; then
   die "GUTENBERG_BATCH_SIZE/--batch-size must be a non-negative integer"
 fi
+
+if [[ ! "$GUTENBERG_REFRESH_BATCH_SIZE" =~ ^[0-9]+$ ]]; then
+  die "GUTENBERG_REFRESH_BATCH_SIZE/--refresh-batch-size must be a non-negative integer"
+fi
+
+for flag in GUTENBERG_REFRESH_ALL GUTENBERG_UPSTREAM_CHECK; do
+  if [[ "${!flag}" != "0" && "${!flag}" != "1" ]]; then
+    die "$flag must be 0 or 1"
+  fi
+done
 
 R2_PREFIX="${R2_PREFIX#/}"
 R2_PREFIX="${R2_PREFIX%/}"

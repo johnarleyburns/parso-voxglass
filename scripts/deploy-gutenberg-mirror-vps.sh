@@ -29,6 +29,7 @@ log() { printf '%s\n' "$*"; }
 [[ -r "$LOCAL_ENV" ]] || die "missing $LOCAL_ENV"
 [[ -x "$REPO_ROOT/scripts/gutenberg-mirror.sh" ]] || die "missing mirror script"
 [[ -f "$REPO_ROOT/scripts/build-gutenberg-index.py" ]] || die "missing index builder"
+[[ -f "$REPO_ROOT/scripts/gutenberg-refresh-plan.py" ]] || die "missing refresh planner"
 [[ -f "$REPO_ROOT/deploy/gutenberg-mirror/voxglass-gutenberg-mirror.service" ]] || die "missing systemd service"
 [[ -f "$REPO_ROOT/deploy/gutenberg-mirror/voxglass-gutenberg-mirror.timer" ]] || die "missing systemd timer"
 
@@ -53,10 +54,10 @@ ssh "${SSH_OPTS[@]}" "$VPS_HOST" "
 "
 
 log "installing mirror scripts"
-tar -C "$REPO_ROOT/scripts" -cf - gutenberg-mirror.sh build-gutenberg-index.py |
+tar -C "$REPO_ROOT/scripts" -cf - gutenberg-mirror.sh build-gutenberg-index.py gutenberg-refresh-plan.py |
   ssh "${SSH_OPTS[@]}" "$VPS_HOST" "
     tar -x -C $(printf '%q' "$REMOTE_ROOT")/bin
-    chmod 755 $(printf '%q' "$REMOTE_ROOT")/bin/gutenberg-mirror.sh $(printf '%q' "$REMOTE_ROOT")/bin/build-gutenberg-index.py
+    chmod 755 $(printf '%q' "$REMOTE_ROOT")/bin/gutenberg-mirror.sh $(printf '%q' "$REMOTE_ROOT")/bin/build-gutenberg-index.py $(printf '%q' "$REMOTE_ROOT")/bin/gutenberg-refresh-plan.py
     chown -R $(printf '%q' "$SERVICE_USER"):$(printf '%q' "$SERVICE_USER") $(printf '%q' "$REMOTE_ROOT")/bin
   "
 

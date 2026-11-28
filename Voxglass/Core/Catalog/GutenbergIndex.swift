@@ -157,6 +157,9 @@ public final class GutenbergIndexStore {
     @ObservationIgnored private let session: URLSession
     @ObservationIgnored private let fileManager: FileManager
     @ObservationIgnored private let storageDirectory: URL
+    /// Coalesces overlapping cold-start/search refreshes so only one manifest
+    /// and index download can be in flight at a time.
+    @ObservationIgnored private var refreshTask: Task<Void, Never>?
     private static let indexFileName = "index.json.zlib"
     private static let manifestFileName = "manifest.json"
 
@@ -185,19 +188,45 @@ public final class GutenbergIndexStore {
         do {
             let loaded = try await Task.detached(priority: .utility) {
                 let compressed = try Data(contentsOf: indexURL)
-                let data = try (compressed as NSData).decompressed(using: .zlib) as Data
-                let decoded = try JSONDecoder().decode(GutenbergCatalogIndex.self, from: data)
                 let manifestURL = directory.appendingPathComponent("manifest.json")
-                let manifest = try? JSONDecoder().decode(
+                let manifest = try JSONDecoder().decode(
                     GutenbergIndexManifest.self,
                     from: Data(contentsOf: manifestURL)
                 )
+                // A crash between the two atomic writes can leave an old
+                // manifest next to a new index. Verify the pair before using
+                // anything from disk, then let the network refresh repair it.
+                guard compressed.count == manifest.bytes else {
+                    throw GutenbergIndexError.sizeMismatch
+                }
+                guard SHA256Hex.hex(compressed) == manifest.sha256 else {
+                    throw GutenbergIndexError.checksumMismatch
+                }
+                let data = try (compressed as NSData).decompressed(using: .zlib) as Data
+                let decoded = try JSONDecoder().decode(GutenbergCatalogIndex.self, from: data)
                 return (decoded, manifest)
             }.value
             index = loaded.0
             manifest = loaded.1
         } catch {
+            // Never publish a corrupt or mismatched snapshot. Keep any older
+            // in-memory index that a concurrent refresh may have installed;
+            // the next refreshIfNeeded() downloads a verified replacement.
             lastRefreshError = error.localizedDescription
+        }
+    }
+
+    /// Loads the cached index first, then waits for (or starts) one mirror
+    /// refresh when no usable snapshot exists. `DiscoverView` calls this before
+    /// it considers the gutenberg.org/Gutendex fallback, so a cold launch uses
+    /// the mirror even when the user searches before the background refresh
+    /// finishes.
+    public func prepareForSearch() async {
+        if index == nil {
+            await load()
+        }
+        if index == nil {
+            await refreshIfNeeded()
         }
     }
 
@@ -205,7 +234,20 @@ public final class GutenbergIndexStore {
     /// its sha256 differs from the copy on disk. Failures are non-fatal: the
     /// previous index remains usable and the network search fallback remains.
     public func refreshIfNeeded(force: Bool = false) async {
-        guard !isRefreshing else { return }
+        if let refreshTask {
+            await refreshTask.value
+            return
+        }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performRefreshIfNeeded(force: force)
+        }
+        refreshTask = task
+        await task.value
+        refreshTask = nil
+    }
+
+    private func performRefreshIfNeeded(force: Bool) async {
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -237,13 +279,13 @@ public final class GutenbergIndexStore {
             }
 
             try fileManager.createDirectory(at: storageDirectory, withIntermediateDirectories: true)
-            let tempIndex = storageDirectory.appendingPathComponent("\(Self.indexFileName).tmp")
-            try compressed.write(to: tempIndex, options: .atomic)
-            let finalIndex = storageDirectory.appendingPathComponent(Self.indexFileName)
-            if fileManager.fileExists(atPath: finalIndex.path) {
-                try fileManager.removeItem(at: finalIndex)
-            }
-            try fileManager.moveItem(at: tempIndex, to: finalIndex)
+            // Data.write(.atomic) replaces each file with a single rename.
+            // Write the content-addressed payload first and the manifest that
+            // points at it second; load() verifies the pair on the next launch.
+            try compressed.write(
+                to: storageDirectory.appendingPathComponent(Self.indexFileName),
+                options: .atomic
+            )
             try manifestData.write(
                 to: storageDirectory.appendingPathComponent(Self.manifestFileName),
                 options: .atomic

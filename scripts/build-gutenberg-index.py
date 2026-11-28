@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import os
 import zlib
 import hashlib
 import json
@@ -65,6 +66,12 @@ def build_records(catalog: Path, language: str | None) -> list[dict]:
     return records
 
 
+def atomic_write_bytes(path: Path, payload: bytes) -> None:
+    temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    temporary.write_bytes(payload)
+    os.replace(temporary, path)
+
+
 def write_index(records: list[dict], output_dir: Path) -> tuple[Path, Path, str, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = (
@@ -83,7 +90,6 @@ def write_index(records: list[dict], output_dir: Path) -> tuple[Path, Path, str,
     digest = hashlib.sha256(compressed).hexdigest()
     index_name = f"index-{digest[:16]}.json.zlib"
     index_path = output_dir / index_name
-    index_path.write_bytes(compressed)
 
     manifest = {
         "schema": SCHEMA_VERSION,
@@ -94,10 +100,17 @@ def write_index(records: list[dict], output_dir: Path) -> tuple[Path, Path, str,
         "bookCount": len(records),
     }
     manifest_path = output_dir / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")) + "\n",
-        encoding="utf-8",
+
+    # Publish the immutable, content-addressed index before the manifest that
+    # points at it. The shell uploader preserves this order remotely too.
+    atomic_write_bytes(index_path, compressed)
+    atomic_write_bytes(
+        manifest_path,
+        (json.dumps(manifest, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"),
     )
+    for stale in output_dir.glob("index-*.json.zlib"):
+        if stale != index_path:
+            stale.unlink(missing_ok=True)
     return index_path, manifest_path, digest, len(compressed)
 
 
@@ -105,7 +118,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=Path, help="pg_catalog.csv")
     parser.add_argument("--output-dir", required=True, type=Path, help="where to write index + manifest")
-    parser.add_argument("--language", default="en", help="language code to include (default: en)")
+    parser.add_argument(
+        "--language",
+        default=None,
+        help="optional language code to include (default: every language)",
+    )
     parser.add_argument("--all-languages", action="store_true", help="include every language")
     parser.add_argument("--limit", type=int, default=0, help="optional record limit for smoke tests")
     args = parser.parse_args()
