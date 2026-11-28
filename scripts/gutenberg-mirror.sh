@@ -685,12 +685,22 @@ run_rclone_catalog() {
   }
 
   if [[ "$GUTENBERG_BUILD_INDEX" == "1" && "$GUTENBERG_SKIP_CATALOG" != "1" ]]; then
+    # rclone rejects --include/--exclude filters on copyto. Use a filter-free
+    # argument set for the two ordered single-object uploads.
+    local -a direct=(
+      --config "$RCLONE_CONFIG_FILE"
+      --s3-no-check-bucket
+      --stats 30s
+      --stats-one-line
+    )
+    if [[ "$DRY_RUN" == "1" ]]; then direct+=(--dry-run -v); fi
+
     local index name
     for index in "$STAGING_CATALOG"/index-*.json.zlib; do
       [[ -f "$index" ]] || continue
       name="$(basename "$index")"
       log "rclone copy index $name -> $R2_REMOTE_ROOT/catalog/$name"
-      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]+"${extra[@]}"}" \
+      if ! run_child "$RCLONE_BIN" copyto "${direct[@]}" \
           "$index" "$R2_REMOTE_ROOT/catalog/$name"; then
         warn "rclone could not upload index object '$name'; leaving the previous manifest in place"
         return 1
@@ -699,7 +709,7 @@ run_rclone_catalog() {
 
     if [[ -f "$STAGING_CATALOG/manifest.json" ]]; then
       log "rclone copy manifest last -> $R2_REMOTE_ROOT/catalog/manifest.json"
-      if ! run_child "$RCLONE_BIN" copyto "${RCLONE_ARGS[@]}" "${extra[@]+"${extra[@]}"}" \
+      if ! run_child "$RCLONE_BIN" copyto "${direct[@]}" \
           "$STAGING_CATALOG/manifest.json" "$R2_REMOTE_ROOT/catalog/manifest.json"; then
         warn "rclone could not upload the search-index manifest; the previous manifest remains active"
         return 1
