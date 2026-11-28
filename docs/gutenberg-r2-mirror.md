@@ -519,10 +519,15 @@ The app is wired to the mirror as its primary Gutenberg source:
 4. **Index integrity:** the app verifies the manifest byte count and SHA-256 before publishing a
    new snapshot in memory, writes both files atomically, and re-verifies the pair when loading from
    disk.
-5. **Public access:** the R2 custom domain maps to the `voxglass-gutenberg` bucket and serves the
+5. **Search performance and language preference:** folded title/author/subject/shelf fields are
+   precomputed once per loaded snapshot. Queries then perform a linear scan and a folded-title
+   tie-break instead of re-normalizing every record. The user's selected languages add a bounded
+   relevance boost, so an English edition wins ties without hiding a materially tighter foreign
+   result or a foreign-only work.
+6. **Public access:** the R2 custom domain maps to the `voxglass-gutenberg` bucket and serves the
    `gutenberg/` prefix. The S3 endpoint and other buckets are never exposed. CORS is unnecessary for
    the native client; add it in a Worker if a web client is introduced.
-6. **Caching:** EPUBs and covers are keyed by Gutenberg ID and served atomically from S3. The
+7. **Caching:** EPUBs and covers are keyed by Gutenberg ID and served atomically from S3. The
    versioned index object is immutable; `manifest.json` is revalidated rather than cached
    indefinitely.
 
